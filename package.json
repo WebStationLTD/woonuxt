@@ -5,7 +5,8 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "build": "nuxt build",
+    "build": "NITRO_PRESET=vercel nuxt build",
+    "vercel-build": "cross-env NITRO_PRESET=vercel nuxt build",
     "dev": "nuxt dev --host",
     "dev:ssl": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 nuxt dev --https --ssl-cert localhost.pem --ssl-key localhost-key.pem",
     "generate": "nuxt generate",

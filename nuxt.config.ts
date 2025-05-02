@@ -1,37 +1,47 @@
+// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  extends: ['./woonuxt_base'],
+  extends: ["./woonuxt_base"],
 
-  components: [{ path: './components', pathPrefix: false }],
+  components: [{ path: "./components", pathPrefix: false }],
 
-  modules: ['nuxt-graphql-client'],
+  modules: ["nuxt-graphql-client"],
 
   runtimeConfig: {
     public: {
-      GQL_HOST: 'https://woonuxt-shop.admin-panels.com/graphql'
-    }
+      GQL_HOST: "https://woonuxt-shop.admin-panels.com/graphql",
+    },
   },
 
-  'graphql-client': {
+  "graphql-client": {
     clients: {
       default: {
-        host: 'https://woonuxt-shop.admin-panels.com/graphql',
+        host:
+          process.env.NODE_ENV === "production"
+            ? "/api/graphql"
+            : "https://woonuxt-shop.admin-panels.com/graphql",
         tokenStorage: {
           cookieOptions: {
-            name: 'authToken',
+            name: "authToken",
             maxAge: 60 * 60 * 24 * 7,
-            sameSite: 'None',
-            secure: true
-          }
-        }
-      }
-    }
+            sameSite: "None",
+            secure: true,
+          },
+        },
+      },
+    },
   },
 
   nitro: {
     prerender: {
       concurrency: 10,
       interval: 1000,
-      failOnError: false
-    }
-  }
+      failOnError: false,
+    },
+    routeRules: {
+      "/api/graphql": {
+        proxy: "https://woonuxt-shop.admin-panels.com/graphql",
+        cors: true,
+      },
+    },
+  },
 });
