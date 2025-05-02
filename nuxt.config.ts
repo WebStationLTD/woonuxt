@@ -7,14 +7,14 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      GQL_HOST: 'https://woonuxt.local/graphql'
+      GQL_HOST: 'https://woonuxt-shop.admin-panels.com/graphql'
     }
   },
 
   'graphql-client': {
     clients: {
       default: {
-        host: 'https://woonuxt.local/graphql',
+        host: 'https://woonuxt-shop.admin-panels.com/graphql',
         tokenStorage: {
           cookieOptions: {
             name: 'authToken',
