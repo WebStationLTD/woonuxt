@@ -18,13 +18,13 @@ const productColumns = [
 </script>
 
 <template>
-  <div class="relative overflow-hidden bg-gray-100">
+  <div class="relative overflow-hidden bg-gray-800">
     <div class="pt-16 pb-80 sm:pt-24 sm:pb-40 lg:pt-40 lg:pb-48">
       <div class="relative mx-auto max-w-7xl px-4 sm:static sm:px-6 lg:px-8">
         <div class="sm:max-w-lg">
-          <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">Нова колекция вече е на разположение</h1>
-          <p class="mt-4 text-xl text-gray-500">
-            Открийте нашата нова колекция продукти, специално подбрани за вашите нужди. Качество, което можете да усетите.
+          <h1 class="text-4xl font-bold tracking-tight text-white sm:text-6xl">Lorem ipsum</h1>
+          <p class="mt-4 text-xl text-white">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
           </p>
         </div>
         <div>
