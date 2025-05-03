@@ -4,12 +4,24 @@ export default defineNuxtConfig({
 
   components: [{ path: "./components", pathPrefix: false }],
 
-  modules: ["nuxt-graphql-client"],
+  modules: ["nuxt-graphql-client", "@nuxtjs/sitemap"],
 
   runtimeConfig: {
     public: {
       GQL_HOST: "https://woonuxt-shop.admin-panels.com/graphql",
     },
+  },
+
+  sitemap: {
+    siteUrl: process.env.SITE_URL || "https://woonuxt-shop.admin-panels.com",
+    excludes: [
+      "/checkout/order-received/**",
+      "/order-summary/**",
+      "/my-account/**",
+      "/oauth/**",
+    ],
+    cacheTime: 1000 * 60 * 15,
+    routes: ["/", "/products", "/categories", "/contact", "/wishlist"],
   },
 
   "graphql-client": {

@@ -24,6 +24,7 @@
     "@nuxt/icon": "^1.11.0",
     "@nuxt/image": "1.10.0",
     "@nuxtjs/i18n": "^9.5.2",
+    "@nuxtjs/sitemap": "^7.2.10",
     "@nuxtjs/tailwindcss": "^6.13.2",
     "@nuxtjs/vercel-builder": "^0.25.0",
     "@tailwindcss/typography": "^0.5.16",

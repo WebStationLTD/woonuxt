@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /checkout/
+Disallow: /my-account/
+Disallow: /oauth/
+Disallow: /order-summary/
+Disallow: /checkout/order-received/
+
+# Указваме пътя до sitemap файла
+Sitemap: https://woonuxt-shop.admin-panels.com/sitemap.xml 
