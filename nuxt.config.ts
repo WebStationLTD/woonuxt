@@ -1,9 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   extends: ["./woonuxt_base"],
-
   components: [{ path: "./components", pathPrefix: false }],
-
   modules: ["nuxt-graphql-client", "@nuxtjs/sitemap"],
 
   runtimeConfig: {
@@ -56,4 +54,6 @@ export default defineNuxtConfig({
       },
     },
   },
+
+  compatibilityDate: "2025-05-03",
 });

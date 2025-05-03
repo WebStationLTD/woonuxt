@@ -31,6 +31,12 @@ useSeoMeta({
       <img src="/images/logoipsum-215.svg" alt="Brand 6" width="132" height="40" />
     </div>
 
+    <CtaBullets />
+
+    <CtaQuality />
+
+    <CtaImage />
+
     <section class="container my-16">
       <div class="flex items-end justify-between">
         <h2 class="text-lg font-semibold md:text-2xl">{{ $t('messages.shop.shopByCategory') }}</h2>
