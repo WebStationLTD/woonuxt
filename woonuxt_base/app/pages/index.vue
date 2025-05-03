@@ -20,7 +20,9 @@ useSeoMeta({
 
 <template>
   <main>
-    <HeroBanner />
+    <!-- <HeroBanner /> -->
+
+    <PromoSection />
 
     <div class="container flex flex-wrap items-center justify-center my-16 text-center gap-x-8 gap-y-4 brand lg:justify-between">
       <img src="/images/logoipsum-211.svg" alt="Brand 1" width="132" height="35" />
@@ -36,6 +38,8 @@ useSeoMeta({
     <CtaQuality />
 
     <CtaImage />
+
+    <!-- <PromoSection /> -->
 
     <section class="container my-16">
       <div class="flex items-end justify-between">

@@ -1,0 +1,13 @@
+query getProductsByIds($ids: [Int]) {
+  products(where: { include: $ids }, first: 10) {
+    nodes {
+      databaseId
+      name
+      slug
+      shortDescription
+      ...SimpleProduct
+      ...VariableProduct
+      ...ExternalProduct
+    }
+  }
+}
