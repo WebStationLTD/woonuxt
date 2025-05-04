@@ -5,12 +5,18 @@ import MegaMenu from './MegaMenu.vue';
 
 <template>
   <nav>
-    <NuxtLink to="/">{{ $t('messages.general.home') }}</NuxtLink>
-    <NuxtLink to="/products">{{ $t('messages.general.allProducts') }}</NuxtLink>
-    <NuxtLink to="/categories">{{ $t('messages.shop.category', 2) }}</NuxtLink>
+    <NuxtLink class="text-base" to="/">{{ $t('messages.general.home') }}</NuxtLink>
+    <NuxtLink class="text-base" to="/products">{{ $t('messages.general.allProducts') }}</NuxtLink>
+    <NuxtLink class="text-base" to="/categories">{{ $t('messages.shop.category', 2) }}</NuxtLink>
     <MegaMenu />
-    <NuxtLink to="/contact">{{ $t('messages.general.contact') }}</NuxtLink>
-    <NuxtLink class="lg:hidden" :to="wishlistLink" :prefetch="false">Wishlist</NuxtLink>
-    <NuxtLink class="lg:hidden" to="/my-account" :prefetch="false">My Account</NuxtLink>
+    <NuxtLink class="text-base" to="/contact">{{ $t('messages.general.contact') }}</NuxtLink>
+    <NuxtLink class="lg:hidden text-base" :to="wishlistLink" :prefetch="false">Wishlist</NuxtLink>
+    <NuxtLink class="lg:hidden text-base" to="/my-account" :prefetch="false">My Account</NuxtLink>
   </nav>
 </template>
+
+<style scoped>
+a {
+  @apply font-semibold focus:outline-none;
+}
+</style>

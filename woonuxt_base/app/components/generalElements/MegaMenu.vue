@@ -1,8 +1,8 @@
 <template>
-  <Popover class="static lg:relative isolate z-50">
-    <PopoverButton class="inline-flex items-center gap-x-1 text-sm font-semibold text-gray-500 hover:text-primary">
+  <Popover v-slot="{ open }" class="static lg:relative isolate z-50">
+    <PopoverButton class="inline-flex items-center gap-x-1 text-base font-semibold text-gray-500 hover:text-primary focus:outline-none">
       Магазин
-      <ChevronDownIcon class="h-5 w-5" aria-hidden="true" />
+      <ChevronDownIcon :class="['h-6 w-6 transition-transform duration-300', open ? 'rotate-180 transform' : '']" aria-hidden="true" />
     </PopoverButton>
 
     <transition
@@ -17,30 +17,30 @@
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-y-10 py-8">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-8 gap-x-8">
               <div>
-                <h3 class="text-sm font-medium text-gray-500">Ангажиране</h3>
+                <h3 class="text-base font-medium text-gray-500">Ангажиране</h3>
                 <div class="mt-5">
                   <div class="space-y-3">
                     <a
                       v-for="item in engagement"
                       :key="item.name"
                       :href="item.href"
-                      class="flex items-center gap-x-3 py-1 text-sm font-semibold text-gray-900 hover:text-primary transition">
-                      <component :is="item.icon" class="h-5 w-5 flex-none text-gray-400" aria-hidden="true" />
+                      class="flex items-center gap-x-3 py-1 text-base font-semibold text-gray-900 hover:text-primary transition">
+                      <component :is="item.icon" class="h-6 w-6 flex-none text-gray-400" aria-hidden="true" />
                       {{ item.name }}
                     </a>
                   </div>
                 </div>
               </div>
               <div>
-                <h3 class="text-sm font-medium text-gray-500">Ресурси</h3>
+                <h3 class="text-base font-medium text-gray-500">Ресурси</h3>
                 <div class="mt-5">
                   <div class="space-y-3">
                     <a
                       v-for="item in resources"
                       :key="item.name"
                       :href="item.href"
-                      class="flex items-center gap-x-3 py-1 text-sm font-semibold text-gray-900 hover:text-primary transition">
-                      <component :is="item.icon" class="h-5 w-5 flex-none text-gray-400" aria-hidden="true" />
+                      class="flex items-center gap-x-3 py-1 text-base font-semibold text-gray-900 hover:text-primary transition">
+                      <component :is="item.icon" class="h-6 w-6 flex-none text-gray-400" aria-hidden="true" />
                       {{ item.name }}
                     </a>
                   </div>
@@ -55,11 +55,11 @@
                   <div class="absolute inset-0 rounded-lg ring-1 ring-gray-900/10 ring-inset" />
                 </div>
                 <div class="flex flex-1 flex-col justify-between p-4">
-                  <div class="flex items-center gap-x-2 text-xs">
+                  <div class="flex items-center gap-x-2 text-sm">
                     <time :datetime="post.datetime" class="text-gray-500">{{ post.date }}</time>
-                    <span class="relative z-10 rounded-full bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600">{{ post.category.title }}</span>
+                    <span class="relative z-10 rounded-full bg-gray-50 px-2 py-1 text-sm font-medium text-gray-600">{{ post.category.title }}</span>
                   </div>
-                  <h4 class="mt-2 text-sm font-semibold text-gray-900">
+                  <h4 class="mt-2 text-base font-semibold text-gray-900">
                     <a :href="post.href">
                       <span class="absolute inset-0" />
                       {{ post.title }}
@@ -70,7 +70,10 @@
             </div>
           </div>
           <div class="lg:hidden border-t border-gray-200 py-3 px-4 text-center">
-            <PopoverButton class="inline-block rounded-md py-2 px-4 text-xs font-medium text-gray-500 hover:bg-gray-100"> Затвори </PopoverButton>
+            <PopoverButton class="inline-block rounded-md py-2 px-4 text-sm font-medium text-gray-500 hover:bg-gray-100 focus:outline-none">
+              Затвори
+              <ChevronDownIcon class="inline-block h-5 w-5 rotate-180 transform" aria-hidden="true" />
+            </PopoverButton>
           </div>
         </div>
       </PopoverPanel>
@@ -133,6 +136,13 @@ const recentPosts = [
 </script>
 
 <style scoped>
+/* Премахва outline при активиране на бутони */
+button:focus,
+a:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .mega-menu-panel {
   @apply z-40 bg-white shadow-lg overflow-hidden;
 
@@ -151,5 +161,10 @@ const recentPosts = [
       0 10px 15px -3px rgba(0, 0, 0, 0.1),
       0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
+}
+
+/* Анимация за ротация на стрелката */
+.rotate-180 {
+  transform: rotate(180deg);
 }
 </style>
