@@ -47,7 +47,7 @@ export default defineNuxtConfig({
   },
 
   hooks: {
-    'pages:extend'(pages) {
+    'pages:extend'(pages: any[]) {
       const addPage = (name: string, path: string, file: string) => {
         pages.push({ name, path, file: resolve(`./app/pages/${file}`) });
       };
@@ -55,6 +55,8 @@ export default defineNuxtConfig({
       addPage('product-page-pager', '/products/page/:pageNumber', 'products.vue');
       addPage('product-category-page', '/product-category/:categorySlug', 'product-category/[slug].vue');
       addPage('product-category-page-pager', '/product-category/:categorySlug/page/:pageNumber', 'product-category/[slug].vue');
+      addPage('produkt-kategoriya-slug', '/produkt-kategoriya/:categorySlug', 'produkt-kategoriya/[slug].vue');
+      addPage('produkt-kategoriya-page-pager', '/produkt-kategoriya/:categorySlug/page/:pageNumber', 'produkt-kategoriya/[slug].vue');
       addPage('order-received', '/checkout/order-received/:orderId', 'order-summary.vue');
       addPage('order-summary', '/order-summary/:orderId', 'order-summary.vue');
     },

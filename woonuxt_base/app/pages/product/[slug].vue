@@ -7,6 +7,8 @@ const { arraysEqual, formatArray, checkForVariationTypeOfAny } = useHelpers();
 const { addToCart, isUpdatingCart } = useCart();
 const { t } = useI18n();
 const slug = route.params.slug as string;
+const runtimeConfig = useRuntimeConfig();
+const productCategoryPermalink = runtimeConfig?.public?.PRODUCT_CATEGORY_PERMALINK || '/product-category/';
 
 const { data } = await useAsyncGql('getProduct', { slug });
 if (!data.value?.product) {
@@ -164,7 +166,7 @@ const disabledAddToCart = computed(() => {
                   <NuxtLink
                     v-for="category in product.productCategories.nodes"
                     :key="category.databaseId"
-                    :to="`/product-category/${decodeURIComponent(category?.slug || '')}`"
+                    :to="`${productCategoryPermalink}${decodeURIComponent(category?.slug || '')}`"
                     class="hover:text-primary"
                     :title="category.name"
                     >{{ category.name }}<span class="comma">, </span>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { FALLBACK_IMG } = useHelpers();
+const runtimeConfig = useRuntimeConfig();
 const props = defineProps({
   node: { type: Object, required: true },
   imageLoading: { type: String as PropType<'lazy' | 'eager'>, default: 'lazy' },
@@ -7,12 +8,13 @@ const props = defineProps({
 
 const imgWidth = 220;
 const imgHeight = Math.round(imgWidth * 1.125);
+const productCategoryPermalink = runtimeConfig?.public?.PRODUCT_CATEGORY_PERMALINK || '/product-category/';
 </script>
 
 <template>
   <NuxtLink
     v-if="node"
-    :to="`/product-category/${decodeURIComponent(node.slug)}`"
+    :to="`${productCategoryPermalink}${decodeURIComponent(node.slug)}`"
     class="relative flex justify-center overflow-hidden border border-white rounded-xl item snap-mandatory snap-x">
     <NuxtImg
       :width="imgWidth"
