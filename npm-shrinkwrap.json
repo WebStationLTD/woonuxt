@@ -11,7 +11,8 @@
         "@heroicons/vue": "^2.2.0",
         "@stripe/stripe-js": "^4.10.0",
         "@vueform/slider": "^2.1.10",
-        "@vueuse/core": "^13.0.0"
+        "@vueuse/core": "^13.0.0",
+        "swiper": "^11.2.6"
       },
       "devDependencies": {
         "@iconify-json/ion": "^1.2.2",
@@ -16333,6 +16334,25 @@
       "license": "MIT",
       "dependencies": {
         "tslib": "^2.0.3"
+      }
+    },
+    "node_modules/swiper": {
+      "version": "11.2.6",
+      "resolved": "https://registry.npmjs.org/swiper/-/swiper-11.2.6.tgz",
+      "integrity": "sha512-8aXpYKtjy3DjcbzZfz+/OX/GhcU5h+looA6PbAzHMZT6ESSycSp9nAjPCenczgJyslV+rUGse64LMGpWE3PX9Q==",
+      "funding": [
+        {
+          "type": "patreon",
+          "url": "https://www.patreon.com/swiperjs"
+        },
+        {
+          "type": "open_collective",
+          "url": "http://opencollective.com/swiper"
+        }
+      ],
+      "license": "MIT",
+      "engines": {
+        "node": ">= 4.7.0"
       }
     },
     "node_modules/sync-fetch": {

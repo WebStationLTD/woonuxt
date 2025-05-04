@@ -10,7 +10,16 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'bg' },
-      link: [{ rel: 'icon', href: '/logo.svg', type: 'image/svg+xml' }],
+      link: [
+        { rel: 'icon', href: '/logo.svg', type: 'image/svg+xml' },
+        { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css' },
+      ],
+      script: [
+        {
+          src: 'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js',
+          defer: true,
+        },
+      ],
     },
     pageTransition: { name: 'page', mode: 'default' },
   },

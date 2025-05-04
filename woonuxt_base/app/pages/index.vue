@@ -33,6 +33,8 @@ useSeoMeta({
       <img src="/images/logoipsum-215.svg" alt="Brand 6" width="132" height="40" />
     </div>
 
+    <NewProductsCarousel />
+
     <CtaBullets />
 
     <CtaQuality />
