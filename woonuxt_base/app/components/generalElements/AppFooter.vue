@@ -9,12 +9,15 @@ const { wishlistLink } = useAuth();
       <div class="mr-auto">
         <Logo />
         <WebsiteShortDescription />
-        <LangSwitcher class="mt-8" />
+        <!-- Скрит превключвател за езици, тъй като използваме само български език -->
+        <!-- <LangSwitcher class="mt-8" /> -->
       </div>
       <div class="w-3/7 lg:w-auto">
         <div class="mb-1 font-semibold">Information</div>
         <div class="text-sm">
-          <a class="py-1.5 block" href="https://github.com/scottyzen/woonuxt?tab=readme-ov-file#next-generation-front-end-for-woocommerce" target="_blank">About</a>
+          <a class="py-1.5 block" href="https://github.com/scottyzen/woonuxt?tab=readme-ov-file#next-generation-front-end-for-woocommerce" target="_blank"
+            >About</a
+          >
           <a href="/" class="py-1.5 block">Careers</a>
           <a href="/" class="py-1.5 block">Press</a>
           <a href="https://woonuxt.com/faq" class="py-1.5 block" rel="noreferrer" target="_blank">FAQ's</a>
