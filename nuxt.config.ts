@@ -8,6 +8,7 @@ export default defineNuxtConfig({
     public: {
       GQL_HOST: "https://woonuxt-shop.admin-panels.com/graphql",
       PRODUCT_CATEGORY_PERMALINK: "/produkt-kategoriya/",
+      PRODUCTS_PER_PAGE: 12,
     },
   },
 
