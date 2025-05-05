@@ -32,8 +32,8 @@
     "@nuxtjs/vercel-builder": "^0.25.0",
     "@tailwindcss/typography": "^0.5.16",
     "cross-env": "^7.0.3",
-    "nuxt": "^3.16.2",
-    "nuxt-graphql-client": "^0.2.45",
+    "nuxt": "^3.17.1",
+    "nuxt-graphql-client": "^0.2.46",
     "prettier": "^3.5.3",
     "woonuxt-settings": "^1.2.1"
   },
