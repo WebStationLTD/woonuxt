@@ -7,4 +7,4 @@ Disallow: /order-summary/
 Disallow: /checkout/order-received/
 
 # Указваме пътя до sitemap файла
-Sitemap: https://woonuxt-shop.admin-panels.com/sitemap.xml 
+Sitemap: https://woonuxt.rosset.website/sitemap.xml 

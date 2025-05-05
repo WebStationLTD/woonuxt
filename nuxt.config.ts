@@ -6,7 +6,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      GQL_HOST: "https://woonuxt-shop.admin-panels.com/graphql",
+      GQL_HOST: "https://woonuxt.rosset.website/graphql",
       PRODUCT_CATEGORY_PERMALINK: "/produkt-kategoriya/",
       PRODUCTS_PER_PAGE: 12,
     },
@@ -15,14 +15,14 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
-        { rel: "preconnect", href: "https://woonuxt-shop.admin-panels.com" },
-        { rel: "dns-prefetch", href: "https://woonuxt-shop.admin-panels.com" },
+        { rel: "preconnect", href: "https://woonuxt.rosset.website" },
+        { rel: "dns-prefetch", href: "https://woonuxt.rosset.website" },
       ],
     },
   },
 
   sitemap: {
-    siteUrl: process.env.SITE_URL || "https://woonuxt-shop.admin-panels.com",
+    siteUrl: process.env.SITE_URL || "https://woonuxt.rosset.website",
     excludes: [
       "/checkout/order-received/**",
       "/order-summary/**",
@@ -39,7 +39,7 @@ export default defineNuxtConfig({
   //       host:
   //         process.env.NODE_ENV === "production"
   //           ? "/api/graphql"
-  //           : "https://woonuxt-shop.admin-panels.com/graphql",
+  //           : "https://woonuxt.rosset.website/graphql",
   //       tokenStorage: {
   //         cookieOptions: {
   //           name: "authToken",
@@ -55,7 +55,7 @@ export default defineNuxtConfig({
   "graphql-client": {
     clients: {
       default: {
-        host: "https://woonuxt-shop.admin-panels.com/graphql",
+        host: "https://woonuxt.rosset.website/graphql",
         tokenStorage: {
           cookieOptions: {
             name: "authToken",
