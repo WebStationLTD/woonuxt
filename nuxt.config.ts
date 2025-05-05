@@ -12,6 +12,15 @@ export default defineNuxtConfig({
     },
   },
 
+  app: {
+    head: {
+      link: [
+        { rel: "preconnect", href: "https://woonuxt-shop.admin-panels.com" },
+        { rel: "dns-prefetch", href: "https://woonuxt-shop.admin-panels.com" },
+      ],
+    },
+  },
+
   sitemap: {
     siteUrl: process.env.SITE_URL || "https://woonuxt-shop.admin-panels.com",
     excludes: [
