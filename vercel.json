@@ -1,11 +1,5 @@
 {
   "buildCommand": "npm run vercel-build",
   "outputDirectory": ".output/public",
-  "framework": "nuxtjs",
-  "rewrites": [
-    {
-      "source": "/api/graphql",
-      "destination": "https://woonuxt-shop.admin-panels.com/graphql"
-    }
-  ]
+  "framework": "nuxtjs"
 }

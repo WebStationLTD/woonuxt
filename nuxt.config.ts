@@ -33,13 +33,29 @@ export default defineNuxtConfig({
     routes: ["/", "/products", "/categories", "/contact", "/wishlist"],
   },
 
+  // "graphql-client": {
+  //   clients: {
+  //     default: {
+  //       host:
+  //         process.env.NODE_ENV === "production"
+  //           ? "/api/graphql"
+  //           : "https://woonuxt-shop.admin-panels.com/graphql",
+  //       tokenStorage: {
+  //         cookieOptions: {
+  //           name: "authToken",
+  //           maxAge: 60 * 60 * 24 * 7,
+  //           sameSite: "None",
+  //           secure: true,
+  //         },
+  //       },
+  //     },
+  //   },
+  // },
+
   "graphql-client": {
     clients: {
       default: {
-        host:
-          process.env.NODE_ENV === "production"
-            ? "/api/graphql"
-            : "https://woonuxt-shop.admin-panels.com/graphql",
+        host: "https://woonuxt-shop.admin-panels.com/graphql",
         tokenStorage: {
           cookieOptions: {
             name: "authToken",
@@ -58,12 +74,7 @@ export default defineNuxtConfig({
       interval: 1000,
       failOnError: false,
     },
-    routeRules: {
-      "/api/graphql": {
-        proxy: "https://woonuxt-shop.admin-panels.com/graphql",
-        cors: true,
-      },
-    },
+    minify: true,
   },
 
   compatibilityDate: "2025-05-03",
