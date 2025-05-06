@@ -65,7 +65,7 @@ export default defineNuxtConfig({
       "/checkout/order-received/**": { ssr: false },
       "/order-summary/**": { ssr: false },
 
-      // Прилагане на Vercel Edge Cache правила
+      // Прилагане на Vercel Edge Cache правилата
       "/": {
         vercel: {
           edge: false,
