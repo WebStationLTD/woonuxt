@@ -49,7 +49,7 @@ const numberSrc = (pageNumber: number) => {
 </script>
 
 <template>
-  <div class="flex justify-center mt-8 mb-16 col-span-full tabular-nums">
+  <div class="flex flex-wrap justify-center mt-8 mb-16 col-span-full tabular-nums">
     <!-- Pagination -->
     <nav v-if="numberOfPages && numberOfPages > 1" class="inline-flex self-end -space-x-px rounded-md shadow-sm isolate" aria-label="Pagination">
       <!-- PREV -->
