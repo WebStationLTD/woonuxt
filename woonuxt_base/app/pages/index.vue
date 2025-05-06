@@ -1,5 +1,9 @@
 <script lang="ts" setup>
 import { ProductsOrderByEnum } from '#woo';
+
+// Add Vercel speed insights
+import { SpeedInsights } from '@vercel/speed-insights/nuxt';
+
 const { siteName, description, shortDescription, siteImage } = useAppConfig();
 
 const { data } = await useAsyncGql('getProductCategories', { first: 6 });
