@@ -1,3 +1,4 @@
+// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   extends: ["./woonuxt_base"],
 
@@ -27,7 +28,7 @@ export default defineNuxtConfig({
   },
 
   sitemap: {
-    siteUrl: "https://woonuxt-shop.admin-panels.com",
+    siteUrl: process.env.SITE_URL || "https://woonuxt-shop.admin-panels.com",
     excludes: [
       "/checkout/order-received/**",
       "/order-summary/**",
@@ -56,35 +57,83 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
-      routes: ["/", "/products", "/categories", "/contact"],
       concurrency: 10,
       interval: 1000,
       failOnError: false,
     },
     minify: true,
     routeRules: {
-      // Генерирани по време на билд
-      "/": { static: true },
-      "/products": { static: true },
-      "/categories": { static: true },
-      "/contact": { static: true },
+      // Запазваме правилата от базовата конфигурация
+      "/checkout/order-received/**": { ssr: false },
+      "/order-summary/**": { ssr: false },
 
-      // Частично кеширани с ISR (Incremental Static Regeneration)
+      // Прилагане на Vercel Edge Cache правила
+      "/": {
+        vercel: {
+          edge: false,
+          isr: {
+            expiration: 60 * 10, // 10 минути кеш
+            fallback: true,
+          },
+        },
+      },
+      "/products": {
+        vercel: {
+          edge: false,
+          isr: {
+            expiration: 60 * 30, // 30 минути кеш
+            fallback: true,
+          },
+        },
+      },
       "/product/**": {
-        isr: {
-          expiration: 1800, // 30 минути
+        vercel: {
+          edge: false,
+          isr: {
+            expiration: 60 * 30, // 30 минути кеш
+            fallback: true,
+          },
+        },
+      },
+      "/product-category/**": {
+        vercel: {
+          edge: false,
+          isr: {
+            expiration: 60 * 30, // 30 минути кеш
+            fallback: true,
+          },
         },
       },
       "/produkt-kategoriya/**": {
-        isr: {
-          expiration: 1800,
+        vercel: {
+          edge: false,
+          isr: {
+            expiration: 60 * 30, // 30 минути кеш
+            fallback: true,
+          },
         },
       },
+      "/categories": {
+        vercel: {
+          edge: false,
+          isr: {
+            expiration: 60 * 60, // 1 час кеш
+            fallback: true,
+          },
+        },
+      },
+      // Динамични пътища които не трябва да се кешират
 
-      // Страници с SSR, без кеш
       "/checkout/**": { ssr: true, cache: false },
-      "/cart": { ssr: true, cache: false },
       "/my-account/**": { ssr: true, cache: false },
+      "/cart": { ssr: true, cache: false },
+      // API endpoints
+      "/api/**": {
+        vercel: {
+          edge: true, // Включваме Edge за API routes
+          isr: false, // Изключваме ISR за API routes
+        },
+      },
     },
   },
 
