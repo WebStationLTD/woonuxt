@@ -51,7 +51,7 @@ const numberSrc = (pageNumber: number) => {
 <template>
   <div class="flex flex-wrap justify-center mt-8 mb-16 col-span-full tabular-nums">
     <!-- Pagination -->
-    <nav v-if="numberOfPages && numberOfPages > 1" class="inline-flex self-end -space-x-px rounded-md shadow-sm isolate" aria-label="Pagination">
+    <nav v-if="numberOfPages && numberOfPages > 1" class="flex-wrap inline-flex self-end -space-x-px rounded-md shadow-sm isolate" aria-label="Pagination">
       <!-- PREV -->
       <NuxtLink
         :to="prevSrc(page)"
