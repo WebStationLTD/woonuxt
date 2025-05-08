@@ -3,14 +3,24 @@ const { frontEndUrl, wooNuxtSEO, stripHtml } = useHelpers();
 const { path } = useRoute();
 const { info } = defineProps({ info: { type: Object as PropType<Product>, required: true } });
 
-const title = info.name;
-const canonical = `${frontEndUrl}${path}`;
+// Prioritize Yoast SEO data if available
+const title = info.seo?.title || info.name;
+const metaDescription =
+  info.seo?.metaDesc || (info.shortDescription || info.description ? stripHtml(info.shortDescription || '') : stripHtml(info.description || ''));
+const canonical = info.seo?.canonical || `${frontEndUrl}${path}`;
 const siteName = process.env.SITE_TITLE ?? 'WooNuxt';
 
+// Prioritize Yoast SEO OpenGraph image
 const img = useImage();
-const imageURL = info.image?.sourceUrl ?? '/images/placeholder.jpg';
+let imageURL = '';
+if (info.seo?.opengraphImage?.sourceUrl) {
+  imageURL = info.seo.opengraphImage.sourceUrl;
+} else {
+  imageURL = info.image?.sourceUrl ?? '/images/placeholder.jpg';
+}
+
 const defaultImageSrc = img.getSizes(imageURL, { width: 1200, height: 630 }).src;
-const twitterImageSrc = img.getSizes(imageURL, { width: 1600, height: 900 }).src;
+const twitterImageSrc = info.seo?.twitterImage?.sourceUrl ? info.seo.twitterImage.sourceUrl : img.getSizes(imageURL, { width: 1600, height: 900 }).src;
 
 const getFullImageURL = (url?: string) => {
   if (!url) return '';
@@ -20,29 +30,48 @@ const getFullImageURL = (url?: string) => {
 
 const defaultImage = getFullImageURL(defaultImageSrc);
 const twitterImage = getFullImageURL(twitterImageSrc);
-const description = info.shortDescription || info.description ? stripHtml(info.shortDescription || '') : stripHtml(info.description || '');
+const ogTitle = info.seo?.opengraphTitle || title;
+const ogDescription = info.seo?.opengraphDescription || metaDescription;
+const twitterTitle = info.seo?.twitterTitle || title;
+const twitterDescription = info.seo?.twitterDescription || metaDescription;
 
 const facebook = wooNuxtSEO?.find((item) => item?.provider === 'facebook') ?? null;
 const twitter = wooNuxtSEO?.find((item) => item?.provider === 'twitter') ?? null;
+
+// Добавяме schema.org структурирани данни чрез useHead
+if (info.seo?.schema?.raw) {
+  useHead({
+    script: [
+      {
+        type: 'application/ld+json',
+        innerHTML: info.seo.schema.raw,
+      },
+    ],
+  });
+}
 </script>
 
 <template>
   <Head>
     <Title>{{ title }}</Title>
-    <Meta v-if="description" name="description" hid="description" :content="description" />
+    <Meta v-if="metaDescription" name="description" hid="description" :content="metaDescription" />
     <Meta name="image" hid="image" :content="defaultImage" />
     <Meta property="og:site_name" hid="og:site_name" :content="siteName" />
     <Meta property="og:url" hid="og:url" :content="canonical" />
-    <Meta v-if="info.name" property="og:title" hid="og:title" :content="info.name" />
-    <Meta v-if="description" property="og:description" hid="og:description" :content="description" />
+    <Meta property="og:title" hid="og:title" :content="ogTitle || ''" />
+    <Meta v-if="ogDescription" property="og:description" hid="og:description" :content="ogDescription" />
     <Meta property="og:image" hid="og:image" :content="defaultImage" />
     <Meta v-if="facebook?.url" property="article:publisher" hid="article:publisher" :content="facebook.url" />
     <Meta name="twitter:card" hid="twitter:card" content="summary_large_image" />
     <Meta v-if="twitter?.handle" name="twitter:site" hid="twitter:site" :content="twitter.handle" />
-    <Meta v-if="info.name" name="twitter:title" hid="twitter:title" :content="info.name" />
-    <Meta v-if="description" name="twitter:description" hid="twitter:description" :content="description" />
+    <Meta name="twitter:title" hid="twitter:title" :content="twitterTitle || ''" />
+    <Meta v-if="twitterDescription" name="twitter:description" hid="twitter:description" :content="twitterDescription" />
     <Meta name="twitter:image" hid="twitter:image" :content="twitterImage" />
     <Meta name="twitter:url" hid="twitter:url" :content="canonical" />
     <Link rel="canonical" hid="canonical" :href="canonical" />
+    <!-- Add meta robots if specified in Yoast SEO -->
+    <Meta v-if="info.seo?.metaRobotsNoindex" name="robots" content="noindex" />
+    <Meta v-if="info.seo?.metaRobotsNofollow" name="robots" content="nofollow" />
+    <!-- Schema.org data is now added using useHead in the script section -->
   </Head>
 </template>

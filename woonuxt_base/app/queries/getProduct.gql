@@ -20,6 +20,7 @@ query getProduct($slug: ID!) {
     ...SimpleProduct
     ...VariableProduct
     ...ExternalProduct
+    ...SeoProductFragment
     related(first: 5) {
       nodes {
         ...SimpleProduct

@@ -1,0 +1,25 @@
+fragment SeoFragment on Page {
+  seo {
+    title
+    metaDesc
+    metaKeywords
+    metaRobotsNoindex
+    metaRobotsNofollow
+    opengraphTitle
+    opengraphDescription
+    opengraphImage {
+      sourceUrl
+      altText
+    }
+    twitterTitle
+    twitterDescription
+    twitterImage {
+      sourceUrl
+      altText
+    }
+    canonical
+    schema {
+      raw
+    }
+  }
+}

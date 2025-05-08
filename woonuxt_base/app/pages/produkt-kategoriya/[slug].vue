@@ -98,6 +98,12 @@ async function loadProductsByCategory(categorySlug: string) {
   }
 }
 
+// Променливи за SEO данни
+let matchingCategory = null;
+let categoryTitle = '';
+let categoryDescription = '';
+let seoData = null;
+
 // Основна логика за зареждане на данни
 async function loadData() {
   try {
@@ -114,7 +120,7 @@ async function loadData() {
     );
 
     // Намираме съвпадаща категория ако имаме slug
-    let matchingCategory = null;
+    matchingCategory = null;
     let categoryProducts: any[] = [];
 
     if (slug) {
@@ -167,11 +173,32 @@ async function loadData() {
       },
     );
 
-    // Задаваме заглавието според намерената категория
+    // Използване на SEO данни от Yoast ако са налични
+    categoryTitle = matchingCategory?.seo?.title || matchingCategory?.name || decodedSlug || 'All Products';
+    categoryDescription =
+      matchingCategory?.seo?.metaDesc || matchingCategory?.description || `Products in category ${matchingCategory?.name || decodedSlug || 'All Products'}`;
+
     useHead({
-      title: `Category: ${matchingCategory?.name || decodedSlug || 'All Products'}`,
-      meta: [{ name: 'description', content: `Products in category ${matchingCategory?.name || decodedSlug || 'All Products'}` }],
+      title: categoryTitle,
+      meta: [
+        { name: 'description', content: categoryDescription },
+        { property: 'og:title', content: matchingCategory?.seo?.opengraphTitle || categoryTitle },
+        { property: 'og:description', content: matchingCategory?.seo?.opengraphDescription || categoryDescription },
+      ],
+      link: [{ rel: 'canonical', href: matchingCategory?.seo?.canonical || '' }],
     });
+
+    // Добавяне на структурирани данни (schema.org) ако са налични в Yoast
+    if (matchingCategory?.seo?.schema?.raw) {
+      useHead({
+        script: [
+          {
+            type: 'application/ld+json',
+            innerHTML: matchingCategory.seo.schema.raw,
+          },
+        ],
+      });
+    }
   } catch (error: any) {
     console.error('Грешка при зареждане на данни:', error);
     if (error.graphQLErrors) {

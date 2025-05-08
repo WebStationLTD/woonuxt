@@ -1,7 +1,33 @@
-query getProductCategories($first: Int = 20) {
-  productCategories(first: $first, where: { orderby: COUNT, order: DESC, hideEmpty: true }) {
+query getProductCategories($first: Int, $after: String, $slug: [String]) {
+  productCategories(first: $first, after: $after, where: { hideEmpty: true, slug: $slug }) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
     nodes {
-      ...ProductCategory
+      slug
+      name
+      databaseId
+      id
+      description
+      count
+      uri
+      image {
+        ...Image
+      }
+      children {
+        nodes {
+          slug
+          name
+          databaseId
+          description
+          count
+          image {
+            ...Image
+          }
+        }
+      }
+      ...SeoCategoryFragment
     }
   }
 }

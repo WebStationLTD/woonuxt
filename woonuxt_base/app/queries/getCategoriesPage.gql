@@ -1,0 +1,11 @@
+# import "./fragments/SeoFragment.gql"
+
+query getCategoriesPage {
+  page(id: "produkt-kategoriya", idType: URI) {
+    id
+    title
+    uri
+    slug
+    ...SeoFragment
+  }
+}

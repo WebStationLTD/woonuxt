@@ -1,0 +1,11 @@
+# import "./fragments/SeoFragment.gql"
+
+query getHomeSeo {
+  page(id: "/", idType: URI) {
+    id
+    title
+    uri
+    slug
+    ...SeoFragment
+  }
+}

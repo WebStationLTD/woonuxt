@@ -3,8 +3,13 @@ const { setProducts, updateProductList } = useProducts();
 const { isQueryEmpty } = useHelpers();
 const { storeSettings } = useAppConfig();
 const route = useRoute();
-const slug = route.params.slug;
+const slug = route.params.slug as string;
 
+// Получаване на данни за категорията и SEO информацията чрез getProductCategories
+const { data: categoryData } = await useAsyncGql('getProductCategories', { first: 1, slug: [slug] });
+const productCategory = categoryData.value?.productCategories?.nodes?.[0] || null;
+
+// Получаване на продуктите в категорията
 const { data } = await useAsyncGql('getProducts', { slug });
 const productsInCategory = (data.value?.products?.nodes || []) as Product[];
 setProducts(productsInCategory);
@@ -21,10 +26,31 @@ watch(
   },
 );
 
+// Използване на SEO данни от Yoast ако са налични
+const categoryTitle = productCategory?.seo?.title || productCategory?.name || 'Products';
+const categoryDescription = productCategory?.seo?.metaDesc || productCategory?.description || 'Products in this category';
+
 useHead({
-  title: 'Products',
-  meta: [{ hid: 'description', name: 'description', content: 'Products' }],
+  title: categoryTitle,
+  meta: [
+    { name: 'description', content: categoryDescription },
+    { property: 'og:title', content: productCategory?.seo?.opengraphTitle || categoryTitle },
+    { property: 'og:description', content: productCategory?.seo?.opengraphDescription || categoryDescription },
+  ],
+  link: [{ rel: 'canonical', href: productCategory?.seo?.canonical || '' }],
 });
+
+// Добавяне на структурирани данни (schema.org) ако са налични в Yoast
+if (productCategory?.seo?.schema?.raw) {
+  useHead({
+    script: [
+      {
+        type: 'application/ld+json',
+        innerHTML: productCategory.seo.schema.raw,
+      },
+    ],
+  });
+}
 </script>
 
 <template>

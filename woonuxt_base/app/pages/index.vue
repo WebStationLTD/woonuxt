@@ -6,20 +6,43 @@ import { SpeedInsights } from '@vercel/speed-insights/vue';
 
 const { siteName, description, shortDescription, siteImage } = useAppConfig();
 
+// Получаване на SEO данни от Yoast SEO за началната страница
+const { data: seoData } = await useAsyncGql('getHomeSeo');
+const homeSeo = seoData.value?.page?.seo || null;
+
+// Получаване на категории
 const { data } = await useAsyncGql('getProductCategories', { first: 6 });
 const productCategories = data.value?.productCategories?.nodes || [];
 
+// Получаване на популярни продукти
 const { data: productData } = await useAsyncGql('getProducts', { first: 5, orderby: ProductsOrderByEnum.POPULARITY });
 const popularProducts = productData.value.products?.nodes || [];
 
+// Използване на SEO данни от Yoast ако са налични, иначе използване на данни от конфигурацията
 useSeoMeta({
-  title: `Home`,
-  ogTitle: siteName,
-  description: description,
-  ogDescription: shortDescription,
-  ogImage: siteImage,
-  twitterCard: `summary_large_image`,
+  title: homeSeo?.title || 'Home',
+  ogTitle: homeSeo?.opengraphTitle || siteName,
+  description: homeSeo?.metaDesc || description,
+  ogDescription: homeSeo?.opengraphDescription || shortDescription,
+  ogImage: homeSeo?.opengraphImage?.sourceUrl || siteImage,
+  twitterCard: 'summary_large_image',
+  twitterTitle: homeSeo?.twitterTitle || siteName,
+  twitterDescription: homeSeo?.twitterDescription || description,
+  twitterImage: homeSeo?.twitterImage?.sourceUrl || siteImage,
+  robots: homeSeo?.metaRobotsNoindex ? 'noindex' : undefined,
 });
+
+// Добавяне на структурирани данни (schema.org) ако са налични в Yoast
+if (homeSeo?.schema?.raw) {
+  useHead({
+    script: [
+      {
+        type: 'application/ld+json',
+        innerHTML: homeSeo.schema.raw,
+      },
+    ],
+  });
+}
 </script>
 
 <template>
