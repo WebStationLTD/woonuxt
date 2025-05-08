@@ -11,7 +11,7 @@ export default defineNuxtConfig({
     head: {
       htmlAttrs: { lang: 'bg' },
       link: [
-        { rel: 'icon', href: '/logo.svg', type: 'image/svg+xml' },
+        { rel: 'icon', href: '/next-level-logo.png', type: 'image/png' },
         { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/tiny-slider.css' },
       ],
       script: [
