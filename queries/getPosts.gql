@@ -1,0 +1,22 @@
+query GetBlogPosts($first: Int) {
+  posts(first: $first) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      id
+      databaseId
+      title
+      slug
+      date
+      excerpt
+      featuredImage {
+        node {
+          sourceUrl
+          altText
+        }
+      }
+    }
+  }
+}

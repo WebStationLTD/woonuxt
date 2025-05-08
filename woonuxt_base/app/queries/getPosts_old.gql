@@ -1,0 +1,36 @@
+query GetPosts($first: Int) {
+  posts(first: $first, where: { status: PUBLISH }) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      id
+      databaseId
+      title
+      slug
+      date
+      excerpt
+      featuredImage {
+        node {
+          sourceUrl
+          altText
+        }
+      }
+      author {
+        node {
+          name
+          avatar {
+            url
+          }
+        }
+      }
+      categories {
+        nodes {
+          name
+          slug
+        }
+      }
+    }
+  }
+}
