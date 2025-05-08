@@ -39,13 +39,19 @@ onMounted(() => {
         navPosition: 'bottom',
         responsive: {
           640: {
-            items: 2,
+            items: 1,
           },
           768: {
-            items: 3,
+            items: 2,
           },
           1024: {
+            items: 3,
+          },
+          1280: {
             items: 4,
+          },
+          1536: {
+            items: 6,
           },
         },
       });
@@ -63,10 +69,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section v-if="newProducts.length" class="container my-16">
+  <section v-if="newProducts.length" class="my-4">
     <div class="flex items-end justify-between mb-8">
-      <h2 class="text-2xl font-semibold md:text-3xl">{{ $t('messages.shop.newArrivals') }}</h2>
-      <NuxtLink class="text-primary" to="/products">{{ $t('messages.general.viewAll') }}</NuxtLink>
+      <h2 class="text-2xl font-semibold md:text-3xl px-4">{{ $t('messages.shop.newArrivals') }}</h2>
+      <NuxtLink class="text-primary px-4" to="/products">{{ $t('messages.general.viewAll') }}</NuxtLink>
     </div>
 
     <client-only>
@@ -107,10 +113,11 @@ onUnmounted(() => {
 
 <style scoped>
 .carousel-wrapper {
-  padding: 0 30px; /* Увеличаваме padding за да не се отрязват продуктите */
+  padding: 0 30px;
   max-width: 100%;
   overflow: hidden;
   margin: 0 auto;
+  width: 100%;
 }
 
 .carousel-outer-container {

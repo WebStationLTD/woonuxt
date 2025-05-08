@@ -53,7 +53,7 @@ if (homeSeo?.schema?.raw) {
 
     <NewProductsCarousel />
 
-    <section class="container my-16">
+    <section class="mt-4 mb-16 px-6">
       <div class="flex items-end justify-between">
         <h2 class="text-lg font-semibold md:text-2xl">{{ $t('messages.shop.shopByCategory') }}</h2>
         <NuxtLink class="text-primary" to="/categories">{{ $t('messages.general.viewAll') }}</NuxtLink>
