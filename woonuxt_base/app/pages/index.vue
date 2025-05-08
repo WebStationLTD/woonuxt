@@ -53,6 +53,16 @@ if (homeSeo?.schema?.raw) {
 
     <NewProductsCarousel />
 
+    <section class="container my-16">
+      <div class="flex items-end justify-between">
+        <h2 class="text-lg font-semibold md:text-2xl">{{ $t('messages.shop.shopByCategory') }}</h2>
+        <NuxtLink class="text-primary" to="/categories">{{ $t('messages.general.viewAll') }}</NuxtLink>
+      </div>
+      <div class="grid justify-center grid-cols-2 gap-4 mt-8 md:grid-cols-3 lg:grid-cols-6">
+        <CategoryCard v-for="(category, i) in productCategories" :key="i" class="w-full" :node="category" />
+      </div>
+    </section>
+
     <CtaBullets />
 
     <div class="container flex flex-wrap items-center justify-center my-16 text-center gap-x-8 gap-y-4 brand lg:justify-between">
@@ -65,20 +75,6 @@ if (homeSeo?.schema?.raw) {
     </div>
 
     <CtaQuality />
-
-    <CtaImage />
-
-    <!-- <PromoSection /> -->
-
-    <section class="container my-16">
-      <div class="flex items-end justify-between">
-        <h2 class="text-lg font-semibold md:text-2xl">{{ $t('messages.shop.shopByCategory') }}</h2>
-        <NuxtLink class="text-primary" to="/categories">{{ $t('messages.general.viewAll') }}</NuxtLink>
-      </div>
-      <div class="grid justify-center grid-cols-2 gap-4 mt-8 md:grid-cols-3 lg:grid-cols-6">
-        <CategoryCard v-for="(category, i) in productCategories" :key="i" class="w-full" :node="category" />
-      </div>
-    </section>
 
     <section class="container grid gap-4 my-24 md:grid-cols-2 lg:grid-cols-4">
       <div class="flex items-center gap-8 p-8 bg-white rounded-lg">
@@ -110,6 +106,10 @@ if (homeSeo?.schema?.raw) {
         </div>
       </div>
     </section>
+
+    <CtaImage />
+
+    <!-- <PromoSection /> -->
 
     <!--<section class="container my-16" v-if="popularProducts">
       <div class="flex items-end justify-between">

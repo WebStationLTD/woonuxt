@@ -19,7 +19,7 @@ const productColumns = [
 
 <template>
   <div class="relative overflow-hidden bg-gray-800">
-    <div class="pt-16 pb-80 sm:pt-24 sm:pb-40 lg:pt-40 lg:pb-48">
+    <div class="pt-16 pb-20 sm:pt-24 sm:pb-40 lg:pt-40 lg:pb-48">
       <div class="relative mx-auto max-w-7xl px-4 sm:static sm:px-6 lg:px-8">
         <div class="sm:max-w-lg">
           <h1 class="text-4xl font-bold tracking-tight text-white sm:text-6xl">Lorem ipsum</h1>
@@ -31,7 +31,7 @@ const productColumns = [
           <div class="mt-10">
             <!-- Декоративна мрежа от изображения с реални продукти -->
             <div aria-hidden="false" class="pointer-events-auto lg:absolute lg:inset-y-0 lg:mx-auto lg:w-full lg:max-w-7xl">
-              <div class="absolute transform sm:top-0 sm:left-1/2 sm:translate-x-8 lg:top-1/2 lg:left-1/2 lg:translate-x-8 lg:-translate-y-1/2">
+              <div class="absolute hidden lg:block transform sm:top-0 sm:left-1/2 sm:translate-x-8 lg:top-1/2 lg:left-1/2 lg:translate-x-8 lg:-translate-y-1/2">
                 <div class="flex items-center space-x-6 lg:space-x-8">
                   <!-- Итерираме през колоните с продукти -->
                   <div v-for="(column, columnIndex) in productColumns" :key="`column-${columnIndex}`" class="grid shrink-0 grid-cols-1 gap-y-6 lg:gap-y-8">
@@ -74,7 +74,7 @@ const productColumns = [
 
             <NuxtLink
               to="/products"
-              class="inline-block rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-center font-medium text-white hover:bg-indigo-700 transition-colors duration-300">
+              class="inline-block relative z-10 cursor-pointer rounded-md border border-transparent bg-[#129160] px-8 py-3 text-center font-medium text-white hover:text-black hover:bg-[#ebedeb] transition-colors duration-300">
               Разгледайте колекцията
             </NuxtLink>
           </div>
