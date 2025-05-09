@@ -104,7 +104,9 @@ const login = async (userInfo: UserInfo) => {
 
 const handleFormSubmit = async (userInfo: UserInfo) => {
   if (formView.value === 'register') {
-    const { success, error } = await registerUser(userInfo);
+    const { email, password, username } = userInfo;
+    const registerData = { email, password, username };
+    const { success, error } = await registerUser(registerData);
     if (success) {
       errorMessage.value = '';
       message.value = t('messages.account.accountCreated') + ' ' + t('messages.account.loggingIn');
