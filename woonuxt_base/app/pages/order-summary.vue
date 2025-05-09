@@ -44,6 +44,7 @@ onMounted(async () => {
 
 async function getOrder() {
   try {
+    // Всички потребители използват една и съща заявка (без key параметър)
     const data = await GqlGetOrder({ id: params.orderId as string });
     if (data.order) {
       order.value = data.order;
@@ -51,6 +52,7 @@ async function getOrder() {
       errorMessage.value = 'Could not find order';
     }
   } catch (err: any) {
+    // Ако има грешка, показваме я
     errorMessage.value = err?.gqlErrors?.[0].message || 'Could not find order';
   }
   isLoaded.value = true;
@@ -103,7 +105,7 @@ useSeoMeta({
         </template>
         <hr class="my-8" />
       </div>
-      <div v-if="order && !isGuest" class="flex-1 w-full">
+      <div v-if="order" class="flex-1 w-full">
         <div class="flex items-start justify-between">
           <div class="w-[21%]">
             <div class="mb-2 text-xs text-gray-400 uppercase">{{ $t('messages.shop.order') }}</div>

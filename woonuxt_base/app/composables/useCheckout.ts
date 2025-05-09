@@ -101,6 +101,26 @@ export function useCheckout() {
       const orderInputPaymentId = orderInput.value.paymentMethod.id;
       const isPayPal = orderInputPaymentId === 'paypal' || orderInputPaymentId === 'ppcp-gateway';
 
+      // Съхраняваме данните за поръчката в localStorage
+      if (checkout?.order) {
+        try {
+          localStorage.setItem(
+            'lastOrder',
+            JSON.stringify({
+              id: orderId,
+              key: orderKey,
+              total: checkout.order.total,
+              status: checkout.order.status,
+              date: checkout.order.date,
+              paymentMethod: checkout.order.paymentMethod,
+              paymentMethodTitle: checkout.order.paymentMethodTitle,
+            }),
+          );
+        } catch (e) {
+          console.error('Не може да се запише поръчката в localStorage', e);
+        }
+      }
+
       // PayPal redirect
       if ((await checkout?.redirect) && isPayPal) {
         const frontEndUrl = window.location.origin;
@@ -115,10 +135,22 @@ export function useCheckout() {
         const isPayPalWindowClosed = await openPayPalWindow(redirectUrl);
 
         if (isPayPalWindowClosed) {
-          router.push(`/checkout/order-received/${orderId}/?key=${orderKey}&fetch_delay=true`);
+          // За регистрирани потребители, продължаваме към страницата с детайли за поръчката
+          if (customer.value?.email && customer.value.email !== 'guest') {
+            router.push(`/checkout/order-received/${orderId}/?key=${orderKey}&fetch_delay=true`);
+          } else {
+            // За гост потребители, пренасочваме към страницата за благодарности
+            router.push('/thank-you');
+          }
         }
       } else {
-        router.push(`/checkout/order-received/${orderId}/?key=${orderKey}`);
+        // За регистрирани потребители, продължаваме към страницата с детайли за поръчката
+        if (customer.value?.email && customer.value.email !== 'guest') {
+          router.push(`/checkout/order-received/${orderId}/?key=${orderKey}`);
+        } else {
+          // За гост потребители, пренасочваме към страницата за благодарности
+          router.push('/thank-you');
+        }
       }
 
       if ((await checkout?.result) !== 'success') {
