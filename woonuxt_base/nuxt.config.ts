@@ -68,6 +68,9 @@ export default defineNuxtConfig({
       addPage('produkt-kategoriya-page-pager', '/produkt-kategoriya/:categorySlug/page/:pageNumber', 'produkt-kategoriya/[slug].vue');
       addPage('order-received', '/checkout/order-received/:orderId', 'order-summary.vue');
       addPage('order-summary', '/order-summary/:orderId', 'order-summary.vue');
+
+      // Нови маршрути за produkt вместо product
+      addPage('produkt-page', '/produkt/:slug', 'produkt/[slug].vue');
     },
   },
 
@@ -75,6 +78,7 @@ export default defineNuxtConfig({
     routeRules: {
       '/checkout/order-received/**': { ssr: false },
       '/order-summary/**': { ssr: false },
+      '/product/**': { redirect: { to: '/produkt/**', statusCode: 301 } },
     },
   },
 

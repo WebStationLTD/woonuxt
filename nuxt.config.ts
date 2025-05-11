@@ -70,7 +70,7 @@ export default defineNuxtConfig({
       "/contact": { static: true },
 
       // Частично кеширани с ISR (Incremental Static Regeneration)
-      "/product/**": {
+      "/produkt/**": {
         isr: {
           expiration: 600, // 10 минути
         },

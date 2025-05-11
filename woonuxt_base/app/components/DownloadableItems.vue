@@ -19,7 +19,7 @@ const props = defineProps({
     <tbody>
       <tr v-for="item in props.downloadableItems" :key="item.id">
         <td class="rounded-l-lg">
-          <NuxtLink v-if="item.product" :to="`/product/${item.product.slug}`" class="hover:underline">{{ item.product.name }}</NuxtLink>
+          <NuxtLink v-if="item.product" :to="`/produkt/${item.product.slug}`" class="hover:underline">{{ item.product.name }}</NuxtLink>
         </td>
         <td>{{ item.downloadsRemaining || '∞' }}</td>
         <td>{{ item.accessExpires ? formatDate(item.accessExpires) : 'Never' }}</td>

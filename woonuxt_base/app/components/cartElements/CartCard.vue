@@ -9,7 +9,7 @@ const { item } = defineProps({
 });
 
 const productType = computed(() => (item.variation ? item.variation?.node : item.product?.node));
-const productSlug = computed(() => `/product/${decodeURIComponent(item.product.node.slug)}`);
+const productSlug = computed(() => `/produkt/${decodeURIComponent(item.product.node.slug)}`);
 const isLowStock = computed(() => (productType.value.stockQuantity ? productType.value.lowStockAmount >= productType.value.stockQuantity : false));
 const imgScr = computed(() => productType.value.image?.cartSourceUrl || productType.value.image?.sourceUrl || item.product.image?.sourceUrl || FALLBACK_IMG);
 const regularPrice = computed(() => parseFloat(productType.value.rawRegularPrice));

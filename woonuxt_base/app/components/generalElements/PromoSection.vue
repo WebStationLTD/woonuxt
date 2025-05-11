@@ -37,7 +37,7 @@ const productColumns = [
                   <div v-for="(column, columnIndex) in productColumns" :key="`column-${columnIndex}`" class="grid shrink-0 grid-cols-1 gap-y-6 lg:gap-y-8">
                     <!-- Итерираме през продуктите в тази колона -->
                     <div v-for="product in column" :key="product.databaseId" class="h-64 w-44 overflow-hidden rounded-lg relative group shadow-lg">
-                      <NuxtLink :to="`/product/${product.slug}`" class="block h-full w-full">
+                      <NuxtLink :to="`/produkt/${product.slug}`" class="block h-full w-full">
                         <!-- Изображение на продукта -->
                         <img
                           v-if="product.image"
