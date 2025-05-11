@@ -44,6 +44,9 @@ useHead({
     </Transition>
 
     <LazyAppFooter hydrate-on-visible />
+
+    <!-- Бутон за връщане към началото -->
+    <BackToTop />
   </div>
 </template>
 
