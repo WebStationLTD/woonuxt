@@ -20,7 +20,7 @@ const toggleWishlist = (event: Event) => {
 <template>
   <button
     type="button"
-    class="absolute top-2 left-2 z-50 bg-white/80 hover:bg-white rounded-full shadow-md transition-all duration-200 wishlist-btn"
+    class="absolute top-2 left-2 z-40 bg-white/80 hover:bg-white rounded-full shadow-md transition-all duration-200 wishlist-btn"
     @click="toggleWishlist"
     :title="isWishlisted ? $t('messages.shop.wishlistRemove') : $t('messages.shop.wishlistAdd')">
     <Icon v-if="isWishlisted" name="ion:heart" size="24" class="text-red-500 md:w-6 md:h-6 w-5 h-5" />
