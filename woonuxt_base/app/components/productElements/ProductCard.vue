@@ -40,6 +40,7 @@ const imagetoDisplay = computed<string>(() => {
   <div class="relative group">
     <NuxtLink v-if="node.slug" :to="`/product/${decodeURIComponent(node.slug)}`" :title="node.name">
       <SaleBadge :node class="absolute top-2 right-2" />
+      <ProductWishlistButton :product="node" />
       <NuxtImg
         v-if="imagetoDisplay"
         :width="imgWidth"

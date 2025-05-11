@@ -16,6 +16,7 @@ const { isShowingSearch } = useSearching();
         <SearchTrigger />
         <div class="flex gap-4 items-center">
           <SignInLink />
+          <WishlistTrigger />
           <CartTrigger />
         </div>
       </div>
