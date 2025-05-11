@@ -8,7 +8,7 @@ const { isShowingSearch } = useSearching();
     <div class="flex w-full items-center justify-between py-4 px-4">
       <div class="flex items-center">
         <MenuTrigger class="lg:hidden" />
-        <Logo class="md:w-[160px]" />
+        <Logo class="w-[140px] md:w-[160px]" />
       </div>
       <MainMenu class="items-center hidden gap-6 text-sm text-gray-500 lg:flex lg:px-14" />
       <div class="flex justify-end items-center md:w-[160px] flex-1 ml-auto gap-4 md:gap-6">
