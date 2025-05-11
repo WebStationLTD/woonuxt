@@ -8,7 +8,7 @@ const props = defineProps({
 
 const imgWidth = 220;
 const imgHeight = Math.round(imgWidth * 1.125);
-const productCategoryPermalink = runtimeConfig?.public?.PRODUCT_CATEGORY_PERMALINK || '/product-category/';
+const productCategoryPermalink = runtimeConfig?.public?.PRODUCT_CATEGORY_PERMALINK || '/produkt-kategoriya/';
 </script>
 
 <template>

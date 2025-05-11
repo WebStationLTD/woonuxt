@@ -19,7 +19,7 @@ const subcategories = computed(() => {
   return category.value?.children?.nodes || [];
 });
 
-const productCategoryPermalink = runtimeConfig?.public?.PRODUCT_CATEGORY_PERMALINK || '/product-category/';
+const productCategoryPermalink = runtimeConfig?.public?.PRODUCT_CATEGORY_PERMALINK || '/produkt-kategoriya/';
 
 // Функция за безопасно декодиране на URL
 const safeDecodeURI = (uri: string | null | undefined): string => {

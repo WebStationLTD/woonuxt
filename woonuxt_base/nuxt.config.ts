@@ -1,5 +1,6 @@
 import { createResolver } from '@nuxt/kit';
 const { resolve } = createResolver(import.meta.url);
+import redirects from './redirects.config';
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-03-30',
@@ -50,6 +51,9 @@ export default defineNuxtConfig({
     },
   },
 
+  // Добавяне на redirects
+  redirects,
+
   alias: {
     '#constants': resolve('./app/constants'),
     '#woo': '../.nuxt/gql/default',
@@ -62,8 +66,6 @@ export default defineNuxtConfig({
       };
 
       addPage('product-page-pager', '/products/page/:pageNumber', 'products.vue');
-      addPage('product-category-page', '/product-category/:categorySlug', 'product-category/[slug].vue');
-      addPage('product-category-page-pager', '/product-category/:categorySlug/page/:pageNumber', 'product-category/[slug].vue');
       addPage('produkt-kategoriya-slug', '/produkt-kategoriya/:categorySlug', 'produkt-kategoriya/[slug].vue');
       addPage('produkt-kategoriya-page-pager', '/produkt-kategoriya/:categorySlug/page/:pageNumber', 'produkt-kategoriya/[slug].vue');
       addPage('order-received', '/checkout/order-received/:orderId', 'order-summary.vue');
@@ -79,6 +81,7 @@ export default defineNuxtConfig({
       '/checkout/order-received/**': { ssr: false },
       '/order-summary/**': { ssr: false },
       '/product/**': { redirect: { to: '/produkt/**', statusCode: 301 } },
+      '/product-category/**': { redirect: { to: '/produkt-kategoriya/**', statusCode: 301 } },
     },
   },
 

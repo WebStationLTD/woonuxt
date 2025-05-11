@@ -21,7 +21,7 @@ onMounted(() => {
 watch(
   () => route.query,
   () => {
-    if (route.name !== 'product-category-slug') return;
+    if (route.name !== 'produkt-kategoriya-slug') return;
     updateProductList();
   },
 );

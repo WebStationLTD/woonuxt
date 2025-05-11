@@ -38,7 +38,7 @@ export function useSearching() {
      * If we are on a category page, we need to add the category slug to the
      * route, otherwise every search will redirect to the products page.
      */
-    if (route.name === 'product-category-slug') {
+    if (route.name === 'produkt-kategoriya-slug') {
       const categorySlug = route.params.categorySlug as string;
       router.push({ name, params: { categorySlug }, query: { ...route.query, search } });
     } else {
