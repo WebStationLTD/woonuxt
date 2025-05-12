@@ -1,4 +1,5 @@
 fragment VariableProduct on VariableProduct {
+  databaseId
   name
   slug
   price

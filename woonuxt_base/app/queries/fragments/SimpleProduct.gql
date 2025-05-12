@@ -1,4 +1,5 @@
 fragment SimpleProduct on SimpleProduct {
+  databaseId
   name
   slug
   price
