@@ -2,6 +2,7 @@ fragment VariableProduct on VariableProduct {
   databaseId
   name
   slug
+  type
   price
   rawPrice: price(format: RAW)
   date

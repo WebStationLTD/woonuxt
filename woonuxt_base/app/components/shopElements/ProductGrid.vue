@@ -10,7 +10,12 @@ const productsToShow = computed(() => products.value.slice((page.value - 1) * pr
   <Transition name="fade" mode="out-in">
     <section v-if="!!products.length" class="relative w-full">
       <TransitionGroup name="shrink" tag="div" mode="in-out" class="product-grid">
-        <ProductCard v-for="(node, i) in productsToShow" :key="node.id || i" :node :index="i" />
+        <div
+          v-for="(node, i) in productsToShow"
+          :key="node.id || i"
+          class="product-card rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 h-full bg-white p-2 w-full">
+          <ProductCard :node="node" :index="i" />
+        </div>
       </TransitionGroup>
       <Pagination />
     </section>

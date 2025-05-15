@@ -2,6 +2,7 @@ fragment SimpleProduct on SimpleProduct {
   databaseId
   name
   slug
+  type
   price
   rawPrice: price(format: RAW)
   date

@@ -25,6 +25,10 @@ const isSimpleProduct = computed<boolean>(() => product.value?.type === ProductT
 const isVariableProduct = computed<boolean>(() => product.value?.type === ProductTypesEnum.VARIABLE);
 const isExternalProduct = computed<boolean>(() => product.value?.type === ProductTypesEnum.EXTERNAL);
 
+const relatedProducts = computed(() => {
+  return (product.value.related?.nodes?.slice(0, 4) || []) as Product[];
+});
+
 const type = computed(() => activeVariation.value || product.value);
 const selectProductInput = computed<any>(() => ({ productId: type.value?.databaseId, quantity: quantity.value })) as ComputedRef<AddToCartInput>;
 
@@ -186,9 +190,16 @@ const disabledAddToCart = computed(() => {
       <div v-if="product.description || product.reviews" class="my-32">
         <ProductTabs :product />
       </div>
-      <div class="my-32" v-if="product.related && storeSettings.showRelatedProducts">
+      <div class="my-32" v-if="relatedProducts.length && storeSettings.showRelatedProducts">
         <div class="mb-4 text-xl font-semibold">{{ $t('messages.shop.youMayLike') }}</div>
-        <LazyProductRow :products="product.related.nodes" class="grid-cols-2 md:grid-cols-4 lg:grid-cols-5" />
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
+          <div
+            v-for="(relatedItem, i) in relatedProducts"
+            :key="relatedItem.databaseId"
+            class="product-card rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 h-full bg-white p-2 w-full">
+            <ProductCard :node="relatedItem" :index="i" />
+          </div>
+        </div>
       </div>
     </div>
   </main>
