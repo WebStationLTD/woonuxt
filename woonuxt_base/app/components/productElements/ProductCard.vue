@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { ProductTypesEnum } from '#woo';
+
 const route = useRoute();
 const { storeSettings } = useAppConfig();
+const { addToCart, isUpdatingCart, cart } = useCart();
+const { t } = useI18n();
 const props = defineProps({
   node: { type: Object as PropType<Product>, required: true },
   index: { type: Number, default: 1 },
@@ -34,6 +38,74 @@ const imagetoDisplay = computed<string>(() => {
   }
   return mainImage.value;
 });
+
+// Локален стейт
+const isLoading = ref(false);
+const quantity = ref(1);
+const variationError = ref('');
+const selectedVariationId = ref<number | null>(null);
+
+// Изчисляване на продуктов тип
+const isVariableProduct = computed(() => props.node?.type === ProductTypesEnum.VARIABLE);
+const isSimpleProduct = computed(() => props.node?.type === ProductTypesEnum.SIMPLE);
+const hasVariations = computed(() => isVariableProduct.value && props.node?.variations?.nodes && props.node.variations.nodes.length > 0);
+
+// Изчисляване дали да показваме вариации и бутон
+const shouldShowCart = computed(() => isVariableProduct.value || isSimpleProduct.value);
+
+// Логика за бутона
+const isButtonDisabled = computed(() => isLoading.value || (hasVariations.value && !selectedVariationId.value));
+
+// Увеличаване/намаляване на количество
+const incrementQuantity = () => quantity.value++;
+const decrementQuantity = () => {
+  if (quantity.value > 1) quantity.value--;
+};
+
+// Функция за избиране на вариация
+const selectVariation = (varId: number) => {
+  selectedVariationId.value = varId;
+  variationError.value = '';
+};
+
+// Добавяне в количката
+const addProductToCart = async () => {
+  if (!props.node?.databaseId) return;
+
+  // Проверка за продукти с вариации
+  if (hasVariations.value && !selectedVariationId.value) {
+    variationError.value = 'Моля, изберете вариация';
+    return;
+  }
+
+  isLoading.value = true;
+  variationError.value = '';
+
+  try {
+    const input = {
+      productId: props.node.databaseId,
+      quantity: quantity.value,
+      variationId: selectedVariationId.value,
+    };
+
+    await addToCart(input);
+  } catch (error) {
+    console.error('Грешка при добавяне в количката:', error);
+    variationError.value = 'Възникна грешка при добавяне в количката';
+  } finally {
+    setTimeout(() => {
+      isLoading.value = false;
+    }, 500);
+  }
+};
+
+// Спираме loading индикатора при промяна на количката
+watch(cart, () => {
+  setTimeout(() => {
+    isLoading.value = false;
+    variationError.value = '';
+  }, 300);
+});
 </script>
 
 <template>
@@ -55,11 +127,88 @@ const imagetoDisplay = computed<string>(() => {
         placeholder-class="blur-xl" />
     </NuxtLink>
     <div class="p-2">
-      <StarRating v-if="storeSettings.showReviews" :rating="node.averageRating" :count="node.reviewCount" />
+      <StarRating v-if="storeSettings.showReviews" :rating="node.averageRating || 0" :count="node.reviewCount || 0" />
       <NuxtLink v-if="node.slug" :to="`/produkt/${decodeURIComponent(node.slug)}`" :title="node.name">
         <h2 class="mb-2 font-light leading-tight group-hover:text-primary">{{ node.name }}</h2>
       </NuxtLink>
-      <ProductPrice class="text-sm" :sale-price="node.salePrice" :regular-price="node.regularPrice" />
+
+      <!-- Показваме цената и вариациите на един ред -->
+      <div class="flex items-center justify-between mb-3 min-h-[26px]">
+        <ProductPrice class="text-sm" :sale-price="node.salePrice" :regular-price="node.regularPrice" />
+
+        <!-- Селект за вариации (само за вариационни продукти) -->
+        <div v-if="hasVariations" class="flex justify-end w-[100px]">
+          <select
+            class="text-xs py-1 px-2 border border-gray-300 rounded focus:outline-none focus:border-gray-400 bg-white max-w-[160px]"
+            @change="(e) => selectVariation(Number((e.target as HTMLSelectElement).value))">
+            <option value="" disabled selected>Вариации</option>
+            <option
+              v-for="variation in node?.variations?.nodes"
+              :key="variation.databaseId"
+              :value="variation.databaseId"
+              :selected="selectedVariationId === variation.databaseId">
+              <template v-if="variation.attributes?.nodes?.length">
+                {{
+                  variation.attributes.nodes
+                    .map((attr) => attr.value)
+                    .filter(Boolean)
+                    .join(' / ')
+                }}
+              </template>
+              <template v-else>{{ variation.name }}</template>
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Показваме грешки за вариациите -->
+      <div v-if="variationError" class="text-red-500 text-xs -mt-2 mb-3">
+        {{ variationError }}
+      </div>
+
+      <!-- Само показваме следващите елементи ако е продукт, който може да се купи -->
+      <div v-if="shouldShowCart">
+        <!-- Брояч и бутон Купи -->
+        <div class="flex items-center justify-between space-x-2">
+          <div class="flex items-center h-8 bg-white border border-gray-300 rounded-md">
+            <button
+              @click.prevent="decrementQuantity"
+              type="button"
+              class="flex items-center justify-center w-6 h-full text-xs text-gray-500 transition-colors border-r border-gray-300 hover:bg-gray-50"
+              :disabled="quantity <= 1">
+              <Icon name="ion:remove" size="14" />
+            </button>
+            <input v-model.number="quantity" type="number" min="1" class="w-8 h-full text-xs text-center bg-transparent focus:outline-none" />
+            <button
+              @click.prevent="incrementQuantity"
+              type="button"
+              class="flex items-center justify-center w-6 h-full text-xs text-gray-500 transition-colors border-l border-gray-300 hover:bg-gray-50">
+              <Icon name="ion:add" size="14" />
+            </button>
+          </div>
+
+          <button
+            @click.prevent="addProductToCart"
+            type="button"
+            :disabled="isButtonDisabled"
+            class="flex items-center justify-center flex-1 h-8 px-3 text-xs font-medium text-white transition-colors bg-gray-800 rounded-md hover:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed">
+            <span>Купи</span>
+            <LoadingIcon v-if="isLoading" stroke="3" size="10" color="#fff" class="ml-1" />
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+</style>

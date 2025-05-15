@@ -132,6 +132,10 @@ onUnmounted(() => {
   padding: 0;
 }
 
+.tns-slider.tns-carousel.tns-subpixel.tns-calc.tns-horizontal {
+  padding: 1rem 0;
+}
+
 .product-card {
   display: flex;
   flex-direction: column;
