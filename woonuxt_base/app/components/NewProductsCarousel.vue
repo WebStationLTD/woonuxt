@@ -1,6 +1,7 @@
 <!-- Използваме Tiny-Slider за по-лека и бърза карусел имплементация -->
 <script setup lang="ts">
 import { ProductsOrderByEnum } from '#woo';
+import { onMounted, onUnmounted, ref, computed, nextTick } from 'vue';
 
 // Дефиниране на типа на tns за TypeScript
 declare global {
@@ -23,13 +24,12 @@ let slider: any = null;
 
 // Инициализираме Tiny-Slider след монтиране на компонента
 onMounted(() => {
-  // Изчакваме малко, за да сме сигурни, че DOM е готов
-  setTimeout(() => {
+  nextTick(() => {
     if (typeof window !== 'undefined' && window.tns && sliderContainerRef.value) {
       slider = window.tns({
         container: sliderContainerRef.value,
         items: 1,
-        slideBy: 1,
+        slideBy: 'page',
         gutter: 20,
         mouseDrag: true,
         swipeAngle: false,
@@ -37,6 +37,7 @@ onMounted(() => {
         controlsText: ['', ''],
         controlsContainer: '.slider-controls',
         navPosition: 'bottom',
+        loop: false,
         responsive: {
           640: {
             items: 1,
@@ -56,7 +57,7 @@ onMounted(() => {
         },
       });
     }
-  }, 500);
+  });
 });
 
 // Унищожаваме Tiny-Slider когато компонентът е премахнат
