@@ -25,19 +25,12 @@ const productsToShow = computed(() => products.value.slice((page.value - 1) * pr
 
 <style lang="postcss" scoped>
 .product-grid {
-  @apply my-4 min-h-[600px] grid transition-all gap-8 lg:my-8;
+  @apply my-4 min-h-[600px] grid transition-all gap-[0.7rem] sm:gap-8 lg:my-8;
 
-  grid-template-columns: repeat(1, 1fr); /* Default to 1 column for the smallest screens */
+  grid-template-columns: repeat(2, 1fr);
 }
 .product-grid:empty {
   display: none;
-}
-
-@media (min-width: 640px) {
-  /* sm breakpoint */
-  .product-grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 columns for sm screens */
-  }
 }
 
 @media (min-width: 768px) {

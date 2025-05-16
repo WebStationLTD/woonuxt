@@ -126,20 +126,20 @@ watch(cart, () => {
         placeholder
         placeholder-class="blur-xl" />
     </NuxtLink>
-    <div class="p-2">
+    <div>
       <StarRating v-if="storeSettings.showReviews" :rating="node.averageRating || 0" :count="node.reviewCount || 0" />
       <NuxtLink v-if="node.slug" :to="`/produkt/${decodeURIComponent(node.slug)}`" :title="node.name">
         <h2 class="mb-2 font-light leading-tight group-hover:text-primary">{{ node.name }}</h2>
       </NuxtLink>
 
       <!-- Показваме цената и вариациите на един ред -->
-      <div class="flex items-center justify-between mb-3 min-h-[26px]">
+      <div class="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between mb-3 min-h-[26px]">
         <ProductPrice class="text-sm" :sale-price="node.salePrice" :regular-price="node.regularPrice" />
 
         <!-- Селект за вариации (само за вариационни продукти) -->
-        <div v-if="hasVariations" class="flex justify-end w-[100px]">
+        <div v-if="hasVariations" class="flex w-full mt-2 sm:mt-0 sm:justify-end sm:w-[100px]">
           <select
-            class="text-xs py-1 px-2 border border-gray-300 rounded focus:outline-none focus:border-gray-400 bg-white max-w-[160px]"
+            class="text-xs py-1 px-2 border border-gray-300 rounded focus:outline-none focus:border-gray-400 bg-white w-full sm:max-w-[160px]"
             @change="(e) => selectVariation(Number((e.target as HTMLSelectElement).value))">
             <option value="" disabled selected>Вариации</option>
             <option
