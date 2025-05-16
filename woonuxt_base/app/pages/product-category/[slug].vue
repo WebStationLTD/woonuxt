@@ -54,7 +54,7 @@ if (productCategory?.seo?.schema?.raw) {
 </script>
 
 <template>
-  <div class="container flex items-start gap-16" v-if="productsInCategory.length">
+  <div class="container flex items-start gap-16 px-2" v-if="productsInCategory.length">
     <Filters v-if="storeSettings.showFilters" :hide-categories="true" />
 
     <div class="w-full">

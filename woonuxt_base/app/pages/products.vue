@@ -91,7 +91,7 @@ watch(
 </script>
 
 <template>
-  <div class="container flex items-start gap-16" v-if="allProducts?.length">
+  <div class="container flex items-start gap-16 px-2" v-if="allProducts?.length">
     <Filters v-if="storeSettings.showFilters" />
 
     <div class="w-full">

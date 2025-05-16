@@ -225,7 +225,7 @@ if (matchingCategory.value?.seo?.schema?.raw) {
 </script>
 
 <template>
-  <div class="container">
+  <div class="container px-2">
     <div v-if="!isLoading && products && products.length" class="flex items-start gap-16">
       <Filters v-if="storeSettings.showFilters" :hide-categories="true" />
 
