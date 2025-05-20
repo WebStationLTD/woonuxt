@@ -25,9 +25,9 @@ const productsToShow = computed(() => products.value.slice((page.value - 1) * pr
 
 <style lang="postcss" scoped>
 .product-grid {
-  @apply my-4 min-h-[600px] grid transition-all gap-[0.7rem] sm:gap-8 lg:my-8;
-
+  @apply my-4 grid transition-all gap-[0.7rem] sm:gap-8 lg:my-8;
   grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: min-content;
 }
 .product-grid:empty {
   display: none;
