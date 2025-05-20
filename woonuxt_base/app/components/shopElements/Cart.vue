@@ -3,7 +3,7 @@ const { cart, toggleCart, isUpdatingCart } = useCart();
 </script>
 
 <template>
-  <div class="fixed top-0 bottom-0 right-0 z-[100] flex flex-col w-11/12 max-w-lg overflow-x-hidden bg-white shadow-lg">
+  <div class="fixed top-0 bottom-0 right-0 z-[100] flex flex-col w-11/12 max-w-lg bg-white shadow-lg">
     <Icon name="ion:close-outline" class="absolute p-1 rounded-lg shadow-lg top-6 left-6 md:left-8 cursor-pointer" size="34" @click="toggleCart(false)" />
     <EmptyCart v-if="cart && !cart.isEmpty" class="rounded-lg shadow-lg p-1.5 hover:bg-red-400 hover:text-white" />
 
@@ -14,10 +14,12 @@ const { cart, toggleCart, isUpdatingCart } = useCart();
 
     <ClientOnly>
       <template v-if="cart && !cart.isEmpty">
-        <ul class="flex flex-col flex-1 gap-4 p-6 overflow-y-scroll md:p-8">
-          <CartCard v-for="item in cart.contents?.nodes" :key="item.key" :item />
-        </ul>
-        <div class="px-8 mb-8">
+        <div class="flex-1 overflow-auto">
+          <ul class="flex flex-col gap-4 p-6 md:p-8">
+            <CartCard v-for="item in cart.contents?.nodes" :key="item.key" :item />
+          </ul>
+        </div>
+        <div class="px-8 py-4 mt-auto border-t border-gray-100 bg-white">
           <NuxtLink
             class="block p-3 text-lg text-center text-white bg-gray-800 rounded-lg shadow-md justify-evenly hover:bg-gray-900"
             to="/checkout"

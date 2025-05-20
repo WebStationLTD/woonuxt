@@ -39,9 +39,9 @@ const moveToWishList = () => {
           :title="productType.image?.title || productType.name"
           loading="lazy" />
       </NuxtLink>
-      <div class="flex-1">
-        <div class="flex gap-x-2 gap-y-1 flex-wrap items-center">
-          <NuxtLink class="leading-tight" :to="productSlug">{{ productType.name }}</NuxtLink>
+      <div class="flex-1 min-w-0">
+        <div class="flex flex-wrap gap-x-2 gap-y-1 items-center">
+          <NuxtLink class="leading-tight truncate max-w-full block" :to="productSlug">{{ productType.name }}</NuxtLink>
           <span v-if="productType.salePrice" class="text-[10px] border-green-200 leading-none bg-green-100 inline-block p-0.5 rounded text-green-600 border">
             Save {{ salePercentage }}
           </span>
@@ -51,7 +51,7 @@ const moveToWishList = () => {
         </div>
         <ProductPrice class="mt-1 text-xs" :sale-price="productType.salePrice" :regular-price="productType.regularPrice" />
       </div>
-      <div class="inline-flex gap-2 flex-col items-end">
+      <div class="inline-flex gap-2 flex-col items-end shrink-0">
         <QuantityInput :item />
         <div class="text-xs text-gray-400 group-hover:text-gray-700 flex leading-none items-center">
           <button v-if="storeSettings.showMoveToWishlist" class="mr-2 pr-2 border-r" @click="moveToWishList" type="button">Move to Wishlist</button>
@@ -61,7 +61,7 @@ const moveToWishList = () => {
             @click="removeItem"
             type="button"
             class="flex items-center gap-1 hover:text-red-500 cursor-pointer">
-            <Icon name="ion:trash" class="hidden md:inline-block" size="12" />
+            <Icon name="ion:trash" class="md:inline-block" size="12" />
           </button>
         </div>
       </div>
