@@ -11,7 +11,7 @@ import { AtSymbolIcon, PhoneIcon, MapPinIcon } from '@heroicons/vue/24/outline';
           <!-- Имейл -->
           <div class="flex items-center text-sm font-medium">
             <AtSymbolIcon class="mr-1.5 h-4 w-4 text-white" />
-            <a href="mailto:info@example.bg" class="text-white hover:text-gray-900 transition-colors"> info@example.bg </a>
+            <a href="mailto:info@example.bg" class="text-white hover:text-white transition-colors"> info@example.bg </a>
           </div>
 
           <!-- По-тъмен вертикален разделител -->
@@ -20,7 +20,7 @@ import { AtSymbolIcon, PhoneIcon, MapPinIcon } from '@heroicons/vue/24/outline';
           <!-- Телефон -->
           <div class="flex items-center text-sm font-medium">
             <PhoneIcon class="mr-1.5 h-4 w-4 text-white" />
-            <a href="tel:+359888123456" class="text-white hover:text-gray-900 transition-colors"> +359 888 123 456 </a>
+            <a href="tel:+359888123456" class="text-white hover:text-white transition-colors"> +359 888 123 456 </a>
           </div>
         </div>
 
@@ -38,7 +38,7 @@ import { AtSymbolIcon, PhoneIcon, MapPinIcon } from '@heroicons/vue/24/outline';
           <!-- Instagram линк -->
           <a
             href="https://www.instagram.com/"
-            class="flex items-center text-sm font-medium text-white hover:text-gray-900 transition-colors"
+            class="flex items-center text-sm font-medium text-white hover:text-white transition-colors"
             target="_blank"
             rel="noopener noreferrer">
             <svg fill="currentColor" viewBox="0 0 24 24" class="h-4 w-4 mr-1.5">

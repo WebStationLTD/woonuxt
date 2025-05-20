@@ -3,7 +3,7 @@ const { cart, toggleCart, isUpdatingCart } = useCart();
 </script>
 
 <template>
-  <div class="fixed top-0 bottom-0 right-0 z-50 flex flex-col w-11/12 max-w-lg overflow-x-hidden bg-white shadow-lg">
+  <div class="fixed top-0 bottom-0 right-0 z-[100] flex flex-col w-11/12 max-w-lg overflow-x-hidden bg-white shadow-lg">
     <Icon name="ion:close-outline" class="absolute p-1 rounded-lg shadow-lg top-6 left-6 md:left-8 cursor-pointer" size="34" @click="toggleCart(false)" />
     <EmptyCart v-if="cart && !cart.isEmpty" class="rounded-lg shadow-lg p-1.5 hover:bg-red-400 hover:text-white" />
 
