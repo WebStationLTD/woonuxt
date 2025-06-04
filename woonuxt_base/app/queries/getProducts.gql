@@ -1,8 +1,26 @@
-query getProducts($after: String, $slug: [String], $first: Int = 9999, $orderby: ProductsOrderByEnum = DATE) {
+query getProducts(
+  $after: String
+  $slug: [String]
+  $first: Int = 12
+  $orderby: ProductsOrderByEnum = DATE
+  $minPrice: Float
+  $maxPrice: Float
+  $onSale: Boolean
+  $search: String
+) {
   products(
     first: $first
     after: $after
-    where: { categoryIn: $slug, visibility: VISIBLE, minPrice: 0, orderby: { field: $orderby, order: DESC }, status: "publish" }
+    where: {
+      categoryIn: $slug
+      visibility: VISIBLE
+      minPrice: $minPrice
+      maxPrice: $maxPrice
+      onSale: $onSale
+      search: $search
+      orderby: { field: $orderby, order: DESC }
+      status: "publish"
+    }
   ) {
     pageInfo {
       hasNextPage
@@ -18,8 +36,8 @@ query getProducts($after: String, $slug: [String], $first: Int = 9999, $orderby:
       reviewCount
       ...Terms
       ...ProductCategories
-      ...SimpleProduct
-      ...VariableProduct
+      ...SimpleProductGrid
+      ...VariableProductGrid
       ...ExternalProduct
     }
   }

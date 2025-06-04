@@ -3,10 +3,35 @@ export default defineNuxtConfig({
 
   components: [{ path: "./components", pathPrefix: false }],
 
-  modules: ["nuxt-graphql-client", "@nuxtjs/sitemap"],
+  modules: ["nuxt-graphql-client", "@nuxtjs/sitemap", "@nuxt/image"],
+
+  // Оптимизации за изображения
+  image: {
+    quality: 80,
+    format: ["webp", "jpg"],
+    screens: {
+      xs: 320,
+      sm: 640,
+      md: 768,
+      lg: 1024,
+      xl: 1280,
+    },
+    densities: [1, 2],
+    presets: {
+      product: {
+        modifiers: {
+          format: "webp",
+          quality: 85,
+          width: 280,
+          height: 315,
+        },
+      },
+    },
+  },
 
   experimental: {
     payloadExtraction: true,
+    inlineSSRStyles: false, // Намалява размера на инлайн CSS
   },
 
   runtimeConfig: {
@@ -42,6 +67,7 @@ export default defineNuxtConfig({
     clients: {
       default: {
         host: "https://app.leaderfitness.net/graphql",
+        retainQuery: true,
         tokenStorage: {
           cookieOptions: {
             name: "authToken",
@@ -49,6 +75,9 @@ export default defineNuxtConfig({
             sameSite: "None",
             secure: true,
           },
+        },
+        cacheOptions: {
+          maxAge: 1000 * 60 * 5, // 5 минути кеш за GraphQL заявки
         },
       },
     },
@@ -62,10 +91,18 @@ export default defineNuxtConfig({
       failOnError: false,
     },
     minify: true,
+    compressPublicAssets: true,
     routeRules: {
       // Генерирани по време на билд
       "/": { static: true },
-      "/products": { static: true },
+      "/products": {
+        isr: {
+          expiration: 300, // 5 минути за продукти
+        },
+        headers: {
+          "Cache-Control": "s-maxage=300",
+        },
+      },
       "/categories": { static: true },
       "/contact": { static: true },
 
@@ -74,17 +111,46 @@ export default defineNuxtConfig({
         isr: {
           expiration: 600, // 10 минути
         },
+        headers: {
+          "Cache-Control": "s-maxage=600",
+        },
       },
       "/produkt-kategoriya/**": {
         isr: {
-          expiration: 600,
+          expiration: 300, // 5 минути за категории
+        },
+        headers: {
+          "Cache-Control": "s-maxage=300",
         },
       },
 
-      // Страници с SSR, без кеш
+      // Странци с SSR, без кеш
       "/checkout/**": { ssr: true, cache: false },
       "/cart": { ssr: true, cache: false },
       "/my-account/**": { ssr: true, cache: false },
+
+      // Статични файлове с дълъг кеш
+      "/images/**": {
+        headers: {
+          "Cache-Control": "max-age=31536000",
+        },
+      },
+    },
+  },
+
+  // Оптимизации за build
+  vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            "product-components": [
+              "./woonuxt_base/app/components/productElements/ProductCard.vue",
+              "./woonuxt_base/app/components/shopElements/ProductGrid.vue",
+            ],
+          },
+        },
+      },
     },
   },
 

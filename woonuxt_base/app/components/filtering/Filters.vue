@@ -32,7 +32,8 @@ const attributesWithTerms = globalProductAttributes.map((attr) => ({ ...attr, te
         <GlobalFilter v-else :attribute />
       </div>
       <OnSaleFilter />
-      <LazyStarRatingFilter v-if="storeSettings.showReviews" />
+      <!-- ВРЕМЕННО СКРИТ - StarRatingFilter -->
+      <!-- <LazyStarRatingFilter v-if="storeSettings.showReviews" /> -->
       <LazyResetFiltersButton v-if="isFiltersActive" />
     </div>
   </aside>

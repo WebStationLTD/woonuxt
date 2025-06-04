@@ -1,9 +1,8 @@
 <script setup lang="ts">
 const route = useRoute();
-const { productsPerPage } = useHelpers();
 const { products } = useProducts();
-const page = ref(parseInt(route.params.pageNumber as string) || 1);
-const productsToShow = computed(() => products.value.slice((page.value - 1) * productsPerPage, page.value * productsPerPage));
+// Показваме всички продукти от текущата страница вместо да ги slice-ваме
+const productsToShow = computed(() => products.value);
 </script>
 
 <template>
@@ -17,7 +16,7 @@ const productsToShow = computed(() => products.value.slice((page.value - 1) * pr
           <ProductCard :node="node" :index="i" />
         </div>
       </TransitionGroup>
-      <Pagination />
+      <PaginationServer />
     </section>
     <NoProductsFound v-else />
   </Transition>
@@ -25,19 +24,31 @@ const productsToShow = computed(() => products.value.slice((page.value - 1) * pr
 
 <style lang="postcss" scoped>
 .product-grid {
-  @apply my-4 grid transition-all gap-[0.7rem] sm:gap-8 lg:my-8;
+  @apply my-4 grid transition-all gap-4 lg:my-8;
+
+  /* Mobile: 2 колони */
   grid-template-columns: repeat(2, 1fr);
   grid-auto-rows: min-content;
 }
-.product-grid:empty {
-  display: none;
+
+/* Tablet: 3 колони */
+@media (min-width: 768px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+    @apply gap-6;
+  }
 }
 
-@media (min-width: 768px) {
-  /* md breakpoint */
+/* Desktop: 4 колони */
+@media (min-width: 1024px) {
   .product-grid {
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
+    @apply gap-6;
   }
+}
+
+.product-grid:empty {
+  display: none;
 }
 
 .shrink-move {

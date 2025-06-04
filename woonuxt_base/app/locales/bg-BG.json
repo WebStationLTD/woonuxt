@@ -128,7 +128,9 @@
       "productResultCount": {
         "showing": "Показване",
         "to": "до",
-        "of": "от"
+        "of": "от",
+        "many": "много",
+        "lastPage": "последна страница"
       },
       "noProductsFound": {
         "title": "Не са намерени продукти",

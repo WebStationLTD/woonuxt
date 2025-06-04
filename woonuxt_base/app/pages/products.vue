@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const { setProducts, updateProductList, products } = useProducts();
+const { loadProductsPage, loadProductsWithFilters, products, isLoading } = useProducts();
+const { buildGraphQLFilters } = useFiltering();
 const route = useRoute();
 const { storeSettings } = useAppConfig();
 const { isQueryEmpty } = useHelpers();
@@ -72,36 +73,62 @@ try {
   });
 }
 
-// Получаване на всички продукти
-const { data } = await useAsyncGql('getProducts');
-const allProducts = data.value?.products?.nodes as Product[];
-setProducts(allProducts);
+// Проверяваме дали има филтри или сортиране в URL и зареждаме продуктите
+const hasFilters = route.query.filter;
+const hasOrderBy = route.query.orderby;
 
-onMounted(() => {
-  if (!isQueryEmpty.value) updateProductList();
-});
+if (hasFilters || hasOrderBy) {
+  // Ако има филтри или сортиране, зареждаме със серверните филтри
+  const filters = buildGraphQLFilters();
 
-watch(
-  () => route.query,
-  () => {
-    if (route.name !== 'products') return;
-    updateProductList();
-  },
-);
+  // Конвертираме orderby в GraphQL формат
+  let graphqlOrderBy = 'DATE';
+  if (route.query.orderby === 'price') graphqlOrderBy = 'PRICE';
+  else if (route.query.orderby === 'rating') graphqlOrderBy = 'RATING';
+  else if (route.query.orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
+  else if (route.query.orderby === 'date') graphqlOrderBy = 'DATE';
+  else if (route.query.orderby === 'discount') graphqlOrderBy = 'DATE';
+
+  await loadProductsWithFilters(undefined, graphqlOrderBy, filters);
+} else {
+  // Ако няма филтри, зареждаме първата страница нормално
+  await loadProductsPage(1);
+}
 </script>
 
 <template>
-  <div class="container flex items-start gap-16 px-2" v-if="allProducts?.length">
-    <Filters v-if="storeSettings.showFilters" />
-
-    <div class="w-full">
-      <div class="flex items-center justify-between w-full gap-4 mt-8 md:gap-8">
-        <ProductResultCount />
-        <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings.showOrderByDropdown" />
-        <ShowFilterTrigger v-if="storeSettings.showFilters" class="md:hidden" />
-      </div>
-      <ProductGrid />
+  <div class="container mx-auto px-2 py-6">
+    <!-- Loading индикатор -->
+    <div v-if="isLoading" class="w-full flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
     </div>
+
+    <!-- Съдържание когато има продукти -->
+    <div v-else-if="products?.length" class="flex flex-col lg:flex-row gap-8">
+      <!-- Sidebar с филтри - вляво -->
+      <aside v-if="storeSettings.showFilters" class="lg:w-80 flex-shrink-0">
+        <div class="sticky top-4">
+          <Filters />
+        </div>
+      </aside>
+
+      <!-- Main съдържание - отдясно -->
+      <main class="flex-1 min-w-0">
+        <!-- Header с контроли -->
+        <div class="flex items-center justify-between w-full gap-4 mb-8">
+          <ProductResultCount />
+          <div class="flex items-center gap-4">
+            <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings.showOrderByDropdown" />
+            <ShowFilterTrigger v-if="storeSettings.showFilters" class="lg:hidden" />
+          </div>
+        </div>
+
+        <!-- Grid с продукти -->
+        <ProductGrid />
+      </main>
+    </div>
+
+    <!-- Няма продукти -->
+    <NoProductsFound v-else> Could not fetch products from your store. Please check your configuration. </NoProductsFound>
   </div>
-  <NoProductsFound v-else>Could not fetch products from your store. Please check your configuration.</NoProductsFound>
 </template>

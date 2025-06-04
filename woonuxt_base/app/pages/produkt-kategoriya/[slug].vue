@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
 
-const { setProducts, updateProductList, products } = useProducts();
+const { loadProductsPage, loadProductsWithFilters, products, isLoading } = useProducts();
+const { buildGraphQLFilters } = useFiltering();
 const { isQueryEmpty } = useHelpers();
 const { storeSettings } = useAppConfig();
 const route = useRoute();
-
-// За да контролираме показването на компонентите
-const isLoading = ref(true);
 
 // По-детайлно логване за дебъг
 console.log('Текущ route:', {
@@ -107,92 +105,57 @@ const allCategories = computed(() => categoriesData.value?.productCategories?.no
 // Опитваме се първо да намерим категорията
 if (slug.value) {
   matchingCategory.value = allCategories.value.find((cat: Category) => cat.slug && (cat.slug === slug.value || cat.slug === decodedSlug)) || null;
-
   console.log('Намерена категория:', matchingCategory.value);
 }
 
-// Ако имаме категория, зареждаме продуктите
-if (matchingCategory.value && matchingCategory.value.slug) {
-  try {
-    const { data: productsData } = await useAsyncGql('getProducts', { slug: [matchingCategory.value.slug] });
-    const categoryProducts = productsData.value?.products?.nodes || [];
+// Зареждаме продуктите с новата серверна пагинация
+try {
+  // Проверяваме дали има филтри или сортиране в URL
+  const hasFilters = route.query.filter;
+  const hasOrderBy = route.query.orderby;
+  let filters;
+  let graphqlOrderBy = 'DATE';
 
-    if (categoryProducts && categoryProducts.length > 0) {
-      console.log(`Заредени ${categoryProducts.length} продукта от категория ${matchingCategory.value.slug}`);
-      setProducts(categoryProducts);
+  if (hasFilters) {
+    filters = buildGraphQLFilters();
+  }
+
+  if (hasOrderBy) {
+    if (route.query.orderby === 'price') graphqlOrderBy = 'PRICE';
+    else if (route.query.orderby === 'rating') graphqlOrderBy = 'RATING';
+    else if (route.query.orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
+    else if (route.query.orderby === 'date') graphqlOrderBy = 'DATE';
+    else if (route.query.orderby === 'discount') graphqlOrderBy = 'DATE';
+  }
+
+  if (matchingCategory.value && matchingCategory.value.slug) {
+    // Зареждаме продукти за конкретната категория
+    console.log(`Зареждаме продукти за категория: ${matchingCategory.value.slug}`);
+    if (hasFilters || hasOrderBy) {
+      await loadProductsWithFilters([matchingCategory.value.slug], graphqlOrderBy, filters);
     } else {
-      // Ако нямаме продукти директно, опитваме да заредим всички и филтрираме
-      console.log('Опитваме филтриране по категория ID');
-      const { data: allProductsData } = await useAsyncGql('getProducts');
-      const allProducts = allProductsData.value?.products?.nodes || [];
-
-      if (allProducts && allProducts.length > 0) {
-        console.log(`Заредени ${allProducts.length} общо продукта, филтрираме по категория ID`);
-
-        // Филтриране по категория ID
-        if (matchingCategory.value && matchingCategory.value.databaseId) {
-          const filteredProducts = allProducts.filter((product: any) =>
-            product.productCategories?.nodes?.some((cat: any) => cat.databaseId === matchingCategory.value?.databaseId),
-          );
-
-          console.log(`Филтрирани ${filteredProducts.length} продукта по категория ID`);
-
-          if (filteredProducts.length > 0) {
-            setProducts(filteredProducts);
-          } else {
-            setProducts([]);
-          }
-        } else {
-          setProducts([]);
-        }
-      } else {
-        setProducts([]);
-      }
+      await loadProductsPage(1, [matchingCategory.value.slug]);
     }
-  } catch (error) {
-    console.error('Грешка при зареждане на продукти:', error);
-    setProducts([]);
+  } else if (slug.value) {
+    // Опитваме директно със slug-а
+    console.log(`Опитваме директно със slug: ${slug.value}`);
+    if (hasFilters || hasOrderBy) {
+      await loadProductsWithFilters([slug.value], graphqlOrderBy, filters);
+    } else {
+      await loadProductsPage(1, [slug.value]);
+    }
+  } else {
+    // Зареждаме всички продукти
+    console.log('Зареждаме всички продукти');
+    if (hasFilters || hasOrderBy) {
+      await loadProductsWithFilters(undefined, graphqlOrderBy, filters);
+    } else {
+      await loadProductsPage(1);
+    }
   }
-} else if (slug.value) {
-  // Нямаме намерена категория, но опитваме директно със slug-а
-  try {
-    const { data: productsData } = await useAsyncGql('getProducts', { slug: [slug.value] });
-    const categoryProducts = productsData.value?.products?.nodes || [];
-    setProducts(categoryProducts || []);
-  } catch (error) {
-    console.error('Грешка при зареждане на продукти по slug:', error);
-    setProducts([]);
-  }
-} else {
-  // Ако нямаме slug, зареждаме всички продукти
-  try {
-    const { data: allProductsData } = await useAsyncGql('getProducts');
-    const allProducts = allProductsData.value?.products?.nodes || [];
-    setProducts(allProducts || []);
-  } catch (error) {
-    console.error('Грешка при зареждане на всички продукти:', error);
-    setProducts([]);
-  }
+} catch (error) {
+  console.error('Грешка при зареждане на продукти:', error);
 }
-
-// Преминаваме към режим "зареден" след кратко време
-setTimeout(() => {
-  isLoading.value = false;
-}, 500);
-
-// Актуализиране на списъка с продукти при нужда
-onMounted(() => {
-  if (!isQueryEmpty.value) updateProductList();
-});
-
-// Следим за промени в заявката
-watch(
-  () => route.query,
-  () => {
-    if (route.name !== 'produkt-kategoriya-slug') return;
-    updateProductList();
-  },
-);
 
 // Използване на SEO данни от Yoast ако са налични
 categoryTitle.value = matchingCategory.value?.seo?.title || matchingCategory.value?.name || decodedSlug || 'All Products';
@@ -225,25 +188,38 @@ if (matchingCategory.value?.seo?.schema?.raw) {
 </script>
 
 <template>
-  <div class="container px-2">
-    <div v-if="!isLoading && products && products.length" class="flex items-start gap-16">
-      <Filters v-if="storeSettings.showFilters" :hide-categories="true" />
+  <div class="container mx-auto px-2 py-6">
+    <!-- Loading индикатор -->
+    <div v-if="isLoading" class="w-full flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+    </div>
 
-      <div class="w-full">
-        <div class="flex items-center justify-between w-full gap-4 mt-8 md:gap-8">
-          <ProductResultCount />
-          <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings.showOrderByDropdown" />
-          <ShowFilterTrigger v-if="storeSettings.showFilters" class="md:hidden" />
+    <!-- Съдържание когато има продукти -->
+    <div v-else-if="products && products.length" class="flex flex-col lg:flex-row gap-8">
+      <!-- Sidebar с филтри - вляво -->
+      <aside v-if="storeSettings.showFilters" class="lg:w-80 flex-shrink-0">
+        <div class="sticky top-4">
+          <Filters :hide-categories="true" />
         </div>
+      </aside>
+
+      <!-- Main съдържание - отдясно -->
+      <main class="flex-1 min-w-0">
+        <!-- Header с контроли -->
+        <div class="flex items-center justify-between w-full gap-4 mb-8">
+          <ProductResultCount />
+          <div class="flex items-center gap-4">
+            <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings.showOrderByDropdown" />
+            <ShowFilterTrigger v-if="storeSettings.showFilters" class="lg:hidden" />
+          </div>
+        </div>
+
+        <!-- Grid с продукти -->
         <ProductGrid />
-      </div>
+      </main>
     </div>
-    <div v-else-if="isLoading" class="py-16 text-center">
-      <div class="inline-block p-4 text-gray-500">
-        <div class="h-8 w-8 border-t-2 border-primary border-solid rounded-full mx-auto animate-spin mb-4"></div>
-        <p>Loading products...</p>
-      </div>
-    </div>
+
+    <!-- Няма продукти -->
     <NoProductsFound v-else>
       <div class="text-center">
         <h2 class="text-xl font-bold mb-4">{{ slug ? 'No products found in this category.' : 'All Products' }}</h2>

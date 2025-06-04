@@ -128,7 +128,9 @@
       "productResultCount": {
         "showing": "Showing",
         "to": "to",
-        "of": "of"
+        "of": "of",
+        "many": "many",
+        "lastPage": "last page"
       },
       "noProductsFound": {
         "title": "No products found",

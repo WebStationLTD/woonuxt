@@ -1,17 +1,34 @@
 <script setup lang="ts">
-const route = useRoute();
-const { products } = useProducts();
-const { productsPerPage } = useHelpers();
-const page = ref(parseInt(route.params.pageNumber as string) || 1);
+const { products, currentPage, productsPerPage, pageInfo } = useProducts();
+const { t } = useI18n();
+
+// Изчисляваме стартовия номер за текущата страница
+const startProduct = computed(() => {
+  return (currentPage.value - 1) * productsPerPage.value + 1;
+});
+
+// Изчисляваме крайния номер за текущата страница
+const endProduct = computed(() => {
+  return (currentPage.value - 1) * productsPerPage.value + products.value.length;
+});
+
+// По-ясно съобщение за резултатите
+const resultMessage = computed(() => {
+  const productsCount = products.value.length;
+  if (productsCount === 0) return '';
+
+  if (pageInfo.hasNextPage) {
+    // Има още страници - показваме "Страница X"
+    return `${t('messages.shop.productResultCount.showing')} ${startProduct.value} ${t('messages.shop.productResultCount.to')} ${endProduct.value} (${t('messages.general.product')} ${currentPage.value})`;
+  } else {
+    // Последна страница - показваме общия брой
+    return `${t('messages.shop.productResultCount.showing')} ${startProduct.value} ${t('messages.shop.productResultCount.to')} ${endProduct.value}`;
+  }
+});
 </script>
 
 <template>
   <div class="text-sm font-light" v-if="products.length !== 0">
-    <span>{{ $t('messages.shop.productResultCount.showing') + ' ' }}</span>
-    <span class="font-normal">{{ (page - 1) * productsPerPage + 1 + ' ' }}</span>
-    <span>{{ $t('messages.shop.productResultCount.to') + ' ' }}</span>
-    <span class="font-normal">{{ Math.min(page * productsPerPage, products.length) + ' ' }}</span>
-    (<span>{{ $t('messages.shop.productResultCount.of') }}</span> <span class="font-normal">{{ products.length }}</span
-    >)
+    {{ resultMessage }}
   </div>
 </template>

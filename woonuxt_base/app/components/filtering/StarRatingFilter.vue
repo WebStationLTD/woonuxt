@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { getFilter, setFilter, isFiltersActive } = await useFiltering();
 
-const selectedTerms = ref<string[]>(getFilter('rating'));
+const selectedRating = ref<string>(getFilter('rating')[0] || '');
 const isOpen = ref(true);
 
 /**
@@ -9,7 +9,7 @@ const isOpen = ref(true);
  * @example If the user clicks the 'clear filters' button, the isFiltersActive variable would change to false.
  */
 watch(isFiltersActive, () => {
-  if (!isFiltersActive.value) selectedTerms.value = [];
+  if (!isFiltersActive.value) selectedRating.value = '';
 });
 
 /**
@@ -17,7 +17,15 @@ watch(isFiltersActive, () => {
  * @description This sets the filter to the selected rating. If the rating is already selected, it will be removed from the filter.
  */
 const radioClicked = (rating: string): void => {
-  setFilter('rating', selectedTerms.value.includes(rating) ? [] : [rating]);
+  if (selectedRating.value === rating) {
+    // Ако същата оценка е вече избрана, премахваме филтъра
+    selectedRating.value = '';
+    setFilter('rating', []);
+  } else {
+    // Избираме новата оценка
+    selectedRating.value = rating;
+    setFilter('rating', [rating]);
+  }
 };
 </script>
 
@@ -30,34 +38,34 @@ const radioClicked = (rating: string): void => {
     </div>
     <div v-if="isOpen" class="mt-3 text-sm grid text-gray-500 gap-3">
       <div class="cursor-pointer flex gap-2 items-center">
-        <input id="star-five" v-model="selectedTerms" type="radio" value="5" aria-label="5 stars" @click="radioClicked('5')" />
+        <input id="star-five" v-model="selectedRating" type="radio" value="5" aria-label="5 stars" @click="radioClicked('5')" />
         <label class="flex items-center" for="star-five">
           <StarRating :rating="5" :size="16" />
         </label>
       </div>
       <div class="cursor-pointer flex gap-2 items-center">
-        <input id="star-four" v-model="selectedTerms" type="radio" value="4" aria-label="4 stars" @click="radioClicked('4')" />
+        <input id="star-four" v-model="selectedRating" type="radio" value="4" aria-label="4 stars" @click="radioClicked('4')" />
         <label class="flex items-center" for="star-four">
           <StarRating :rating="4" :size="16" />
           <span class="ml-1 text-xs">& {{ $t('messages.general.up') }}</span>
         </label>
       </div>
       <div class="cursor-pointer flex gap-2 items-center">
-        <input id="star-three" v-model="selectedTerms" type="radio" value="3" aria-label="3 stars" @click="radioClicked('3')" />
+        <input id="star-three" v-model="selectedRating" type="radio" value="3" aria-label="3 stars" @click="radioClicked('3')" />
         <label class="flex items-center" for="star-three">
           <StarRating :rating="3" :size="16" />
           <span class="ml-1 text-xs">& {{ $t('messages.general.up') }}</span>
         </label>
       </div>
       <div class="cursor-pointer flex gap-2 items-center">
-        <input id="star-two" v-model="selectedTerms" type="radio" value="2" aria-label="2 stars" @click="radioClicked('2')" />
+        <input id="star-two" v-model="selectedRating" type="radio" value="2" aria-label="2 stars" @click="radioClicked('2')" />
         <label class="flex items-center" for="star-two">
           <StarRating :rating="2" :size="16" />
           <span class="ml-1 text-xs">& {{ $t('messages.general.up') }}</span>
         </label>
       </div>
       <div class="cursor-pointer flex gap-2 items-center">
-        <input id="star-one" v-model="selectedTerms" type="radio" value="1" aria-label="1 star" @click="radioClicked('1')" />
+        <input id="star-one" v-model="selectedRating" type="radio" value="1" aria-label="1 star" @click="radioClicked('1')" />
         <label class="flex items-center" for="star-one">
           <StarRating :rating="1" :size="16" />
           <span class="ml-1 text-xs">& {{ $t('messages.general.up') }}</span>

@@ -33,3 +33,24 @@ fragment SimpleProduct on SimpleProduct {
     }
   }
 }
+
+fragment SimpleProductGrid on SimpleProduct {
+  databaseId
+  name
+  slug
+  type
+  price
+  rawPrice: price(format: RAW)
+  regularPrice
+  rawRegularPrice: regularPrice(format: RAW)
+  salePrice
+  rawSalePrice: salePrice(format: RAW)
+  stockStatus
+  averageRating
+  reviewCount
+  onSale
+  image {
+    ...Image
+    producCardSourceUrl: sourceUrl(size: WOOCOMMERCE_THUMBNAIL)
+  }
+}

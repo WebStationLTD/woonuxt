@@ -3,7 +3,8 @@
 export function useSorting() {
   const route = useRoute();
   const router = useRouter();
-  const { updateProductList } = useProducts();
+  const { loadProductsWithFilters } = useProducts();
+  const { buildGraphQLFilters } = useFiltering();
 
   const orderQuery = useState<string>('order', () => '');
 
@@ -13,16 +14,38 @@ export function useSorting() {
     return { orderBy: route.query.orderby as string, order: route.query.order as string };
   }
 
-  function setOrderQuery(orderby: string, order?: string): void {
+  async function setOrderQuery(orderby: string, order?: string): Promise<void> {
     router.push({ query: { ...route.query, orderby: orderby ?? undefined, order: order ?? undefined } });
-    setTimeout(() => {
-      updateProductList();
-    }, 100);
+
+    // Изчакваме URL-а да се обнови и после зареждаме продуктите
+    await nextTick();
+
+    const filters = buildGraphQLFilters();
+
+    // Получаваме текущата категория от route ако е налична
+    let categorySlug: string[] | undefined;
+    if (route.params.slug) {
+      categorySlug = [route.params.slug as string];
+    }
+
+    // Конвертираме orderby в GraphQL формат
+    let graphqlOrderBy = 'DATE';
+    if (orderby === 'price') graphqlOrderBy = 'PRICE';
+    else if (orderby === 'rating') graphqlOrderBy = 'RATING';
+    else if (orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
+    else if (orderby === 'date') graphqlOrderBy = 'DATE';
+    else if (orderby === 'discount') {
+      // За discount използваме DATE и ще сортираме клиентски
+      // защото WooCommerce GraphQL не поддържа директно discount сортиране
+      graphqlOrderBy = 'DATE';
+    }
+
+    await loadProductsWithFilters(categorySlug, graphqlOrderBy, filters);
   }
 
   const isSortingActive = computed<boolean>(() => !!orderQuery.value);
 
-  // Define a function to order the products
+  // Define a function to order the products (legacy client-side sorting)
   function sortProducts(products: Product[]): Product[] {
     if (!isSortingActive) return products;
 
@@ -40,9 +63,13 @@ export function useSorting() {
       const aPrice = a.rawPrice ? parseFloat([...a.rawPrice.split(',')].reduce((a, b) => String(Math.max(Number(a), Number(b))))) : 0;
       const bPrice = b.rawPrice ? parseFloat([...b.rawPrice.split(',')].reduce((a, b) => String(Math.max(Number(a), Number(b))))) : 0;
       const aSalePrice: number = a.rawSalePrice ? parseFloat([...a.rawSalePrice.split(',')].reduce((a, b) => String(Math.max(Number(a), Number(b))))) : 0;
-      const aRegularPrice: number = a.rawRegularPrice ? parseFloat([...a.rawRegularPrice.split(',')].reduce((a, b) => String(Math.max(Number(a), Number(b))))) : 0;
+      const aRegularPrice: number = a.rawRegularPrice
+        ? parseFloat([...a.rawRegularPrice.split(',')].reduce((a, b) => String(Math.max(Number(a), Number(b)))))
+        : 0;
       const bSalePrice: number = b.rawSalePrice ? parseFloat([...b.rawSalePrice.split(',')].reduce((a, b) => String(Math.max(Number(a), Number(b))))) : 0;
-      const bRegularPrice: number = b.rawRegularPrice ? parseFloat([...b.rawRegularPrice.split(',')].reduce((a, b) => String(Math.max(Number(a), Number(b))))) : 0;
+      const bRegularPrice: number = b.rawRegularPrice
+        ? parseFloat([...b.rawRegularPrice.split(',')].reduce((a, b) => String(Math.max(Number(a), Number(b)))))
+        : 0;
       const aDiscount: number = a.onSale ? Math.round(((aSalePrice - aRegularPrice) / aRegularPrice) * 100) : 0;
       const bDiscount: number = b.onSale ? Math.round(((bSalePrice - bRegularPrice) / bRegularPrice) * 100) : 0;
       const aName: string = a.name || '';

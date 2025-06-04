@@ -6,8 +6,8 @@
 export function useFiltering() {
   const route = useRoute();
   const router = useRouter();
-  const runtimeConfig = useRuntimeConfig(); // Declare a variable for the runtime config and the filter and order functions
-  const { updateProductList } = useProducts();
+  const runtimeConfig = useRuntimeConfig();
+  const { loadProductsWithFilters } = useProducts();
 
   const filterQuery = useState<string>('filter', () => '');
 
@@ -24,12 +24,62 @@ export function useFiltering() {
   }
 
   /**
-   * Set the filter value in the url
+   * Конвертира URL филтрите в GraphQL формат
+   */
+  function buildGraphQLFilters() {
+    const filters: any = {};
+
+    // Ценови филтър
+    const priceRange = getFilter('price');
+    if (priceRange.length === 2 && priceRange[0] && priceRange[1]) {
+      filters.minPrice = parseFloat(priceRange[0]);
+      filters.maxPrice = parseFloat(priceRange[1]);
+    }
+
+    // OnSale филтър
+    const onSale = getFilter('sale');
+    if (onSale.length > 0) {
+      filters.onSale = true;
+    }
+
+    // Search филтър (ако е наличен в URL)
+    const searchTerm = getFilter('search');
+    if (searchTerm.length > 0) {
+      filters.search = searchTerm[0];
+    }
+
+    // Category филтър - ще се предава като categorySlug array към GraphQL
+    const categoryFilter = getFilter('category');
+    if (categoryFilter.length > 0) {
+      filters.categorySlug = categoryFilter;
+    }
+
+    // ВРЕМЕННО СКРИТ - Rating филтър
+    // Rating филтър - ще се обработва клиентски след получаване на резултатите
+    // защото WooCommerce GraphQL не поддържа директен rating филтър
+    // const ratingFilter = getFilter('rating');
+    // if (ratingFilter.length > 0 && ratingFilter[0]) {
+    //   filters.rating = parseFloat(ratingFilter[0]);
+    // }
+
+    return filters;
+  }
+
+  /**
+   * Получава категорията от URL
+   */
+  function getCategoryFromFilters(): string[] {
+    const categories = getFilter('category');
+    return categories;
+  }
+
+  /**
+   * Set the filter value in the url and reload products with server-side filtering
    * @param {string}
    * @param {string[]}
    * @example Just like the example above, but in reverse. setFilter('pa_color', ['green', 'blue'])
    */
-  function setFilter(filterName: string, filterValue: string[]) {
+  async function setFilter(filterName: string, filterValue: string[]) {
     let newFilterQuery = filterQuery.value || '';
 
     // If there are filters and filterName is not one of them, add the filter query
@@ -51,8 +101,6 @@ export function useFiltering() {
     // Update the filter query
     filterQuery.value = newFilterQuery;
 
-    router.push({ query: { ...route.query, filter: newFilterQuery } });
-
     // remove pagination from the url
     const path = route.path.includes('/page/') ? route.path.split('/page/')[0] : route.path;
 
@@ -69,23 +117,55 @@ export function useFiltering() {
       });
     }
 
-    setTimeout(() => {
-      updateProductList();
-    }, 50);
+    // Изчакваме URL-а да се обнови и после зареждаме продуктите
+    await nextTick();
+
+    const filters = buildGraphQLFilters();
+
+    // Получаваме текущата категория от route ако е налична
+    let categorySlug: string[] | undefined;
+    if (route.params.slug) {
+      categorySlug = [route.params.slug as string];
+    }
+
+    // Получаваме и orderby ако е налично
+    let graphqlOrderBy = 'DATE';
+    if (route.query.orderby === 'price') graphqlOrderBy = 'PRICE';
+    else if (route.query.orderby === 'rating') graphqlOrderBy = 'RATING';
+    else if (route.query.orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
+    else if (route.query.orderby === 'date') graphqlOrderBy = 'DATE';
+    else if (route.query.orderby === 'discount') graphqlOrderBy = 'DATE';
+
+    await loadProductsWithFilters(categorySlug, graphqlOrderBy, filters);
   }
 
   /**
    * Reset the filter value in the url
    */
-  function resetFilter(): void {
+  async function resetFilter(): Promise<void> {
     const { scrollToTop } = useHelpers();
     filterQuery.value = '';
     router.push({ query: { ...route.query, filter: undefined } });
 
-    setTimeout(() => {
-      updateProductList();
-      scrollToTop();
-    }, 50);
+    // Изчакваме URL-а да се обнови и после зареждаме продуктите
+    await nextTick();
+
+    // Получаваме текущата категория от route ако е налична
+    let categorySlug: string[] | undefined;
+    if (route.params.slug) {
+      categorySlug = [route.params.slug as string];
+    }
+
+    // Получаваме orderby ако е налично
+    let graphqlOrderBy = 'DATE';
+    if (route.query.orderby === 'price') graphqlOrderBy = 'PRICE';
+    else if (route.query.orderby === 'rating') graphqlOrderBy = 'RATING';
+    else if (route.query.orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
+    else if (route.query.orderby === 'date') graphqlOrderBy = 'DATE';
+    else if (route.query.orderby === 'discount') graphqlOrderBy = 'DATE';
+
+    await loadProductsWithFilters(categorySlug, graphqlOrderBy);
+    scrollToTop();
   }
 
   /**
@@ -95,7 +175,7 @@ export function useFiltering() {
   const isFiltersActive = computed<boolean>(() => !!filterQuery.value);
 
   /**
-   * Filter the products based on the active filters
+   * Filter the products based on the active filters (legacy client-side filtering)
    * @param {Product[]} products - An array of all the products
    * @returns {Product[]} - An array of filtered products
    */
@@ -114,11 +194,15 @@ export function useFiltering() {
         : true;
 
       // Star rating filter
-      const starRating = getFilter('rating') || [];
-      const ratingCondition = starRating.length ? (product?.averageRating || 0) >= parseFloat(starRating[0] as string) : true;
+      // ВРЕМЕННО СКРИТО - rating филтър в legacy filterProducts
+      // const starRating = getFilter('rating') || [];
+      // const ratingCondition = starRating.length ? (product?.averageRating || 0) >= parseFloat(starRating[0] as string) : true;
+      const ratingCondition = true; // Винаги true когато rating филтърът е скрит
 
       // Product attribute filters
-      const globalProductAttributes = runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES?.map((attribute: any) => attribute.slug) || [];
+      const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES)
+        ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES.map((attribute: any) => attribute.slug)
+        : [];
       const attributeCondition = globalProductAttributes
         .map((attribute: string) => {
           const attributeValues = getFilter(attribute) || [];
@@ -135,5 +219,5 @@ export function useFiltering() {
     });
   }
 
-  return { getFilter, setFilter, resetFilter, isFiltersActive, filterProducts };
+  return { getFilter, setFilter, resetFilter, isFiltersActive, filterProducts, buildGraphQLFilters, getCategoryFromFilters };
 }

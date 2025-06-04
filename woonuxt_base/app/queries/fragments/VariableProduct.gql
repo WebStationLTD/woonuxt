@@ -69,3 +69,42 @@ fragment VariationAttribute on VariationAttribute {
   value
   label
 }
+
+fragment VariableProductGrid on VariableProduct {
+  databaseId
+  name
+  slug
+  type
+  price
+  rawPrice: price(format: RAW)
+  averageRating
+  reviewCount
+  onSale
+  regularPrice
+  rawRegularPrice: regularPrice(format: RAW)
+  salePrice
+  rawSalePrice: salePrice(format: RAW)
+  stockStatus
+  image {
+    ...Image
+    producCardSourceUrl: sourceUrl(size: WOOCOMMERCE_THUMBNAIL)
+  }
+  variations(first: 3) {
+    nodes {
+      name
+      databaseId
+      price
+      stockStatus
+      slug
+      image {
+        ...Image
+        producCardSourceUrl: sourceUrl(size: WOOCOMMERCE_THUMBNAIL)
+      }
+      attributes {
+        nodes {
+          ...VariationAttribute
+        }
+      }
+    }
+  }
+}
