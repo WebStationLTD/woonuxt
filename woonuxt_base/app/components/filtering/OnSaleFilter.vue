@@ -23,7 +23,7 @@ const checkboxClicked = (e) => {
 <template>
   <div>
     <div class="cursor-pointer flex font-semibold mt-8 leading-none justify-between items-center" @click="isOpen = !isOpen">
-      <span>Sale Products Only</span>
+      <span>Само продукти с отстъпки</span>
       <Icon name="ion:chevron-down-outline" class="transform" :class="isOpen ? 'rotate-180' : ''" />
     </div>
     <div v-if="isOpen" class="mt-3 mr-1 max-h-[240px] grid gap-1 overflow-auto custom-scrollbar">

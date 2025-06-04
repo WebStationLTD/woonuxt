@@ -96,9 +96,9 @@ export default defineNuxtConfig({
       // Генерирани по време на билд
       "/": { static: true },
       "/products": {
-        isr: {
-          expiration: 300, // 5 минути за продукти
-        },
+        // isr: {
+        //   expiration: 300, // 5 минути за продукти
+        // },
         headers: {
           "Cache-Control": "s-maxage=300",
         },
