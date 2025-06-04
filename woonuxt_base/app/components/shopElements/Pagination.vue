@@ -17,7 +17,7 @@ const currentQuery = computed(() => {
 });
 
 const page = ref(route.params.pageNumber ? parseInt(route.params.pageNumber as string) : 1);
-const numberOfPages = computed<number>(() => Math.ceil(products.value.length / productsPerPage || 1));
+const numberOfPages = computed<number>(() => Math.ceil((products.value?.length || 0) / productsPerPage || 1));
 
 const prevSrc = (pageNumber: number) => {
   if (currentQuery.value === '') {

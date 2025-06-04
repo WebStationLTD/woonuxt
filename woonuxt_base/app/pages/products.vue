@@ -103,8 +103,8 @@ if (hasFilters || hasOrderBy) {
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
     </div>
 
-    <!-- Съдържание когато има продукти -->
-    <div v-else-if="products?.length" class="flex flex-col lg:flex-row gap-8">
+    <!-- Основен layout - винаги се показва когато не зарежда -->
+    <div v-else class="flex flex-col lg:flex-row gap-8">
       <!-- Sidebar с филтри - вляво -->
       <aside v-if="storeSettings.showFilters" class="lg:w-80 flex-shrink-0">
         <div class="sticky top-4">
@@ -114,8 +114,8 @@ if (hasFilters || hasOrderBy) {
 
       <!-- Main съдържание - отдясно -->
       <main class="flex-1 min-w-0">
-        <!-- Header с контроли -->
-        <div class="flex items-center justify-between w-full gap-4 mb-8">
+        <!-- Header с контроли - показва се само ако има продукти -->
+        <div v-if="products?.length" class="flex items-center justify-between w-full gap-4 mb-8">
           <ProductResultCount />
           <div class="flex items-center gap-4">
             <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings.showOrderByDropdown" />
@@ -123,12 +123,10 @@ if (hasFilters || hasOrderBy) {
           </div>
         </div>
 
-        <!-- Grid с продукти -->
-        <ProductGrid />
+        <!-- Grid с продукти или съобщение за липса на продукти -->
+        <ProductGrid v-if="products?.length" />
+        <NoProductsFound v-else> Could not fetch products from your store. Please check your configuration. </NoProductsFound>
       </main>
     </div>
-
-    <!-- Няма продукти -->
-    <NoProductsFound v-else> Could not fetch products from your store. Please check your configuration. </NoProductsFound>
   </div>
 </template>

@@ -2,7 +2,7 @@
 const { getFilter, setFilter, isFiltersActive } = useFiltering();
 
 const props = defineProps({
-  terms: { type: Array, required: true },
+  terms: { type: Array, default: () => [] },
   label: { type: String, default: '' },
   openByDefault: { type: Boolean, default: true },
   showCount: { type: Boolean, default: false },
@@ -27,7 +27,7 @@ const checkboxChanged = () => {
 </script>
 
 <template>
-  <div v-if="terms.length">
+  <div v-if="terms && terms.length">
     <div class="cursor-pointer flex font-semibold mt-8 justify-between items-center" @click="isOpen = !isOpen">
       <span>{{ label || $t('messages.shop.category', 2) }}</span>
       <Icon name="ion:chevron-down-outline" class="transform" :class="isOpen ? 'rotate-180' : ''" />

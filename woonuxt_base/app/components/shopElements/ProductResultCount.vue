@@ -9,12 +9,12 @@ const startProduct = computed(() => {
 
 // Изчисляваме крайния номер за текущата страница
 const endProduct = computed(() => {
-  return (currentPage.value - 1) * productsPerPage.value + products.value.length;
+  return (currentPage.value - 1) * productsPerPage.value + (products.value?.length || 0);
 });
 
 // По-ясно съобщение за резултатите
 const resultMessage = computed(() => {
-  const productsCount = products.value.length;
+  const productsCount = products.value?.length || 0;
   if (productsCount === 0) return '';
 
   if (pageInfo.hasNextPage) {
@@ -28,7 +28,7 @@ const resultMessage = computed(() => {
 </script>
 
 <template>
-  <div class="text-sm font-light" v-if="products.length !== 0">
+  <div class="text-sm font-light" v-if="(products?.length || 0) !== 0">
     {{ resultMessage }}
   </div>
 </template>

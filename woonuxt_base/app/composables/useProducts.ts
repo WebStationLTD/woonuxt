@@ -24,7 +24,7 @@ let activeFilters: {
 
 export function useProducts() {
   // Declare the state variables and the setter functions
-  const products = useState<Product[]>('products');
+  const products = useState<Product[]>('products', () => []);
   const isLoading = useState<boolean>('products-loading', () => false);
   const currentPage = useState<number>('products-current-page', () => 1);
   const productsPerPage = useState<number>('products-per-page', () => 12);

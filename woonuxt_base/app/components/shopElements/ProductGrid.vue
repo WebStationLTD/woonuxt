@@ -2,12 +2,12 @@
 const route = useRoute();
 const { products } = useProducts();
 // Показваме всички продукти от текущата страница вместо да ги slice-ваме
-const productsToShow = computed(() => products.value);
+const productsToShow = computed(() => products.value || []);
 </script>
 
 <template>
   <Transition name="fade" mode="out-in">
-    <section v-if="!!products.length" class="relative w-full">
+    <section v-if="!!products?.length" class="relative w-full">
       <TransitionGroup name="shrink" tag="div" mode="in-out" class="product-grid">
         <div
           v-for="(node, i) in productsToShow"
