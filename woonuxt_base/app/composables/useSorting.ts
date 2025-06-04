@@ -1,20 +1,29 @@
 // Example: ?orderby=price&order=asc
 
 export function useSorting() {
-  const route = useRoute();
   const router = useRouter();
   const { loadProductsWithFilters } = useProducts();
   const { buildGraphQLFilters } = useFiltering();
 
   const orderQuery = useState<string>('order', () => '');
 
-  orderQuery.value = route.query.orderby as string;
+  // Инициализираме orderQuery само на клиента
+  if (process.client) {
+    const route = useRoute();
+    orderQuery.value = route.query.orderby as string;
+  }
 
   function getOrderQuery(): { orderBy: string; order: string } {
+    if (!process.client) return { orderBy: '', order: '' };
+
+    const route = useRoute();
     return { orderBy: route.query.orderby as string, order: route.query.order as string };
   }
 
   async function setOrderQuery(orderby: string, order?: string): Promise<void> {
+    if (!process.client) return;
+
+    const route = useRoute();
     router.push({ query: { ...route.query, orderby: orderby ?? undefined, order: order ?? undefined } });
 
     // Изчакваме URL-а да се обнови и после зареждаме продуктите

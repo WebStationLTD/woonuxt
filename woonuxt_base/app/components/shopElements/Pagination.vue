@@ -1,10 +1,12 @@
 <script setup lang="ts">
-const route = useRoute();
 const { productsPerPage } = useHelpers();
 const { products } = useProducts();
 
-// TODO: Refactor all this logic. It's a mess.
+// SSR-safe computed properties
 const currentQuery = computed(() => {
+  if (!process.client) return '';
+
+  const route = useRoute();
   const query = route.query;
   const queryKeys = Object.keys(query);
   let currentQuery = '';
@@ -16,7 +18,13 @@ const currentQuery = computed(() => {
   return decodeURIComponent(currentQuery);
 });
 
-const page = ref(route.params.pageNumber ? parseInt(route.params.pageNumber as string) : 1);
+const page = computed(() => {
+  if (!process.client) return 1;
+
+  const route = useRoute();
+  return route.params.pageNumber ? parseInt(route.params.pageNumber as string) : 1;
+});
+
 const numberOfPages = computed<number>(() => Math.ceil((products.value?.length || 0) / productsPerPage || 1));
 
 const prevSrc = (pageNumber: number) => {

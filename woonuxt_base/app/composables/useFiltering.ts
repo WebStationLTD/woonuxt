@@ -4,14 +4,17 @@
  * is what the filter query looks like: ?filter=pa_color[green,blue],pa_size[md]
  */
 export function useFiltering() {
-  const route = useRoute();
   const router = useRouter();
   const runtimeConfig = useRuntimeConfig();
   const { loadProductsWithFilters } = useProducts();
 
   const filterQuery = useState<string>('filter', () => '');
 
-  filterQuery.value = route.query.filter as string;
+  // Инициализираме filterQuery само на клиента
+  if (process.client) {
+    const route = useRoute();
+    filterQuery.value = route.query.filter as string;
+  }
 
   /**
    * Get the filter value from the url
@@ -80,6 +83,10 @@ export function useFiltering() {
    * @example Just like the example above, but in reverse. setFilter('pa_color', ['green', 'blue'])
    */
   async function setFilter(filterName: string, filterValue: string[]) {
+    // Работи само на клиента
+    if (!process.client) return;
+
+    const route = useRoute();
     let newFilterQuery = filterQuery.value || '';
 
     // If there are filters and filterName is not one of them, add the filter query
@@ -143,6 +150,10 @@ export function useFiltering() {
    * Reset the filter value in the url
    */
   async function resetFilter(): Promise<void> {
+    // Работи само на клиента
+    if (!process.client) return;
+
+    const route = useRoute();
     const { scrollToTop } = useHelpers();
     filterQuery.value = '';
     router.push({ query: { ...route.query, filter: undefined } });

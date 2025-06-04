@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const { loadProductsPage, loadProductsWithFilters, products, isLoading } = useProducts();
 const { buildGraphQLFilters } = useFiltering();
-const route = useRoute();
 const { storeSettings } = useAppConfig();
 const { isQueryEmpty } = useHelpers();
 
@@ -73,27 +72,36 @@ try {
   });
 }
 
-// Проверяваме дали има филтри или сортиране в URL и зареждаме продуктите
-const hasFilters = route.query.filter;
-const hasOrderBy = route.query.orderby;
+// Зареждаме продуктите след hydration за да избегнем SSR грешки
+onMounted(async () => {
+  try {
+    const route = useRoute();
 
-if (hasFilters || hasOrderBy) {
-  // Ако има филтри или сортиране, зареждаме със серверните филтри
-  const filters = buildGraphQLFilters();
+    // Проверяваме дали има филтри или сортиране в URL и зареждаме продуктите
+    const hasFilters = route.query.filter;
+    const hasOrderBy = route.query.orderby;
 
-  // Конвертираме orderby в GraphQL формат
-  let graphqlOrderBy = 'DATE';
-  if (route.query.orderby === 'price') graphqlOrderBy = 'PRICE';
-  else if (route.query.orderby === 'rating') graphqlOrderBy = 'RATING';
-  else if (route.query.orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
-  else if (route.query.orderby === 'date') graphqlOrderBy = 'DATE';
-  else if (route.query.orderby === 'discount') graphqlOrderBy = 'DATE';
+    if (hasFilters || hasOrderBy) {
+      // Ако има филтри или сортиране, зареждаме със серверните филтри
+      const filters = buildGraphQLFilters();
 
-  await loadProductsWithFilters(undefined, graphqlOrderBy, filters);
-} else {
-  // Ако няма филтри, зареждаме първата страница нормално
-  await loadProductsPage(1);
-}
+      // Конвертираме orderby в GraphQL формат
+      let graphqlOrderBy = 'DATE';
+      if (route.query.orderby === 'price') graphqlOrderBy = 'PRICE';
+      else if (route.query.orderby === 'rating') graphqlOrderBy = 'RATING';
+      else if (route.query.orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
+      else if (route.query.orderby === 'date') graphqlOrderBy = 'DATE';
+      else if (route.query.orderby === 'discount') graphqlOrderBy = 'DATE';
+
+      await loadProductsWithFilters(undefined, graphqlOrderBy, filters);
+    } else {
+      // Ако няма филтри, зареждаме първата страница нормално
+      await loadProductsPage(1);
+    }
+  } catch (error) {
+    console.error('Грешка при начално зареждане на продукти:', error);
+  }
+});
 </script>
 
 <template>

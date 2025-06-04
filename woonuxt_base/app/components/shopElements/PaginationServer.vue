@@ -1,9 +1,10 @@
 <script setup lang="ts">
 const { loadProductsPage, loadNextPage, loadPreviousPage, pageInfo, currentPage, isLoading, activeFilters } = useProducts();
-const route = useRoute();
 
 const handlePageChange = async (page: number) => {
-  if (!isLoading.value && page !== currentPage.value) {
+  if (!isLoading.value && page !== currentPage.value && process.client) {
+    const route = useRoute();
+
     // Получаваме категорията от route ако има такава
     let categorySlug: string[] | undefined;
     if (route.params.slug) {

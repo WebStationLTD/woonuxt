@@ -67,10 +67,12 @@ export function useProducts() {
         orderby: orderBy || 'DATE',
       };
 
-      // Добавяме order параметъра (ASC/DESC) ако е зададен
-      const route = useRoute();
-      if (route.query.order) {
-        variables.order = route.query.order.toString().toUpperCase();
+      // Добавяме order параметъра (ASC/DESC) ако е зададен - само на клиента
+      if (process.client) {
+        const route = useRoute();
+        if (route.query.order) {
+          variables.order = route.query.order.toString().toUpperCase();
+        }
       }
 
       // Комбинираме categorySlug от route параметри и от филтри
@@ -127,26 +129,29 @@ export function useProducts() {
         //   });
         // }
 
-        // Прилагаме само клиентски филтри които не са вече приложени сървърно
-        const { filterProducts, getFilter } = useFiltering();
-        const runtimeConfig = useRuntimeConfig();
+        // Прилагаме само клиентски филтри които не са вече приложени сървърно - само на клиента
+        if (process.client) {
+          const { filterProducts, getFilter } = useFiltering();
+          const runtimeConfig = useRuntimeConfig();
 
-        // Филтриране по attributes (pa_color, pa_size и т.н.)
-        const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES)
-          ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES.map((attribute: any) => attribute.slug)
-          : [];
+          // Филтриране по attributes (pa_color, pa_size и т.н.)
+          const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES)
+            ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES.map((attribute: any) => attribute.slug)
+            : [];
 
-        globalProductAttributes.forEach((attribute: string) => {
-          const attributeValues = getFilter(attribute);
-          if (attributeValues.length > 0) {
-            productsToShow = productsToShow.filter((product: any) => {
-              return product.terms?.nodes?.find((node: any) => node.taxonomyName === attribute && attributeValues.includes(node.slug));
-            });
-          }
-        });
+          globalProductAttributes.forEach((attribute: string) => {
+            const attributeValues = getFilter(attribute);
+            if (attributeValues.length > 0) {
+              productsToShow = productsToShow.filter((product: any) => {
+                return product.terms?.nodes?.find((node: any) => node.taxonomyName === attribute && attributeValues.includes(node.slug));
+              });
+            }
+          });
+        }
 
-        // Прилагаме клиентско сортиране по discount ако е нужно (СЛЕД всички филтри)
-        if (orderBy === 'discount') {
+        // Прилагаме клиентско сортиране по discount ако е нужно (СЛЕД всички филтри) - само на клиента
+        if (process.client && orderBy === 'discount') {
+          const route = useRoute();
           const sortOrder = route.query.order?.toString().toUpperCase() || 'DESC';
 
           productsToShow = productsToShow.sort((a: any, b: any) => {

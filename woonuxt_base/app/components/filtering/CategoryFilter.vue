@@ -11,9 +11,14 @@ const props = defineProps({
 const isOpen = ref(props.openByDefault);
 const selectedTerms = ref(getFilter('category') || []);
 
-const route = useRoute();
-const categorySlug = route.params.categorySlug;
-if (categorySlug) selectedTerms.value = [categorySlug];
+// Инициализираме categorySlug само на клиента
+onMounted(() => {
+  if (process.client) {
+    const route = useRoute();
+    const categorySlug = route.params.categorySlug;
+    if (categorySlug) selectedTerms.value = [categorySlug];
+  }
+});
 
 watch(isFiltersActive, () => {
   // uncheck all checkboxes when filters are cleared
