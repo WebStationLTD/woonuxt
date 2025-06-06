@@ -7,13 +7,7 @@ const { isQueryEmpty } = useHelpers();
 const { storeSettings } = useAppConfig();
 const route = useRoute();
 
-// По-детайлно логване за дебъг
-console.log('Текущ route:', {
-  fullPath: route.fullPath,
-  path: route.path,
-  name: route.name,
-  params: route.params,
-});
+// По-детайлно логване за дебъг (премахнато за производство)
 
 // Извличане на slug параметъра от различни източници
 let slugFromParams = '';
@@ -44,21 +38,11 @@ if (!slugFromParams && route.fullPath) {
   }
 }
 
-console.log('Извлечен slug:', slugFromParams);
-
-// Проверяваме дали slug-а е празен
-if (!slugFromParams) {
-  console.log('Използваме всички продукти, тъй като slug е празен');
-} else {
-  console.log('Slug от URL (преди декодиране):', slugFromParams);
-}
-
 // Проверяваме дали slug-а съдържа кирилица или други специални символи
 let decodedSlug = slugFromParams;
 try {
   if (slugFromParams) {
     decodedSlug = decodeURIComponent(slugFromParams);
-    console.log('Декодиран slug:', decodedSlug);
   }
 } catch (error) {
   console.error('Грешка при декодиране на URL:', error);
@@ -105,7 +89,6 @@ const allCategories = computed(() => categoriesData.value?.productCategories?.no
 // Опитваме се първо да намерим категорията
 if (slug.value) {
   matchingCategory.value = allCategories.value.find((cat: Category) => cat.slug && (cat.slug === slug.value || cat.slug === decodedSlug)) || null;
-  console.log('Намерена категория:', matchingCategory.value);
 }
 
 // Зареждаме продуктите с новата серверна пагинация
@@ -130,7 +113,6 @@ try {
 
   if (matchingCategory.value && matchingCategory.value.slug) {
     // Зареждаме продукти за конкретната категория
-    console.log(`Зареждаме продукти за категория: ${matchingCategory.value.slug}`);
     if (hasFilters || hasOrderBy) {
       await loadProductsWithFilters([matchingCategory.value.slug], graphqlOrderBy, filters);
     } else {
@@ -138,7 +120,6 @@ try {
     }
   } else if (slug.value) {
     // Опитваме директно със slug-а
-    console.log(`Опитваме директно със slug: ${slug.value}`);
     if (hasFilters || hasOrderBy) {
       await loadProductsWithFilters([slug.value], graphqlOrderBy, filters);
     } else {
@@ -146,7 +127,6 @@ try {
     }
   } else {
     // Зареждаме всички продукти
-    console.log('Зареждаме всички продукти');
     if (hasFilters || hasOrderBy) {
       await loadProductsWithFilters(undefined, graphqlOrderBy, filters);
     } else {

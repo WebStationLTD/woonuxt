@@ -44,9 +44,9 @@ export const useBlog = () => {
       });
 
       if (data.value?.posts?.nodes) {
-        addPosts(data.value.posts.nodes);
+        addPosts(data.value.posts.nodes as Post[]);
         pageInfo.hasNextPage = data.value.posts.pageInfo.hasNextPage;
-        pageInfo.endCursor = data.value.posts.pageInfo.endCursor;
+        pageInfo.endCursor = data.value.posts.pageInfo.endCursor || null;
       }
     } catch (err: any) {
       error.value = err.message || "Грешка при зареждане на публикации";
@@ -79,8 +79,8 @@ export const useBlog = () => {
         });
 
         if (data.value?.post) {
-          setCurrentPost(data.value.post);
-          return data.value.post;
+          setCurrentPost(data.value.post as Post);
+          return data.value.post as Post;
         }
       }
 

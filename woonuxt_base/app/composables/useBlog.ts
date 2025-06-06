@@ -13,7 +13,6 @@ export const useBlog = () => {
   // Задаване на публикации
   const setPosts = (newPosts: Post[]) => {
     if (newPosts && newPosts.length > 0) {
-      console.log('Задаване на публикации:', newPosts.length);
       posts.value = newPosts;
     } else {
       console.warn('Опит за задаване на празен масив от публикации');
@@ -23,14 +22,12 @@ export const useBlog = () => {
   // Добавяне на още публикации (при пагинация)
   const addPosts = (newPosts: Post[]) => {
     if (newPosts && newPosts.length > 0) {
-      console.log('Добавяне на публикации:', newPosts.length);
       posts.value = [...posts.value, ...newPosts];
     }
   };
 
   // Задаване на текуща публикация
   const setCurrentPost = (post: Post) => {
-    console.log('Задаване на текуща публикация:', post.title);
     currentPost.value = post;
   };
 
@@ -48,7 +45,7 @@ export const useBlog = () => {
         after: pageInfo.endCursor,
       });
 
-      console.log('Резултат от loadMorePosts:', JSON.stringify(data.value, null, 2));
+      // Debug лог премахнат за производство
 
       if (data.value?.posts?.nodes) {
         addPosts(data.value.posts.nodes);
@@ -65,7 +62,6 @@ export const useBlog = () => {
 
   // Зареждане на публикация по slug
   const loadPostBySlug = async (slug: string) => {
-    console.log('Зареждане на публикация със slug:', slug);
     loading.value = true;
     error.value = null;
 
@@ -76,7 +72,7 @@ export const useBlog = () => {
         idType: 'SLUG',
       });
 
-      console.log('Резултат от loadPostBySlug:', JSON.stringify(data.value, null, 2));
+      // Debug лог премахнат за производство
 
       if (data.value?.post) {
         setCurrentPost(data.value.post);

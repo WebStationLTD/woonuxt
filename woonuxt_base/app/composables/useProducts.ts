@@ -62,8 +62,10 @@ export function useProducts() {
     try {
       isLoading.value = true;
 
+      // За cursor-based pagination трябва да заредим до желаната страница + 1 за проверка
+      const totalProductsNeeded = page * productsPerPage.value + 1;
       const variables: any = {
-        first: productsPerPage.value,
+        first: totalProductsNeeded,
         orderby: orderBy || 'DATE',
       };
 
@@ -104,11 +106,6 @@ export function useProducts() {
         activeFilters = { ...filters };
       }
 
-      // За първата страница не подаваме after
-      if (page > 1 && pageInfo.endCursor) {
-        variables.after = pageInfo.endCursor;
-      }
-
       const { data } = await useAsyncGql('getProducts', variables);
       const result = data.value?.products;
 
@@ -117,8 +114,14 @@ export function useProducts() {
         pageInfo.hasNextPage = result.pageInfo.hasNextPage || false;
         pageInfo.endCursor = result.pageInfo.endCursor || '';
 
-        // Запазваме продуктите за тази страница
-        let productsToShow = result.nodes || [];
+        // Взимаме продуктите за конкретната страница от всички заредени
+        const allLoadedProducts = result.nodes || [];
+        const startIndex = (page - 1) * productsPerPage.value;
+        const endIndex = startIndex + productsPerPage.value;
+        let productsToShow = allLoadedProducts.slice(startIndex, endIndex);
+
+        // Проверяваме дали има още страници след текущата
+        pageInfo.hasNextPage = allLoadedProducts.length > page * productsPerPage.value;
 
         // ВРЕМЕННО СКРИТО - Клиентски филтри за rating
         // Прилагаме клиентски филтри които не се поддържат от GraphQL
@@ -229,7 +232,6 @@ export function useProducts() {
 
   const updateProductList = async (): Promise<void> => {
     // Тази функция е остаряла - използваме loadProductsWithFilters вместо нея
-    console.warn('updateProductList е остаряла - използвайте loadProductsWithFilters');
     return;
   };
 

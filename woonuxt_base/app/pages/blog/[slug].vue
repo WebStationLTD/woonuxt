@@ -12,8 +12,7 @@ try {
     id: slug,
   });
 
-  console.log('Заявка за публикация:', slug);
-  console.log('Отговор:', JSON.stringify(data.value, null, 2));
+  // Debug логове премахнати за производство
 
   if (data.value?.post) {
     post.value = data.value.post;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { loadProductsPage, loadProductsWithFilters, products, isLoading } = useProducts();
+const { loadProductsPage, loadProductsWithFilters, products, isLoading, currentPage, pageInfo } = useProducts();
 const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
 const { isQueryEmpty } = useHelpers();
@@ -8,76 +8,45 @@ let shopTitle = 'Products';
 let shopDescription = 'Discover our products';
 let seoDataSet = false;
 
-try {
-  // Зареждаме SEO данни за страницата с продукти
-  const { data: pagesData } = await useAsyncGql('getShopPage');
-  const productPage = pagesData.value?.page;
+// Резервни SEO данни веднага
+useHead({
+  title: shopTitle,
+  meta: [{ name: 'description', content: shopDescription }],
+});
 
-  // Анализ на получената информация
-  if (!productPage) {
-    console.error('Не е намерена страница products в WordPress');
-  } else {
-    // Проверяваме дали имаме SEO данни
-    if (!productPage.seo) {
-      console.error('Страницата няма SEO данни от Yoast');
-    } else {
-      // Използваме SEO данните от Yoast
-      shopTitle = productPage.seo.title || productPage.title || 'Products';
-      shopDescription = productPage.seo.metaDesc || productPage.content || 'Discover our products';
+// SEO данни са в резервните метаданни горе
 
-      // Задаваме SEO метаданните
-      useHead({
-        title: shopTitle,
-        meta: [
-          { name: 'description', content: shopDescription },
-          { property: 'og:title', content: productPage.seo.opengraphTitle || shopTitle },
-          { property: 'og:description', content: productPage.seo.opengraphDescription || shopDescription },
-          { name: 'robots', content: productPage.seo.metaRobotsNoindex ? 'noindex' : 'index' },
-          { name: 'robots', content: productPage.seo.metaRobotsNofollow ? 'nofollow' : 'follow' },
-        ],
-        link: [{ rel: 'canonical', href: productPage.seo.canonical || '/products' }],
-      });
+// Get route instance once
+const route = useRoute();
 
-      // Добавяне на структурирани данни (schema.org)
-      if (productPage.seo.schema?.raw) {
-        useHead({
-          script: [
-            {
-              type: 'application/ld+json',
-              innerHTML: productPage.seo.schema.raw,
-            },
-          ],
-        });
-      }
+// Race condition protection
+let isNavigating = false;
 
-      seoDataSet = true; // Маркираме, че сме задали SEO данни
-    }
+// Функция за зареждане на продукти според URL
+const loadProductsFromRoute = async () => {
+  if (isNavigating) {
+    console.log('🚫 Navigation already in progress, skipping...');
+    return;
   }
 
-  // Ако не сме задали SEO данни, използваме резервни стойности
-  if (!seoDataSet) {
-    console.warn('Използваме резервни SEO данни за продуктовата страница');
-    useHead({
-      title: 'Products',
-      meta: [{ name: 'description', content: 'Discover our products' }],
-    });
-  }
-} catch (error) {
-  console.error('Грешка при зареждане на SEO данни:', error);
-
-  // Резервно решение
-  useHead({
-    title: 'Products',
-    meta: [{ name: 'description', content: 'Discover our products' }],
-  });
-}
-
-// Зареждаме продуктите след hydration за да избегнем SSR грешки
-onMounted(async () => {
+  isNavigating = true;
   try {
-    const route = useRoute();
+    // Определяме страницата от URL
+    let pageNumber = 1;
 
-    // Проверяваме дали има филтри или сортиране в URL и зареждаме продуктите
+    // Проверяваме дали сме в /products/page/N формат
+    if (route.path.startsWith('/products/page/')) {
+      const pathParts = route.path.split('/');
+      const pageIndex = pathParts.indexOf('page');
+      if (pageIndex !== -1 && pathParts[pageIndex + 1]) {
+        const parsedPage = parseInt(pathParts[pageIndex + 1]);
+        if (!isNaN(parsedPage) && parsedPage > 0) {
+          pageNumber = parsedPage;
+        }
+      }
+    }
+
+    // Проверяваме дали има филтри или сортиране в URL
     const hasFilters = route.query.filter;
     const hasOrderBy = route.query.orderby;
 
@@ -87,21 +56,44 @@ onMounted(async () => {
 
       // Конвертираме orderby в GraphQL формат
       let graphqlOrderBy = 'DATE';
-      if (route.query.orderby === 'price') graphqlOrderBy = 'PRICE';
-      else if (route.query.orderby === 'rating') graphqlOrderBy = 'RATING';
-      else if (route.query.orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
-      else if (route.query.orderby === 'date') graphqlOrderBy = 'DATE';
-      else if (route.query.orderby === 'discount') graphqlOrderBy = 'DATE';
+      const orderBy = Array.isArray(route.query.orderby) ? route.query.orderby[0] : route.query.orderby;
+      if (orderBy && typeof orderBy === 'string') {
+        if (orderBy === 'price') graphqlOrderBy = 'PRICE';
+        else if (orderBy === 'rating') graphqlOrderBy = 'RATING';
+        else if (orderBy === 'alphabetically') graphqlOrderBy = 'NAME_IN';
+        else if (orderBy === 'date') graphqlOrderBy = 'DATE';
+        else if (orderBy === 'discount') graphqlOrderBy = 'DATE';
+      }
 
-      await loadProductsWithFilters(undefined, graphqlOrderBy, filters);
+      await loadProductsPage(pageNumber, undefined, graphqlOrderBy, filters);
     } else {
-      // Ако няма филтри, зареждаме първата страница нормално
-      await loadProductsPage(1);
+      // Ако няма филтри, зареждаме конкретната страница
+      await loadProductsPage(pageNumber);
     }
+
+    // Принудително завършване на loading състоянието
+    await nextTick();
   } catch (error) {
-    console.error('Грешка при начално зареждане на продукти:', error);
+    console.error('Грешка при зареждане на продукти:', error);
+  } finally {
+    isNavigating = false;
   }
+};
+
+// Зареждаме продуктите след hydration
+onMounted(() => {
+  loadProductsFromRoute();
 });
+
+// Слушаме за промени в route-а
+watch(
+  () => route.fullPath,
+  (newPath, oldPath) => {
+    if (newPath !== oldPath && process.client) {
+      loadProductsFromRoute();
+    }
+  },
+);
 </script>
 
 <template>
@@ -134,6 +126,11 @@ onMounted(async () => {
         <!-- Grid с продукти или съобщение за липса на продукти -->
         <ProductGrid v-if="products?.length" />
         <NoProductsFound v-else> Could not fetch products from your store. Please check your configuration. </NoProductsFound>
+
+        <!-- Debug информация премахната за production -->
+
+        <!-- Пагинация -->
+        <PaginationServer v-if="products?.length" />
       </main>
     </div>
   </div>
