@@ -59,8 +59,18 @@ export function useProducts() {
       categorySlug?: string[];
     },
   ): Promise<void> {
+    let timeoutId: NodeJS.Timeout | null = null;
+
     try {
       isLoading.value = true;
+
+      // Timeout за предотвратяване на "закачане" на loading
+      timeoutId = setTimeout(() => {
+        if (isLoading.value) {
+          console.warn('⚠️ Loading products timeout - принудително завършване');
+          isLoading.value = false;
+        }
+      }, 10000); // 10 секунди timeout
 
       // За cursor-based pagination трябва да заредим до желаната страница + 1 за проверка
       const totalProductsNeeded = page * productsPerPage.value + 1;
@@ -188,7 +198,22 @@ export function useProducts() {
       console.error('Грешка при зареждане на продукти:', error);
       setProducts([]);
     } finally {
+      if (timeoutId) clearTimeout(timeoutId);
       isLoading.value = false;
+
+      // Принудително завършване на Nuxt loading indicator ако се е "закачил"
+      if (process.client) {
+        setTimeout(() => {
+          const loadingIndicator = document.querySelector('.nuxt-loading-indicator');
+          if (loadingIndicator && getComputedStyle(loadingIndicator).opacity !== '0') {
+            console.log('🔧 Принудително завършване на loading indicator');
+            (loadingIndicator as HTMLElement).style.width = '100%';
+            setTimeout(() => {
+              (loadingIndicator as HTMLElement).style.opacity = '0';
+            }, 100);
+          }
+        }, 500);
+      }
     }
   }
 

@@ -99,12 +99,13 @@ watch(
 <template>
   <div class="container mx-auto px-2 py-6">
     <!-- Loading индикатор -->
-    <div v-if="isLoading" class="w-full flex justify-center items-center py-12">
+    <!-- <div v-if="isLoading" class="w-full flex justify-center items-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-    </div>
+    </div> -->
 
     <!-- Основен layout - винаги се показва когато не зарежда -->
-    <div v-else class="flex flex-col lg:flex-row gap-8">
+    <!-- <div v-else class="flex flex-col lg:flex-row gap-8"> -->
+    <div class="flex flex-col lg:flex-row gap-8">
       <!-- Sidebar с филтри - вляво -->
       <aside v-if="storeSettings.showFilters" class="lg:w-80 flex-shrink-0">
         <div class="sticky top-4">
