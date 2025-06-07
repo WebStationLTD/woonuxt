@@ -1,6 +1,6 @@
 <script setup>
 // Хардкоднатите ID на продуктите от WooCommerce
-const productIds = [520, 518, 516, 514, 512, 510, 508];
+const productIds = [99587, 66564, 62567, 77716, 9402, 97718, 81579];
 
 // Извличаме данните за продуктите по техните ID
 const { data } = await useAsyncGql('getProductsByIds', { ids: productIds });
