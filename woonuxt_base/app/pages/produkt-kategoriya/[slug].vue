@@ -6,6 +6,9 @@ const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
 const route = useRoute();
 
+// Проследяваме дали някога сме зареждали данни
+const hasEverLoaded = ref(false);
+
 interface Category {
   slug?: string | null;
   name?: string | null;
@@ -64,6 +67,7 @@ const loadCategoryProducts = async () => {
   if (!slug) {
     resetProductsState();
     currentSlug.value = '';
+    hasEverLoaded.value = true; // Маркираме като опитано
     return;
   }
 
@@ -73,49 +77,60 @@ const loadCategoryProducts = async () => {
   currentSlug.value = slug;
   currentPageNumber.value = pageNumber;
 
-  // Изчакваме категориите да се заредят
-  if (!categoriesData.value) {
-    await nextTick();
-    if (!categoriesData.value) return;
-  }
-
-  // Намираме категорията
-  if (allCategories.value.length > 0) {
-    matchingCategory.value = allCategories.value.find((cat: Category) => cat.slug === slug) || null;
-  }
-
-  // Проверяваме дали има филтри или сортиране в URL
-  const hasFilters = route.query.filter;
-  const hasOrderBy = route.query.orderby;
-
-  if (hasFilters || hasOrderBy) {
-    // Ако има филтри или сортиране, зареждаме със серверните филтри
-    let filters: any = {};
-
-    // Директно строим филтрите от route query вместо да използваме buildGraphQLFilters
-    if (hasFilters) {
-      const filterParam = route.query.filter;
-      if (filterParam === 'onSale') {
-        filters.onSale = true;
+  try {
+    // Изчакваме категориите да се заредят
+    if (!categoriesData.value) {
+      await nextTick();
+      if (!categoriesData.value) {
+        hasEverLoaded.value = true;
+        return;
       }
-      // Може да добавим други филтри тук ако е нужно
     }
 
-    // Конвертираме orderby в GraphQL формат
-    let graphqlOrderBy = 'DATE';
-    if (hasOrderBy) {
-      const orderBy = String(route.query.orderby);
-      if (orderBy === 'price') graphqlOrderBy = 'PRICE';
-      else if (orderBy === 'rating') graphqlOrderBy = 'RATING';
-      else if (orderBy === 'alphabetically') graphqlOrderBy = 'NAME_IN';
-      else if (orderBy === 'date') graphqlOrderBy = 'DATE';
-      else if (orderBy === 'discount') graphqlOrderBy = 'DATE';
+    // Намираме категорията
+    if (allCategories.value.length > 0) {
+      matchingCategory.value = allCategories.value.find((cat: Category) => cat.slug === slug) || null;
     }
 
-    await loadProductsPage(pageNumber, [slug], graphqlOrderBy, filters);
-  } else {
-    // Ако няма филтри, зареждаме конкретната страница
-    await loadProductsPage(pageNumber, [slug]);
+    // Проверяваме дали има филтри или сортиране в URL
+    const hasFilters = route.query.filter;
+    const hasOrderBy = route.query.orderby;
+
+    if (hasFilters || hasOrderBy) {
+      // Ако има филтри или сортиране, зареждаме със серверните филтри
+      let filters: any = {};
+
+      // Директно строим филтрите от route query вместо да използваме buildGraphQLFilters
+      if (hasFilters) {
+        const filterParam = route.query.filter;
+        if (filterParam === 'onSale') {
+          filters.onSale = true;
+        }
+        // Може да добавим други филтри тук ако е нужно
+      }
+
+      // Конвертираме orderby в GraphQL формат
+      let graphqlOrderBy = 'DATE';
+      if (hasOrderBy) {
+        const orderBy = String(route.query.orderby);
+        if (orderBy === 'price') graphqlOrderBy = 'PRICE';
+        else if (orderBy === 'rating') graphqlOrderBy = 'RATING';
+        else if (orderBy === 'alphabetically') graphqlOrderBy = 'NAME_IN';
+        else if (orderBy === 'date') graphqlOrderBy = 'DATE';
+        else if (orderBy === 'discount') graphqlOrderBy = 'DATE';
+      }
+
+      await loadProductsPage(pageNumber, [slug], graphqlOrderBy, filters);
+    } else {
+      // Ако няма филтри, зареждаме конкретната страница
+      await loadProductsPage(pageNumber, [slug]);
+    }
+
+    // Маркираме че сме зареждали данни поне веднъж
+    hasEverLoaded.value = true;
+  } catch (error) {
+    console.error('Грешка при зареждане на продукти:', error);
+    hasEverLoaded.value = true; // Маркираме като опитано дори при грешка
   }
 };
 
@@ -151,6 +166,16 @@ watch(
   },
 );
 
+// Computed за показване на loading състояние
+const shouldShowLoading = computed(() => {
+  return isLoading.value || !hasEverLoaded.value;
+});
+
+// Computed за показване на NoProductsFound
+const shouldShowNoProducts = computed(() => {
+  return hasEverLoaded.value && !isLoading.value && (!products.value || products.value.length === 0);
+});
+
 // SEO head
 useHead(() => ({
   title: seoTitle.value,
@@ -165,8 +190,8 @@ useHead(() => ({
 
 <template>
   <div class="container mx-auto px-2 py-6">
-    <!-- Основен layout - винаги се показва -->
-    <div :key="currentSlug || 'no-category'" class="flex flex-col lg:flex-row gap-8">
+    <!-- Основен layout -->
+    <div :key="currentSlug || 'no-category'" class="flex flex-col lg:flex-row gap-0 sm:gap-8">
       <!-- Sidebar с филтри - вляво -->
       <aside v-if="storeSettings.showFilters" class="lg:w-80 flex-shrink-0">
         <div class="sticky top-4">
@@ -176,18 +201,57 @@ useHead(() => ({
 
       <!-- Main съдържание - отдясно -->
       <main v-if="currentSlug" class="flex-1 min-w-0">
-        <!-- Header с контроли - показва се само ако има продукти -->
-        <div v-if="products?.length" class="flex items-center justify-between w-full gap-4 mb-8">
-          <ProductResultCount />
-          <div class="flex items-center gap-4">
-            <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings.showOrderByDropdown" />
-            <ShowFilterTrigger v-if="storeSettings.showFilters" class="lg:hidden" />
+        <!-- Loading състояние с skeleton -->
+        <div v-if="shouldShowLoading" class="space-y-8">
+          <!-- Header skeleton -->
+          <div class="flex items-center justify-between w-full gap-4 mb-8">
+            <div class="h-6 bg-gray-200 rounded-md w-32 animate-pulse"></div>
+            <div class="flex items-center gap-4">
+              <div class="h-8 bg-gray-200 rounded-md w-24 animate-pulse hidden md:block"></div>
+              <div class="h-8 bg-gray-200 rounded-md w-10 animate-pulse lg:hidden"></div>
+            </div>
+          </div>
+
+          <!-- Products grid skeleton -->
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+            <div v-for="i in 12" :key="i" class="space-y-3">
+              <div class="aspect-square bg-gray-200 rounded-lg animate-pulse"></div>
+              <div class="space-y-2">
+                <div class="h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div class="h-4 bg-gray-200 rounded w-2/3 animate-pulse"></div>
+                <div class="h-5 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination skeleton -->
+          <div class="flex justify-center mt-8">
+            <div class="flex gap-2">
+              <div v-for="i in 5" :key="i" class="h-10 w-10 bg-gray-200 rounded-md animate-pulse"></div>
+            </div>
           </div>
         </div>
 
-        <!-- Grid с продукти или съобщение за липса на продукти -->
-        <ProductGrid v-if="products?.length" />
-        <NoProductsFound v-else-if="!isLoading">
+        <!-- Заредено съдържание -->
+        <div v-else-if="products?.length" class="space-y-8">
+          <!-- Header с контроли -->
+          <div class="flex items-center justify-between w-full gap-4 mb-8">
+            <ProductResultCount />
+            <div class="flex items-center gap-4">
+              <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings.showOrderByDropdown" />
+              <ShowFilterTrigger v-if="storeSettings.showFilters" class="lg:hidden" />
+            </div>
+          </div>
+
+          <!-- Grid с продукти -->
+          <ProductGrid />
+
+          <!-- Пагинация -->
+          <PaginationServer />
+        </div>
+
+        <!-- No products found - показва се само когато сме сигурни че няма продукти -->
+        <NoProductsFound v-else-if="shouldShowNoProducts">
           <div class="text-center">
             <h2 class="text-xl font-bold mb-4">Не са намерени продукти в тази категория</h2>
             <div class="mt-4 text-sm text-gray-600">
@@ -195,9 +259,6 @@ useHead(() => ({
             </div>
           </div>
         </NoProductsFound>
-
-        <!-- Пагинация -->
-        <PaginationServer v-if="products?.length" />
       </main>
     </div>
   </div>

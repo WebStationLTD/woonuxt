@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { loadProductsPage, loadProductsWithFilters, products, isLoading, currentPage, pageInfo } = useProducts();
+const { loadProductsPage, loadProductsWithFilters, products, isLoading, currentPage, pageInfo, resetProductsState } = useProducts();
 const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
 const { isQueryEmpty } = useHelpers();
@@ -33,7 +33,11 @@ const loadProductsFromRoute = async () => {
   }
 
   isNavigating = true;
+
   try {
+    // Reset products състоянието за чист старт
+    resetProductsState();
+
     // Определяме страницата от URL
     let pageNumber = 1;
 
@@ -73,12 +77,15 @@ const loadProductsFromRoute = async () => {
 
       await loadProductsPage(pageNumber, undefined, graphqlOrderBy, filters);
     } else {
-      // Ако няма филтри, зареждаме конкретната страница
+      // Ако няма филтри, зареждаме първата страница
       await loadProductsPage(pageNumber);
     }
 
     // Маркираме че сме зареждали данни поне веднъж
     hasEverLoaded.value = true;
+
+    // Принудително обновяване на currentPage за правилна синхронизация с pagination
+    currentPage.value = pageNumber;
 
     // Принудително завършване на loading състоянието
     await nextTick();
@@ -90,16 +97,35 @@ const loadProductsFromRoute = async () => {
   }
 };
 
-// Зареждаме продуктите след hydration
-onMounted(() => {
-  loadProductsFromRoute();
+// Зареждаме продуктите веднага при SSR и след hydration
+onMounted(async () => {
+  // Изчакваме един tick за да се установи правилно route състоянието
+  await nextTick();
+  await loadProductsFromRoute();
 });
+
+// За SSR зареждане при извикване на страницата
+if (process.server) {
+  loadProductsFromRoute();
+}
 
 // Слушаме за промени в route-а
 watch(
   () => route.fullPath,
   (newPath, oldPath) => {
     if (newPath !== oldPath && process.client) {
+      loadProductsFromRoute();
+    }
+  },
+);
+
+// Допълнителен watcher за промени в path за да се улавя навигацията между страници
+watch(
+  () => route.path,
+  (newPath, oldPath) => {
+    if (newPath !== oldPath && process.client) {
+      // Reset loading състоянието при навигация за да се покаже skeleton
+      hasEverLoaded.value = false;
       loadProductsFromRoute();
     }
   },
@@ -118,7 +144,7 @@ const shouldShowNoProducts = computed(() => {
 
 <template>
   <div class="container mx-auto px-2 py-6">
-    <div class="flex flex-col lg:flex-row gap-8">
+    <div class="flex flex-col lg:flex-row gap-0 sm:gap-8">
       <!-- Sidebar с филтри - вляво -->
       <aside v-if="storeSettings.showFilters" class="lg:w-80 flex-shrink-0">
         <div class="sticky top-4">
