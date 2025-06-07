@@ -12,6 +12,11 @@ const { hideCategories } = defineProps({ hideCategories: { type: Boolean, defaul
 const globalProductAttributes = (runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES as WooNuxtFilter[]) || [];
 const taxonomies = globalProductAttributes.map((attr) => attr?.slug?.toUpperCase().replace('_', '')) as TaxonomyEnum[];
 
+// Function to close mobile filters
+const closeMobileFilters = () => {
+  removeBodyClass('show-filters');
+};
+
 // Зареждаме terms с fallback стратегия
 let { data } = await useAsyncGql('getAllTerms', { taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY] });
 let terms = data.value?.terms?.nodes || [];
@@ -55,8 +60,8 @@ const attributesWithTerms = globalProductAttributes.map((attr) => ({ ...attr, te
 </script>
 
 <template>
-  <aside id="filters">
-    <OrderByDropdown class="block w-full md:hidden" />
+  <!-- Desktop филтри - остават на мястото си -->
+  <aside id="filters" class="hidden md:block">
     <div class="relative z-30 grid mb-12 space-y-8 divide-y">
       <PriceFilter />
       <CategoryFilter v-if="!hideCategories" :terms="productCategoryTerms" />
@@ -70,7 +75,36 @@ const attributesWithTerms = globalProductAttributes.map((attr) => ({ ...attr, te
       <LazyResetFiltersButton v-if="isFiltersActive" />
     </div>
   </aside>
-  <div class="fixed inset-0 z-50 hidden bg-black opacity-25 filter-overlay" @click="removeBodyClass('show-filters')"></div>
+
+  <!-- Mobile филтри - teleport до body -->
+  <Teleport to="body">
+    <aside id="mobile-filters" class="block md:hidden">
+      <!-- Back/Close button -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-50">
+        <h2 class="text-lg font-semibold">Филтри</h2>
+        <button @click="closeMobileFilters" class="p-2 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Затвори филтрите">
+          <Icon name="ion:close" size="24" />
+        </button>
+      </div>
+
+      <div class="p-4">
+        <OrderByDropdown class="block w-full mb-4" />
+        <div class="relative z-30 grid mb-12 space-y-8 divide-y">
+          <PriceFilter />
+          <CategoryFilter v-if="!hideCategories" :terms="productCategoryTerms" />
+          <div v-for="attribute in attributesWithTerms" :key="attribute.slug">
+            <ColorFilter v-if="attribute.slug == 'pa_color' || attribute.slug == 'pa_colour'" :attribute />
+            <GlobalFilter v-else :attribute />
+          </div>
+          <OnSaleFilter />
+          <!-- ВРЕМЕННО СКРИТ - StarRatingFilter -->
+          <!-- <LazyStarRatingFilter v-if="storeSettings.showReviews" /> -->
+          <LazyResetFiltersButton v-if="isFiltersActive" />
+        </div>
+      </div>
+    </aside>
+    <div class="fixed inset-0 hidden bg-black bg-opacity-50 filter-overlay" style="z-index: 99998 !important" @click="closeMobileFilters"></div>
+  </Teleport>
 </template>
 
 <style lang="postcss">
@@ -102,18 +136,14 @@ const attributesWithTerms = globalProductAttributes.map((attr) => ({ ...attr, te
 }
 
 @media (max-width: 768px) {
-  #filters {
-    @apply bg-white h-full p-8 transform pl-2 transition-all ease-in-out bottom-0 left-4 -translate-x-[110vw] duration-300 overflow-auto fixed;
-
-    box-shadow:
-      -100px 0 0 white,
-      -200px 0 0 white,
-      -300px 0 0 white;
-    z-index: 60;
+  #mobile-filters {
+    @apply bg-white h-full fixed top-0 right-0 w-full max-w-sm transform transition-transform duration-300 ease-in-out translate-x-full overflow-y-auto;
+    z-index: 99999 !important;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
   }
 
-  .show-filters #filters {
-    @apply transform-none;
+  .show-filters #mobile-filters {
+    @apply translate-x-0;
   }
 }
 </style>
