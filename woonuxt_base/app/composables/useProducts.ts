@@ -67,7 +67,6 @@ export function useProducts() {
       // Timeout за предотвратяване на "закачане" на loading
       timeoutId = setTimeout(() => {
         if (isLoading.value) {
-          console.warn('⚠️ Loading products timeout - принудително завършване');
           isLoading.value = false;
         }
       }, 10000); // 10 секунди timeout
@@ -195,7 +194,6 @@ export function useProducts() {
         currentPage.value = page;
       }
     } catch (error) {
-      console.error('Грешка при зареждане на продукти:', error);
       setProducts([]);
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
@@ -206,7 +204,6 @@ export function useProducts() {
         setTimeout(() => {
           const loadingIndicator = document.querySelector('.nuxt-loading-indicator');
           if (loadingIndicator && getComputedStyle(loadingIndicator).opacity !== '0') {
-            console.log('🔧 Принудително завършване на loading indicator');
             (loadingIndicator as HTMLElement).style.width = '100%';
             setTimeout(() => {
               (loadingIndicator as HTMLElement).style.opacity = '0';
@@ -255,6 +252,25 @@ export function useProducts() {
     }
   }
 
+  /**
+   * Reset-ва състоянието на продуктите и пагинацията
+   */
+  function resetProductsState(): void {
+    products.value = [];
+    currentPage.value = 1;
+    pageInfo.hasNextPage = false;
+    pageInfo.endCursor = '';
+    allProducts = [];
+    currentPageProducts = [];
+    activeFilters = {
+      minPrice: undefined,
+      maxPrice: undefined,
+      onSale: undefined,
+      search: undefined,
+      categorySlug: undefined,
+    };
+  }
+
   const updateProductList = async (): Promise<void> => {
     // Тази функция е остаряла - използваме loadProductsWithFilters вместо нея
     return;
@@ -270,6 +286,7 @@ export function useProducts() {
     productsPerPage,
     activeFilters,
     setProducts,
+    resetProductsState,
     updateProductList,
     loadProductsPage,
     loadProductsWithFilters,

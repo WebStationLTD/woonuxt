@@ -4,7 +4,14 @@ const route = useRoute();
 
 // Cached computed properties за оптимизация
 const basePath = computed(() => {
-  if (route.name === 'product-category-slug' && route.params.slug) {
+  // Проверяваме за новите български пътища
+  if (route.name === 'produkt-kategoriya-slug' && route.params.categorySlug) {
+    return `/produkt-kategoriya/${route.params.categorySlug}`;
+  } else if (route.path.startsWith('/produkt-kategoriya/') && route.params.categorySlug) {
+    return `/produkt-kategoriya/${route.params.categorySlug}`;
+  }
+  // Резервна проверка за старите пътища (ако все още се използват)
+  else if (route.name === 'product-category-slug' && route.params.slug) {
     return `/product-category/${route.params.slug}`;
   } else if (route.path.startsWith('/product-category/') && route.params.slug) {
     return `/product-category/${route.params.slug}`;
@@ -72,7 +79,7 @@ const nextPageUrl = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-wrap justify-center mt-8 mb-16 col-span-full tabular-nums">
+  <div class="flex flex-wrap justify-center mt-8 mb-16 col-span-full tabular-nums 2">
     <!-- Pagination -->
     <nav v-if="pageInfo.hasNextPage || currentPage > 1" class="flex-wrap inline-flex self-end -space-x-px rounded-md shadow-sm isolate" aria-label="Pagination">
       <!-- PREV -->

@@ -1,181 +1,172 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed, nextTick } from 'vue';
 
-const { loadProductsPage, loadProductsWithFilters, products, isLoading } = useProducts();
+const { loadProductsPage, loadProductsWithFilters, products, isLoading, resetProductsState } = useProducts();
 const { buildGraphQLFilters } = useFiltering();
-const { isQueryEmpty } = useHelpers();
 const { storeSettings } = useAppConfig();
 const route = useRoute();
 
-// По-детайлно логване за дебъг (премахнато за производство)
-
-// Извличане на slug параметъра от различни източници
-let slugFromParams = '';
-
-// 1. Опитваме от route.params.slug
-if (route.params && route.params.slug) {
-  slugFromParams = typeof route.params.slug === 'string' ? route.params.slug : String(route.params.slug);
-}
-
-// 2. Ако липсва, опитваме да го извлечем от path
-if (!slugFromParams && route.path) {
-  const pathParts = route.path.split('/');
-  if (pathParts.length > 0) {
-    const lastPart = pathParts[pathParts.length - 1];
-    if (lastPart) slugFromParams = lastPart;
-  }
-}
-
-// 3. Ако все още липсва, извличаме от fullPath
-if (!slugFromParams && route.fullPath) {
-  const pathParts = route.fullPath.split('/');
-  if (pathParts.length > 0) {
-    const lastPart = pathParts[pathParts.length - 1];
-    if (lastPart) {
-      const withoutQuery = lastPart.split('?')[0];
-      if (withoutQuery) slugFromParams = withoutQuery;
-    }
-  }
-}
-
-// Проверяваме дали slug-а съдържа кирилица или други специални символи
-let decodedSlug = slugFromParams;
-try {
-  if (slugFromParams) {
-    decodedSlug = decodeURIComponent(slugFromParams);
-  }
-} catch (error) {
-  console.error('Грешка при декодиране на URL:', error);
-}
-
-const slug = ref(slugFromParams);
-
-// Дефинираме типа за категорията
 interface Category {
   slug?: string | null;
   name?: string | null;
-  databaseId?: number | null;
-  id?: string | null;
   description?: string | null;
-  count?: number | null;
-  uri?: string | null;
-  image?: any;
-  children?: { nodes: any[] } | null;
   seo?: {
     title?: string | null;
     metaDesc?: string | null;
-    metaKeywords?: string | null;
-    metaRobotsNoindex?: string | null;
-    metaRobotsNofollow?: string | null;
     opengraphTitle?: string | null;
     opengraphDescription?: string | null;
-    opengraphImage?: any;
-    twitterTitle?: string | null;
-    twitterDescription?: string | null;
-    twitterImage?: any;
     canonical?: string | null;
-    schema?: { raw?: string | null } | null;
   } | null;
 }
 
+const currentSlug = ref('');
+const currentPageNumber = ref(1);
 const matchingCategory = ref<Category | null>(null);
-const categoryTitle = ref('');
-const categoryDescription = ref('');
 
 // Зареждаме категориите
 const { data: categoriesData } = await useAsyncGql('getProductCategories');
 const allCategories = computed(() => categoriesData.value?.productCategories?.nodes || []);
 
-// Опитваме се първо да намерим категорията
-if (slug.value) {
-  matchingCategory.value = allCategories.value.find((cat: Category) => cat.slug && (cat.slug === slug.value || cat.slug === decodedSlug)) || null;
-}
+// Извличаме slug и страница от route
+const extractRouteParams = () => {
+  let slug = '';
+  let pageNumber = 1;
 
-// Зареждаме продуктите с новата серверна пагинация
-try {
+  if (route.name === 'produkt-kategoriya-page-pager') {
+    // За пагинационния route
+    if (route.params.categorySlug) {
+      slug = String(route.params.categorySlug);
+    }
+    if (route.params.pageNumber) {
+      const parsed = parseInt(String(route.params.pageNumber));
+      if (!isNaN(parsed) && parsed > 0) {
+        pageNumber = parsed;
+      }
+    }
+  } else if (route.name === 'produkt-kategoriya-slug') {
+    // За обикновения категориен route
+    if (route.params.categorySlug) {
+      slug = String(route.params.categorySlug);
+    }
+  } else if (route.params?.slug) {
+    // Резервна проверка за стари route-ове
+    slug = String(route.params.slug);
+  }
+
+  return { slug, pageNumber };
+};
+
+// Основна функция за зареждане
+const loadCategoryProducts = async () => {
+  const { slug, pageNumber } = extractRouteParams();
+
+  // Ако няма slug, reset-ваме и излизаме
+  if (!slug) {
+    resetProductsState();
+    currentSlug.value = '';
+    return;
+  }
+
+  // Винаги reset-ваме за чисто състояние при зареждане
+  resetProductsState();
+
+  currentSlug.value = slug;
+  currentPageNumber.value = pageNumber;
+
+  // Изчакваме категориите да се заредят
+  if (!categoriesData.value) {
+    await nextTick();
+    if (!categoriesData.value) return;
+  }
+
+  // Намираме категорията
+  if (allCategories.value.length > 0) {
+    matchingCategory.value = allCategories.value.find((cat: Category) => cat.slug === slug) || null;
+  }
+
   // Проверяваме дали има филтри или сортиране в URL
   const hasFilters = route.query.filter;
   const hasOrderBy = route.query.orderby;
-  let filters;
-  let graphqlOrderBy = 'DATE';
 
-  if (hasFilters) {
-    filters = buildGraphQLFilters();
-  }
+  if (hasFilters || hasOrderBy) {
+    // Ако има филтри или сортиране, зареждаме със серверните филтри
+    let filters: any = {};
 
-  if (hasOrderBy) {
-    if (route.query.orderby === 'price') graphqlOrderBy = 'PRICE';
-    else if (route.query.orderby === 'rating') graphqlOrderBy = 'RATING';
-    else if (route.query.orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
-    else if (route.query.orderby === 'date') graphqlOrderBy = 'DATE';
-    else if (route.query.orderby === 'discount') graphqlOrderBy = 'DATE';
-  }
-
-  if (matchingCategory.value && matchingCategory.value.slug) {
-    // Зареждаме продукти за конкретната категория
-    if (hasFilters || hasOrderBy) {
-      await loadProductsWithFilters([matchingCategory.value.slug], graphqlOrderBy, filters);
-    } else {
-      await loadProductsPage(1, [matchingCategory.value.slug]);
+    // Директно строим филтрите от route query вместо да използваме buildGraphQLFilters
+    if (hasFilters) {
+      const filterParam = route.query.filter;
+      if (filterParam === 'onSale') {
+        filters.onSale = true;
+      }
+      // Може да добавим други филтри тук ако е нужно
     }
-  } else if (slug.value) {
-    // Опитваме директно със slug-а
-    if (hasFilters || hasOrderBy) {
-      await loadProductsWithFilters([slug.value], graphqlOrderBy, filters);
-    } else {
-      await loadProductsPage(1, [slug.value]);
+
+    // Конвертираме orderby в GraphQL формат
+    let graphqlOrderBy = 'DATE';
+    if (hasOrderBy) {
+      const orderBy = String(route.query.orderby);
+      if (orderBy === 'price') graphqlOrderBy = 'PRICE';
+      else if (orderBy === 'rating') graphqlOrderBy = 'RATING';
+      else if (orderBy === 'alphabetically') graphqlOrderBy = 'NAME_IN';
+      else if (orderBy === 'date') graphqlOrderBy = 'DATE';
+      else if (orderBy === 'discount') graphqlOrderBy = 'DATE';
     }
+
+    await loadProductsPage(pageNumber, [slug], graphqlOrderBy, filters);
   } else {
-    // Зареждаме всички продукти
-    if (hasFilters || hasOrderBy) {
-      await loadProductsWithFilters(undefined, graphqlOrderBy, filters);
-    } else {
-      await loadProductsPage(1);
-    }
+    // Ако няма филтри, зареждаме конкретната страница
+    await loadProductsPage(pageNumber, [slug]);
   }
-} catch (error) {
-  console.error('Грешка при зареждане на продукти:', error);
-}
+};
 
-// Използване на SEO данни от Yoast ако са налични
-categoryTitle.value = matchingCategory.value?.seo?.title || matchingCategory.value?.name || decodedSlug || 'All Products';
-categoryDescription.value =
-  matchingCategory.value?.seo?.metaDesc ||
-  matchingCategory.value?.description ||
-  `Products in category ${matchingCategory.value?.name || decodedSlug || 'All Products'}`;
-
-useHead({
-  title: categoryTitle.value,
-  meta: [
-    { name: 'description', content: categoryDescription.value },
-    { property: 'og:title', content: matchingCategory.value?.seo?.opengraphTitle || categoryTitle.value },
-    { property: 'og:description', content: matchingCategory.value?.seo?.opengraphDescription || categoryDescription.value },
-  ],
-  link: [{ rel: 'canonical', href: matchingCategory.value?.seo?.canonical || '' }],
+// SEO данни
+const seoTitle = computed(() => {
+  if (matchingCategory.value) {
+    return matchingCategory.value.seo?.title || matchingCategory.value.name || currentSlug.value;
+  }
+  return currentSlug.value || 'Категории';
 });
 
-// Добавяне на структурирани данни (schema.org) ако са налични в Yoast
-if (matchingCategory.value?.seo?.schema?.raw) {
-  useHead({
-    script: [
-      {
-        type: 'application/ld+json',
-        innerHTML: matchingCategory.value.seo.schema.raw,
-      },
-    ],
-  });
-}
+const seoDescription = computed(() => {
+  if (matchingCategory.value) {
+    return matchingCategory.value.seo?.metaDesc || matchingCategory.value.description || `Продукти в категория ${matchingCategory.value.name}`;
+  }
+  return 'Продукти по категории';
+});
+
+// Зареждаме при mount
+onMounted(async () => {
+  await nextTick();
+  loadCategoryProducts();
+});
+
+// Следене на промени в route
+watch(
+  () => route.fullPath,
+  async (newPath, oldPath) => {
+    if (newPath !== oldPath && process.client) {
+      await nextTick();
+      loadCategoryProducts();
+    }
+  },
+);
+
+// SEO head
+useHead(() => ({
+  title: seoTitle.value,
+  meta: [
+    { name: 'description', content: seoDescription.value },
+    { property: 'og:title', content: matchingCategory.value?.seo?.opengraphTitle || seoTitle.value },
+    { property: 'og:description', content: matchingCategory.value?.seo?.opengraphDescription || seoDescription.value },
+  ],
+  link: [{ rel: 'canonical', href: matchingCategory.value?.seo?.canonical || '' }],
+}));
 </script>
 
 <template>
   <div class="container mx-auto px-2 py-6">
-    <!-- Loading индикатор -->
-    <div v-if="isLoading" class="w-full flex justify-center items-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-    </div>
-
-    <!-- Съдържание когато има продукти -->
-    <div v-else-if="products && products.length" class="flex flex-col lg:flex-row gap-8">
+    <!-- Основен layout - винаги се показва -->
+    <div :key="currentSlug || 'no-category'" class="flex flex-col lg:flex-row gap-8">
       <!-- Sidebar с филтри - вляво -->
       <aside v-if="storeSettings.showFilters" class="lg:w-80 flex-shrink-0">
         <div class="sticky top-4">
@@ -184,9 +175,9 @@ if (matchingCategory.value?.seo?.schema?.raw) {
       </aside>
 
       <!-- Main съдържание - отдясно -->
-      <main class="flex-1 min-w-0">
-        <!-- Header с контроли -->
-        <div class="flex items-center justify-between w-full gap-4 mb-8">
+      <main v-if="currentSlug" class="flex-1 min-w-0">
+        <!-- Header с контроли - показва се само ако има продукти -->
+        <div v-if="products?.length" class="flex items-center justify-between w-full gap-4 mb-8">
           <ProductResultCount />
           <div class="flex items-center gap-4">
             <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings.showOrderByDropdown" />
@@ -194,23 +185,20 @@ if (matchingCategory.value?.seo?.schema?.raw) {
           </div>
         </div>
 
-        <!-- Grid с продукти -->
-        <ProductGrid />
+        <!-- Grid с продукти или съобщение за липса на продукти -->
+        <ProductGrid v-if="products?.length" />
+        <NoProductsFound v-else-if="!isLoading">
+          <div class="text-center">
+            <h2 class="text-xl font-bold mb-4">Не са намерени продукти в тази категория</h2>
+            <div class="mt-4 text-sm text-gray-600">
+              <p>Опитайте да промените филтрите или изберете друга категория.</p>
+            </div>
+          </div>
+        </NoProductsFound>
+
+        <!-- Пагинация -->
+        <PaginationServer v-if="products?.length" />
       </main>
     </div>
-
-    <!-- Няма продукти -->
-    <NoProductsFound v-else>
-      <div class="text-center">
-        <h2 class="text-xl font-bold mb-4">{{ slug ? 'No products found in this category.' : 'All Products' }}</h2>
-        <div v-if="slug" class="mt-4 text-sm text-gray-600 border p-4 rounded text-left inline-block">
-          <p><strong>URL slug:</strong> {{ slug || 'Not provided' }}</p>
-          <p><strong>Decoded slug:</strong> {{ decodedSlug || 'Not decoded' }}</p>
-        </div>
-        <div v-else class="mt-4 text-sm text-gray-600">
-          <p>Please select a category from the menu.</p>
-        </div>
-      </div>
-    </NoProductsFound>
   </div>
 </template>
