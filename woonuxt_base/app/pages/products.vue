@@ -8,6 +8,9 @@ let shopTitle = 'Products';
 let shopDescription = 'Discover our products';
 let seoDataSet = false;
 
+// Проследяваме дали някога сме зареждали данни
+const hasEverLoaded = ref(false);
+
 // Резервни SEO данни веднага
 useHead({
   title: shopTitle,
@@ -39,9 +42,12 @@ const loadProductsFromRoute = async () => {
       const pathParts = route.path.split('/');
       const pageIndex = pathParts.indexOf('page');
       if (pageIndex !== -1 && pathParts[pageIndex + 1]) {
-        const parsedPage = parseInt(pathParts[pageIndex + 1]);
-        if (!isNaN(parsedPage) && parsedPage > 0) {
-          pageNumber = parsedPage;
+        const pageParam = pathParts[pageIndex + 1];
+        if (pageParam) {
+          const parsedPage = parseInt(pageParam);
+          if (!isNaN(parsedPage) && parsedPage > 0) {
+            pageNumber = parsedPage;
+          }
         }
       }
     }
@@ -71,10 +77,14 @@ const loadProductsFromRoute = async () => {
       await loadProductsPage(pageNumber);
     }
 
+    // Маркираме че сме зареждали данни поне веднъж
+    hasEverLoaded.value = true;
+
     // Принудително завършване на loading състоянието
     await nextTick();
   } catch (error) {
     console.error('Грешка при зареждане на продукти:', error);
+    hasEverLoaded.value = true; // Маркираме като опитано дори при грешка
   } finally {
     isNavigating = false;
   }
@@ -94,17 +104,20 @@ watch(
     }
   },
 );
+
+// Computed за показване на loading състояние
+const shouldShowLoading = computed(() => {
+  return isLoading.value || !hasEverLoaded.value;
+});
+
+// Computed за показване на NoProductsFound
+const shouldShowNoProducts = computed(() => {
+  return hasEverLoaded.value && !isLoading.value && (!products.value || products.value.length === 0);
+});
 </script>
 
 <template>
   <div class="container mx-auto px-2 py-6">
-    <!-- Loading индикатор -->
-    <!-- <div v-if="isLoading" class="w-full flex justify-center items-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-    </div> -->
-
-    <!-- Основен layout - винаги се показва когато не зарежда -->
-    <!-- <div v-else class="flex flex-col lg:flex-row gap-8"> -->
     <div class="flex flex-col lg:flex-row gap-8">
       <!-- Sidebar с филтри - вляво -->
       <aside v-if="storeSettings.showFilters" class="lg:w-80 flex-shrink-0">
@@ -115,23 +128,57 @@ watch(
 
       <!-- Main съдържание - отдясно -->
       <main class="flex-1 min-w-0">
-        <!-- Header с контроли - показва се само ако има продукти -->
-        <div v-if="products?.length" class="flex items-center justify-between w-full gap-4 mb-8">
-          <ProductResultCount />
-          <div class="flex items-center gap-4">
-            <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings.showOrderByDropdown" />
-            <ShowFilterTrigger v-if="storeSettings.showFilters" class="lg:hidden" />
+        <!-- Loading състояние с skeleton -->
+        <div v-if="shouldShowLoading" class="space-y-8">
+          <!-- Header skeleton -->
+          <div class="flex items-center justify-between w-full gap-4 mb-8">
+            <div class="h-6 bg-gray-200 rounded-md w-32 animate-pulse"></div>
+            <div class="flex items-center gap-4">
+              <div class="h-8 bg-gray-200 rounded-md w-24 animate-pulse hidden md:block"></div>
+              <div class="h-8 bg-gray-200 rounded-md w-10 animate-pulse lg:hidden"></div>
+            </div>
+          </div>
+
+          <!-- Products grid skeleton -->
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+            <div v-for="i in 12" :key="i" class="space-y-3">
+              <div class="aspect-square bg-gray-200 rounded-lg animate-pulse"></div>
+              <div class="space-y-2">
+                <div class="h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div class="h-4 bg-gray-200 rounded w-2/3 animate-pulse"></div>
+                <div class="h-5 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination skeleton -->
+          <div class="flex justify-center mt-8">
+            <div class="flex gap-2">
+              <div v-for="i in 5" :key="i" class="h-10 w-10 bg-gray-200 rounded-md animate-pulse"></div>
+            </div>
           </div>
         </div>
 
-        <!-- Grid с продукти или съобщение за липса на продукти -->
-        <ProductGrid v-if="products?.length" />
-        <NoProductsFound v-else> Could not fetch products from your store. Please check your configuration. </NoProductsFound>
+        <!-- Заредено съдържание -->
+        <div v-else-if="products?.length" class="space-y-8">
+          <!-- Header с контроли -->
+          <div class="flex items-center justify-between w-full gap-4 mb-8">
+            <ProductResultCount />
+            <div class="flex items-center gap-4">
+              <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings.showOrderByDropdown" />
+              <ShowFilterTrigger v-if="storeSettings.showFilters" class="lg:hidden" />
+            </div>
+          </div>
 
-        <!-- Debug информация премахната за production -->
+          <!-- Grid с продукти -->
+          <ProductGrid />
 
-        <!-- Пагинация -->
-        <PaginationServer v-if="products?.length" />
+          <!-- Пагинация -->
+          <PaginationServer />
+        </div>
+
+        <!-- No products found - показва се само когато сме сигурни че няма продукти -->
+        <NoProductsFound v-else-if="shouldShowNoProducts"> Could not fetch products from your store. Please check your configuration. </NoProductsFound>
       </main>
     </div>
   </div>
