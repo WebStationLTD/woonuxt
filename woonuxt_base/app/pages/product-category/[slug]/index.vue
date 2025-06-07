@@ -100,6 +100,9 @@ watch(
             <p>Няма продукти в тази категория.</p>
           </div>
         </NoProductsFound>
+
+        <!-- Пагинация -->
+        <PaginationServer v-if="products?.length" />
       </main>
     </div>
   </div>

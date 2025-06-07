@@ -16,7 +16,9 @@ const productsToShow = computed(() => products.value || []);
           <ProductCard :node="node" :index="i" />
         </div>
       </TransitionGroup>
-      <PaginationServer />
+      <!-- ЗАКОМЕНТИРАНА ПАГИНАЦИЯ - Премахната заради дублиране с тази от страниците -->
+      <!-- Може лесно да се върне при нужда -->
+      <!-- <PaginationServer /> -->
     </section>
     <NoProductsFound v-else />
   </Transition>

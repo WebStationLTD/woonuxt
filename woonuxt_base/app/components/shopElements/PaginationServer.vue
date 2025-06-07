@@ -79,7 +79,7 @@ const nextPageUrl = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-wrap justify-center mt-8 mb-16 col-span-full tabular-nums 2">
+  <div class="flex flex-wrap justify-center mt-8 mb-16 col-span-full tabular-nums">
     <!-- Pagination -->
     <nav v-if="pageInfo.hasNextPage || currentPage > 1" class="flex-wrap inline-flex self-end -space-x-px rounded-md shadow-sm isolate" aria-label="Pagination">
       <!-- PREV -->
