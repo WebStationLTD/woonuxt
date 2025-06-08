@@ -19,7 +19,7 @@ const resultMessage = computed(() => {
 
   if (pageInfo.hasNextPage) {
     // Има още страници - показваме "Страница X"
-    return `${t('messages.shop.productResultCount.showing')} ${startProduct.value} ${t('messages.shop.productResultCount.to')} ${endProduct.value} (${t('messages.general.product')} ${currentPage.value})`;
+    return `${t('messages.shop.productResultCount.showing')} ${startProduct.value} ${t('messages.shop.productResultCount.to')} ${endProduct.value} (Страница ${currentPage.value})`;
   } else {
     // Последна страница - показваме общия брой
     return `${t('messages.shop.productResultCount.showing')} ${startProduct.value} ${t('messages.shop.productResultCount.to')} ${endProduct.value}`;

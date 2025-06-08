@@ -1,22 +1,46 @@
 <script setup lang="ts">
 const { getFilter, setFilter, isFiltersActive } = useFiltering();
+const route = useRoute();
 
 const { attribute } = defineProps({
   attribute: { type: Object, required: true },
 });
 
-const selectedTerms = ref(getFilter(attribute.slug) || []);
+// Reactive computed за selectedTerms базиран на URL състоянието
+const selectedTerms = computed({
+  get() {
+    return getFilter(attribute.slug) || [];
+  },
+  set(newValue) {
+    setFilter(attribute.slug, newValue);
+  },
+});
+
 const filterTitle = ref(attribute.label || attribute.slug);
 const isOpen = ref(attribute.openByDefault);
 
-watch(isFiltersActive, () => {
-  // uncheck all checkboxes when filters are cleared
-  if (!isFiltersActive.value) selectedTerms.value = [];
+// Watcher за URL промени за да синхронизираме checkboxes
+watch(
+  () => route.query.filter,
+  () => {
+    // Форсираме reactivity update при промяна на URL филтри
+    nextTick();
+  },
+  { immediate: true },
+);
+
+// Watcher за reset на филтри
+watch(isFiltersActive, (newValue) => {
+  if (!newValue) {
+    // При reset на филтри, setFilter ще се извика автоматично през computed setter
+    selectedTerms.value = [];
+  }
 });
 
 // Update the URL when the checkbox is changed
 const checkboxChanged = () => {
-  setFilter(attribute.slug, selectedTerms.value);
+  // selectedTerms.value промяната автоматично ще извика computed setter
+  // който ще извика setFilter(attribute.slug, newValue)
 };
 </script>
 
@@ -27,8 +51,8 @@ const checkboxChanged = () => {
   </div>
   <div v-show="isOpen" class="mt-3 mr-6 max-h-[240px] grid gap-1.5 swatches overflow-auto custom-scrollbar">
     <div v-for="color in attribute.terms" :key="color.slug" :style="{ '--color': color.slug }" :title="color.name">
-      <input :id="color.slug" v-model="selectedTerms" class="hidden" type="checkbox" :value="color.slug" @change="checkboxChanged" />
-      <label :for="color.slug" class="cursor-pointer m-0"></label>
+      <input :id="`${attribute.slug}-${color.slug}`" v-model="selectedTerms" class="hidden" type="checkbox" :value="color.slug" @change="checkboxChanged" />
+      <label :for="`${attribute.slug}-${color.slug}`" class="cursor-pointer m-0"></label>
     </div>
   </div>
 </template>

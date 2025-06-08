@@ -10,10 +10,21 @@ export function useFiltering() {
 
   const filterQuery = useState<string>('filter', () => '');
 
-  // Инициализираме filterQuery само на клиента
+  // Инициализираме и синхронизираме filterQuery
   if (process.client) {
     const route = useRoute();
-    filterQuery.value = route.query.filter as string;
+
+    // Първоначална инициализация
+    filterQuery.value = (route.query.filter as string) || '';
+
+    // Watcher за синхронизация на filterQuery с route промени
+    watch(
+      () => route.query.filter,
+      (newFilter) => {
+        filterQuery.value = (newFilter as string) || '';
+      },
+      { immediate: true },
+    );
   }
 
   /**

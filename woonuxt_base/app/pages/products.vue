@@ -25,6 +25,45 @@ const route = useRoute();
 // Race condition protection
 let isNavigating = false;
 
+// Функция за локално парсене на филтри от query string
+const parseFiltersFromQuery = (filterQuery: string) => {
+  const filters: any = {};
+
+  if (!filterQuery) return filters;
+
+  // Функция за извличане на филтър стойности
+  const getFilterValues = (filterName: string): string[] => {
+    return filterQuery?.split(`${filterName}[`)[1]?.split(']')[0]?.split(',') || [];
+  };
+
+  // Ценови филтър
+  const priceRange = getFilterValues('price');
+  if (priceRange.length === 2 && priceRange[0] && priceRange[1]) {
+    filters.minPrice = parseFloat(priceRange[0]);
+    filters.maxPrice = parseFloat(priceRange[1]);
+  }
+
+  // OnSale филтър
+  const onSale = getFilterValues('sale');
+  if (onSale.length > 0) {
+    filters.onSale = true;
+  }
+
+  // Search филтър
+  const searchTerm = getFilterValues('search');
+  if (searchTerm.length > 0) {
+    filters.search = searchTerm[0];
+  }
+
+  // Category филтър
+  const categoryFilter = getFilterValues('category');
+  if (categoryFilter.length > 0) {
+    filters.categorySlug = categoryFilter;
+  }
+
+  return filters;
+};
+
 // Функция за зареждане на продукти според URL
 const loadProductsFromRoute = async () => {
   if (isNavigating) {
@@ -62,7 +101,9 @@ const loadProductsFromRoute = async () => {
 
     if (hasFilters || hasOrderBy) {
       // Ако има филтри или сортиране, зареждаме със серверните филтри
-      const filters = buildGraphQLFilters();
+
+      // Парсваме филтрите директно от route.query.filter за да избегнем timing проблеми
+      const filters = hasFilters ? parseFiltersFromQuery(route.query.filter as string) : {};
 
       // Конвертираме orderby в GraphQL формат
       let graphqlOrderBy = 'DATE';
@@ -125,6 +166,18 @@ watch(
   (newPath, oldPath) => {
     if (newPath !== oldPath && process.client) {
       // Reset loading състоянието при навигация за да се покаже skeleton
+      hasEverLoaded.value = false;
+      loadProductsFromRoute();
+    }
+  },
+);
+
+// Watcher за промени в query параметрите (филтри и сортиране)
+watch(
+  () => route.query,
+  (newQuery, oldQuery) => {
+    if (process.client && JSON.stringify(newQuery) !== JSON.stringify(oldQuery)) {
+      // Reset loading състоянието при промяна на филтри
       hasEverLoaded.value = false;
       loadProductsFromRoute();
     }
