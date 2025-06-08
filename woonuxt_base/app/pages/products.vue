@@ -196,7 +196,7 @@ const shouldShowNoProducts = computed(() => {
 </script>
 
 <template>
-  <div class="container mx-auto px-2 py-6">
+  <div class="container mx-auto px-2 py-4 sm:py-6">
     <div class="flex flex-col lg:flex-row gap-0 sm:gap-8">
       <!-- Sidebar с филтри - вляво -->
       <aside v-if="storeSettings.showFilters" class="lg:w-80 flex-shrink-0">
@@ -210,7 +210,7 @@ const shouldShowNoProducts = computed(() => {
         <!-- Loading състояние с skeleton -->
         <div v-if="shouldShowLoading" class="space-y-8">
           <!-- Header skeleton -->
-          <div class="flex items-center justify-between w-full gap-4 mb-8">
+          <div class="flex items-center justify-between w-full gap-4 mb-8 c1">
             <div class="h-6 bg-gray-200 rounded-md w-32 animate-pulse"></div>
             <div class="flex items-center gap-4">
               <div class="h-8 bg-gray-200 rounded-md w-24 animate-pulse hidden md:block"></div>
@@ -241,11 +241,14 @@ const shouldShowNoProducts = computed(() => {
         <!-- Заредено съдържание -->
         <div v-else-if="products?.length" class="space-y-8">
           <!-- Header с контроли -->
-          <div class="flex items-center justify-between w-full gap-4 mb-8">
+          <div class="flex items-center justify-between w-full gap-4 mb-2 sm:mb-8">
             <ProductResultCount />
             <div class="flex items-center gap-4">
               <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings.showOrderByDropdown" />
-              <ShowFilterTrigger v-if="storeSettings.showFilters" class="lg:hidden" />
+              <div v-if="storeSettings.showFilters" class="flex items-center gap-2 lg:hidden">
+                <span class="text-sm font-light">Филтри</span>
+                <ShowFilterTrigger />
+              </div>
             </div>
           </div>
 

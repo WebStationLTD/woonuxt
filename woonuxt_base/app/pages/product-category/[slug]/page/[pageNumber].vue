@@ -96,7 +96,7 @@ watch(
       <!-- Main съдържание - отдясно -->
       <main class="flex-1 min-w-0">
         <!-- Header с контроли - показва се само ако има продукти -->
-        <div v-if="products?.length" class="flex items-center justify-between w-full gap-4 mb-8">
+        <div v-if="products?.length" class="flex items-center justify-between w-full gap-4 mb-8 c5">
           <ProductResultCount />
           <div class="flex items-center gap-4">
             <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings?.showOrderByDropdown" />

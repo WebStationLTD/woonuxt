@@ -7,7 +7,7 @@ const productsToShow = computed(() => products.value || []);
 
 <template>
   <Transition name="fade" mode="out-in">
-    <section v-if="!!products?.length" class="relative w-full">
+    <section v-if="!!products?.length" class="relative w-full !mt-0">
       <TransitionGroup name="shrink" tag="div" mode="in-out" class="product-grid">
         <div
           v-for="(node, i) in productsToShow"

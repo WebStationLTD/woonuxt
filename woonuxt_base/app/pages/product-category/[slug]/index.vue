@@ -97,7 +97,7 @@ const shouldShowNoProducts = computed(() => {
         <!-- Loading състояние с skeleton -->
         <div v-if="shouldShowLoading" class="space-y-8">
           <!-- Header skeleton -->
-          <div class="flex items-center justify-between w-full gap-4 mb-8">
+          <div class="flex items-center justify-between w-full gap-4 mb-8 c3">
             <div class="h-6 bg-gray-200 rounded-md w-32 animate-pulse"></div>
             <div class="flex items-center gap-4">
               <div class="h-8 bg-gray-200 rounded-md w-24 animate-pulse hidden md:block"></div>
@@ -128,11 +128,14 @@ const shouldShowNoProducts = computed(() => {
         <!-- Заредено съдържание -->
         <div v-else-if="products?.length" class="space-y-8">
           <!-- Header с контроли -->
-          <div class="flex items-center justify-between w-full gap-4 mb-8">
+          <div class="flex items-center justify-between w-full gap-4 mb-8 c4">
             <ProductResultCount />
             <div class="flex items-center gap-4">
               <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings?.showOrderByDropdown" />
-              <ShowFilterTrigger v-if="storeSettings?.showFilters" class="lg:hidden" />
+              <div v-if="storeSettings?.showFilters" class="flex items-center gap-2 lg:hidden">
+                <span class="text-sm font-light">Филтри</span>
+                <ShowFilterTrigger />
+              </div>
             </div>
           </div>
 

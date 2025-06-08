@@ -139,6 +139,7 @@ watch(cart, () => {
         <!-- Селект за вариации (само за вариационни продукти) -->
         <div v-if="hasVariations" class="flex w-full mt-2 sm:mt-0 sm:justify-end sm:w-[100px]">
           <select
+            :id="`variations-${node.databaseId}`"
             class="text-xs py-1 px-2 border border-gray-300 rounded focus:outline-none focus:border-gray-400 bg-white w-full sm:max-w-[160px]"
             @change="(e) => selectVariation(Number((e.target as HTMLSelectElement).value))">
             <option value="" disabled selected>Вариации</option>
@@ -178,7 +179,12 @@ watch(cart, () => {
               :disabled="quantity <= 1">
               <Icon name="ion:remove" size="14" />
             </button>
-            <input v-model.number="quantity" type="number" min="1" class="w-8 h-full text-xs text-center bg-transparent focus:outline-none" />
+            <input
+              :id="`quantity-${node.databaseId}`"
+              v-model.number="quantity"
+              type="number"
+              min="1"
+              class="w-8 h-full text-xs text-center bg-transparent focus:outline-none" />
             <button
               @click.prevent="incrementQuantity"
               type="button"
