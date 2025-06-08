@@ -22,9 +22,9 @@ const productColumns = [
     <div class="pt-16 pb-20 sm:pt-24 sm:pb-40 lg:pt-40 lg:pb-48">
       <div class="relative mx-auto max-w-7xl px-4 sm:static sm:px-6 lg:px-8">
         <div class="sm:max-w-lg">
-          <h1 class="text-4xl font-bold tracking-tight text-white sm:text-6xl">Lorem ipsum</h1>
+          <h1 class="text-4xl font-bold tracking-tight text-white sm:text-6xl">Фитнес уреди и аксесоари</h1>
           <p class="mt-4 text-xl text-white">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Лидерфитнес е водещ вносител и представител на голямо разнообразие от бойна екипировка, фитнес уреди и аксесоари.
           </p>
         </div>
         <div>
@@ -73,9 +73,9 @@ const productColumns = [
             </div>
 
             <NuxtLink
-              to="/products"
+              to="/categories"
               class="inline-block relative z-10 cursor-pointer rounded-md border border-transparent bg-[#129160] px-8 py-3 text-center font-medium text-white hover:text-black hover:bg-[#ebedeb] transition-colors duration-300">
-              Разгледайте колекцията
+              Разгледайте колекциите
             </NuxtLink>
           </div>
         </div>

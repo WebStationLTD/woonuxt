@@ -41,13 +41,15 @@ const buildPageUrl = (pageNumber: number) => {
 // Изчисляваме диапазона от страници за показване
 const visiblePages = computed(() => {
   const pages = [];
-  const maxVisiblePages = 5;
   const currentPageValue = currentPage.value;
 
-  // За да прецизно определим колко страници имаме, използваме логика
-  // Тъй като не знаем общия брой страници, показваме до 5 страници около текущата
+  // Изчисляваме максималната страница базирано на pageInfo
+  // Ако има следваща страница, показваме максимум +1 (за да сме сигурни че съществува)
+  const maxPage = pageInfo.hasNextPage ? currentPageValue + 1 : currentPageValue;
+
+  // Определяме диапазона (5 страници общо)
   const startPage = Math.max(1, currentPageValue - 2);
-  const endPage = currentPageValue + 2;
+  const endPage = Math.min(maxPage, currentPageValue + 2);
 
   for (let i = startPage; i <= endPage; i++) {
     pages.push(i);
@@ -76,17 +78,37 @@ const nextPageUrl = computed(() => {
   if (!pageInfo.hasNextPage) return null;
   return buildPageUrl(currentPage.value + 1);
 });
+
+// Първа страница (показваме само ако не е вече видима в numbers)
+const firstPageUrl = computed(() => {
+  const startPage = Math.max(1, currentPage.value - 2);
+  if (startPage > 1) {
+    return buildPageUrl(1);
+  }
+  return null;
+});
 </script>
 
 <template>
   <div class="flex flex-wrap justify-center mt-8 mb-16 col-span-full tabular-nums">
     <!-- Pagination -->
     <nav v-if="pageInfo.hasNextPage || currentPage > 1" class="flex-wrap inline-flex self-end -space-x-px rounded-md shadow-sm isolate" aria-label="Pagination">
+      <!-- FIRST PAGE -->
+      <NuxtLink v-if="firstPageUrl" :to="firstPageUrl" class="first-page" :class="{ 'opacity-50': isLoading }" aria-label="First page" title="Първа страница">
+        <Icon name="ion:chevron-back-outline" size="16" class="w-4 h-4" />
+        <Icon name="ion:chevron-back-outline" size="16" class="w-4 h-4 -ml-1" />
+      </NuxtLink>
+
       <!-- PREV -->
-      <NuxtLink v-if="previousPageUrl" :to="previousPageUrl" class="prev" :class="{ 'opacity-50': isLoading }" aria-label="Previous">
+      <NuxtLink
+        v-if="previousPageUrl"
+        :to="previousPageUrl"
+        class="prev"
+        :class="{ 'opacity-50': isLoading, 'rounded-l-md': !firstPageUrl }"
+        aria-label="Previous">
         <Icon name="ion:chevron-back-outline" size="20" class="w-5 h-5" />
       </NuxtLink>
-      <span v-else class="prev cursor-not-allowed opacity-50" aria-label="Previous">
+      <span v-else class="prev cursor-not-allowed opacity-50" :class="{ 'rounded-l-md': !firstPageUrl }" aria-label="Previous">
         <Icon name="ion:chevron-back-outline" size="20" class="w-5 h-5" />
       </span>
 
@@ -118,14 +140,19 @@ const nextPageUrl = computed(() => {
 </template>
 
 <style lang="postcss" scoped>
+.first-page,
 .prev,
 .next,
 .page-number {
   @apply bg-white border font-medium border-gray-300 text-sm p-2 text-gray-500 relative inline-flex items-center hover:bg-gray-50 focus:z-10 transition-colors no-underline;
 }
 
-.prev {
+.first-page {
   @apply rounded-l-md;
+}
+
+.prev {
+  /* rounded-l-md само ако няма first-page */
 }
 
 .next {
@@ -140,12 +167,14 @@ const nextPageUrl = computed(() => {
   @apply bg-primary border-primary border bg-opacity-10 text-primary z-10;
 }
 
+.first-page:hover,
 .prev:hover,
 .next:hover,
 .page-number:hover {
   @apply bg-gray-50 text-gray-700;
 }
 
+.first-page.opacity-50:hover,
 .prev.opacity-50:hover,
 .next.opacity-50:hover {
   @apply bg-white;
