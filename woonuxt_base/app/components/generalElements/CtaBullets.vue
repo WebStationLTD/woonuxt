@@ -1,11 +1,10 @@
 <script setup>
 const benefits = [
-  'Competitive salaries',
-  'Flexible work hours',
-  '30 days of paid vacation',
-  'Annual team retreats',
-  'Benefits for you and your family',
-  'A great work environment',
+  'Монтаж на бягащите пътеки срещу заплащане',
+  'Гаранционен и извън гаранционен сервиз',
+  'Безплатна Консултация при избор на подходящ модел',
+  'Поддръжка и профилактика',
+  'Безплатна доставка до Адрес или Офис на куриерска фирма – Еконт!',
 ];
 </script>
 
@@ -18,16 +17,17 @@ const benefits = [
           <div class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm">
             <NuxtImg
               alt="Asian SPA продукти"
-              src="https://nardis.bg/wp-content/uploads/webimage-60C17F8B-F56E-4A71-96CDAA4CBEBA9F9F.png"
+              src="https://leaderfitness.admin-panels.com/wp-content/uploads/2025/03/bqgashta-pyteka-bowflex-bxt8ji-3.jpg"
               class="absolute inset-0 w-full h-full object-cover rounded-2xl"
               sizes="sm:100vw lg:400px"
               width="400"
               height="400" />
           </div>
           <div class="w-full flex-auto">
-            <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">Lorem ipsum</h2>
+            <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">Бягащи пътеки</h2>
             <p class="mt-6 text-lg/8 text-pretty text-gray-300">
-              Lorem ipsum dolor sit amet consect adipisicing elit. Possimus magnam voluptatum cupiditate veritatis in accusamus quisquam.
+              Предлагаме Бягащи Пътеки за Домашна и Професионална Употреба. Тук можете да откриете марките – Orion Fitness, Amila Fitness, Horizon Fitness, Sole
+              Fitness, Xterra Fitness, Kettler, Spirit Fitness,Matrix Fitness.
             </p>
             <ul role="list" class="mt-10 grid grid-cols-1 gap-x-8 gap-y-3 text-base/7 text-white sm:grid-cols-2">
               <li v-for="benefit in benefits" :key="benefit" class="flex gap-x-3">
@@ -43,8 +43,8 @@ const benefits = [
               </li>
             </ul>
             <div class="mt-10 flex">
-              <NuxtLink to="#" class="text-sm/6 font-normal text-[#ffffff] hover:text-black">
-                Вижте всички продукти от Lorem ipsum <span aria-hidden="true">&rarr;</span>
+              <NuxtLink to="/produkt-kategoriya/бягаща-пътека/" class="text-sm/6 font-normal text-[#ffffff] hover:text-black">
+                Вижте всички бягащи пътеки от Leaderfitness <span aria-hidden="true">&rarr;</span>
               </NuxtLink>
             </div>
           </div>

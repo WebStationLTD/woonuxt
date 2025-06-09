@@ -6,15 +6,17 @@
   <div class="relative isolate overflow-hidden bg-gray-800">
     <div class="px-6 py-12 sm:px-6 sm:py-12 lg:px-8">
       <div class="mx-auto max-w-2xl text-center">
-        <h2 class="text-4xl font-semibold tracking-tight text-balance text-white sm:text-5xl">Качествени продукти от Example.bg</h2>
-        <p class="mx-auto mt-6 max-w-xl text-lg/8 text-pretty text-gray-300">Вече над 20 години доставя качествени продукти на потребителите в България.</p>
+        <h2 class="text-4xl font-semibold tracking-tight text-balance text-white sm:text-5xl">Качествени продукти от Leaderfitness.bg</h2>
+        <p class="mx-auto mt-6 max-w-xl text-lg/8 text-pretty text-gray-300">
+          Вече над 16 години се стремим да предложим най-доброто, което се предлага в световен мащаб.
+        </p>
         <div class="mt-10 flex items-center justify-center gap-x-6">
           <NuxtLink
-            to="#"
+            to="/products"
             class="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-xs hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-            Вижте повече
+            Всички продукти
           </NuxtLink>
-          <NuxtLink to="#" class="text-sm/6 font-semibold text-white"> Контакти <span aria-hidden="true">→</span> </NuxtLink>
+          <NuxtLink to="/contact" class="text-sm/6 font-semibold text-white"> Контакти <span aria-hidden="true">→</span> </NuxtLink>
         </div>
       </div>
     </div>
