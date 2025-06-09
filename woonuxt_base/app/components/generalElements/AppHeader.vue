@@ -3,8 +3,8 @@ const { isShowingSearch } = useSearching();
 </script>
 
 <template>
-  <InfoTopBar />
   <header class="sticky top-0 z-50 bg-white shadow-sm shadow-light-500">
+    <InfoTopBar />
     <div class="flex w-full items-center justify-between py-4 px-4">
       <div class="flex items-center">
         <MenuTrigger class="lg:hidden" />

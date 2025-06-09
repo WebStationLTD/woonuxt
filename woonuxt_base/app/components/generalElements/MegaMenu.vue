@@ -14,66 +14,146 @@
       leave-to-class="opacity-0">
       <PopoverPanel class="mega-menu-panel">
         <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-y-10 py-8">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-8 gap-x-8">
-              <div>
-                <h3 class="text-base font-medium text-gray-500">Ангажиране</h3>
-                <div class="mt-5">
-                  <div class="space-y-3">
-                    <a
-                      v-for="item in engagement"
-                      :key="item.name"
-                      :href="item.href"
-                      class="flex items-center gap-x-3 py-1 text-base font-semibold text-gray-900 hover:text-primary transition">
-                      <component :is="item.icon" class="h-6 w-6 flex-none text-gray-400" aria-hidden="true" />
-                      {{ item.name }}
-                    </a>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h3 class="text-base font-medium text-gray-500">Ресурси</h3>
-                <div class="mt-5">
-                  <div class="space-y-3">
-                    <a
-                      v-for="item in resources"
-                      :key="item.name"
-                      :href="item.href"
-                      class="flex items-center gap-x-3 py-1 text-base font-semibold text-gray-900 hover:text-primary transition">
-                      <component :is="item.icon" class="h-6 w-6 flex-none text-gray-400" aria-hidden="true" />
-                      {{ item.name }}
-                    </a>
-                  </div>
-                </div>
-              </div>
+          <div class="py-6">
+            <!-- Заглавие на менюто -->
+            <div class="mb-6 text-center">
+              <h3 class="text-xl font-semibold text-gray-900">Категории продукти</h3>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <h3 class="sr-only">Последни публикации</h3>
-              <article v-for="post in recentPosts" :key="post.id" class="relative flex flex-col overflow-hidden rounded-lg">
-                <div class="relative flex-shrink-0">
-                  <img class="h-40 w-full object-cover" :src="post.imageUrl" alt="" />
-                  <div class="absolute inset-0 rounded-lg ring-1 ring-gray-900/10 ring-inset" />
-                </div>
-                <div class="flex flex-1 flex-col justify-between p-4">
-                  <div class="flex items-center gap-x-2 text-sm">
-                    <time :datetime="post.datetime" class="text-gray-500">{{ post.date }}</time>
-                    <span class="relative z-10 rounded-full bg-gray-50 px-2 py-1 text-sm font-medium text-gray-600">{{ post.category.title }}</span>
+
+            <!-- Loading състояние -->
+            <div v-if="pending" class="flex justify-center items-center py-6">
+              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+
+            <!-- Показваме категориите в компактен списък -->
+            <!-- Десктоп версия -->
+            <div v-else-if="productCategories?.length" class="hidden md:grid grid-cols-12 gap-1">
+              <div v-for="category in productCategories" :key="category.id" class="group">
+                <NuxtLink
+                  :to="`/produkt-kategoriya/${category.slug}`"
+                  class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-200 text-center">
+                  <!-- Иконка или изображение -->
+                  <div class="w-16 h-16 mb-2 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
+                    <img
+                      v-if="category.image"
+                      :src="category.image.sourceUrl"
+                      :alt="category.image.altText || category.name"
+                      class="w-full h-full object-cover"
+                      loading="lazy" />
+                    <div v-else class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                      <Icon name="ion:folder-outline" size="28" class="text-gray-400" />
+                    </div>
                   </div>
-                  <h4 class="mt-2 text-base font-semibold text-gray-900">
-                    <a :href="post.href">
-                      <span class="absolute inset-0" />
-                      {{ post.title }}
-                    </a>
+
+                  <!-- Име на категорията -->
+                  <h4
+                    class="text-xs font-medium text-gray-700 group-hover:text-primary transition-colors line-clamp-2 leading-tight min-h-[2rem] flex items-center">
+                    {{ category.name }}
                   </h4>
-                </div>
-              </article>
+
+                  <!-- Брой продукти -->
+                  <p class="text-[10px] text-gray-500 mt-1 font-medium">{{ category.count || 0 }}</p>
+                </NuxtLink>
+              </div>
             </div>
-          </div>
-          <div class="lg:hidden border-t border-gray-200 py-3 px-4 text-center">
-            <PopoverButton class="inline-block rounded-md py-2 px-4 text-sm font-medium text-gray-500 hover:bg-gray-100 focus:outline-none">
-              Затвори
-              <ChevronDownIcon class="inline-block h-5 w-5 rotate-180 transform" aria-hidden="true" />
-            </PopoverButton>
+
+            <!-- Мобилна версия - компактна grid подредба -->
+            <div v-if="productCategories?.length" class="md:hidden">
+              <!-- Основни категории в grid -->
+              <div class="grid grid-cols-3 gap-3 mb-4">
+                <div v-for="category in productCategories.slice(0, 9)" :key="category.id" class="group">
+                  <NuxtLink
+                    :to="`/produkt-kategoriya/${category.slug}`"
+                    class="flex flex-col items-center p-3 bg-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-lg transition-all duration-200 text-center">
+                    <!-- Иконка -->
+                    <div class="w-12 h-12 mb-2 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
+                      <img
+                        v-if="category.image"
+                        :src="category.image.sourceUrl"
+                        :alt="category.image.altText || category.name"
+                        class="w-full h-full object-cover"
+                        loading="lazy" />
+                      <div v-else class="w-full h-full bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
+                        <Icon name="ion:folder-outline" size="20" class="text-primary/60" />
+                      </div>
+                    </div>
+
+                    <!-- Име на категорията -->
+                    <h4 class="text-xs font-medium text-gray-700 group-hover:text-primary transition-colors line-clamp-2 leading-tight text-center">
+                      {{ category.name }}
+                    </h4>
+
+                    <!-- Брой продукти -->
+                    <p class="text-[10px] text-gray-500 mt-1">{{ category.count || 0 }}</p>
+                  </NuxtLink>
+                </div>
+              </div>
+
+              <!-- Допълнителни категории като компактен списък -->
+              <div v-if="productCategories.length > 9" class="space-y-2">
+                <h5 class="text-sm font-medium text-gray-600 px-2">Още категории:</h5>
+                <div class="grid grid-cols-2 gap-2">
+                  <NuxtLink
+                    v-for="category in productCategories.slice(9, 15)"
+                    :key="category.id"
+                    :to="`/produkt-kategoriya/${category.slug}`"
+                    class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-primary/5 hover:text-primary transition-all duration-200 text-xs">
+                    <div class="w-6 h-6 rounded overflow-hidden flex-shrink-0">
+                      <img
+                        v-if="category.image"
+                        :src="category.image.sourceUrl"
+                        :alt="category.image.altText || category.name"
+                        class="w-full h-full object-cover"
+                        loading="lazy" />
+                      <div v-else class="w-full h-full bg-primary/20 flex items-center justify-center">
+                        <Icon name="ion:folder-outline" size="12" class="text-primary/60" />
+                      </div>
+                    </div>
+                    <span class="truncate">{{ category.name }}</span>
+                  </NuxtLink>
+                </div>
+              </div>
+
+              <!-- Виж всички категории бутон -->
+              <div v-if="productCategories.length > 15" class="mt-4 text-center">
+                <NuxtLink
+                  to="/categories"
+                  class="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/20 transition-all duration-200">
+                  Виж всички {{ productCategories.length }} категории
+                  <Icon name="ion:arrow-forward-outline" size="16" />
+                </NuxtLink>
+              </div>
+            </div>
+
+            <!-- Fallback ако няма категории -->
+            <div v-else class="text-center py-6">
+              <Icon name="ion:folder-outline" size="32" class="mx-auto text-gray-300 mb-3" />
+              <p class="text-gray-500 text-sm">Няма налични категории</p>
+            </div>
+
+            <!-- Футър с линкове -->
+            <div class="mt-6 pt-4 border-t border-gray-200 flex flex-wrap justify-center gap-4">
+              <NuxtLink
+                to="/products"
+                class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm font-medium">
+                <Icon name="ion:grid-outline" size="16" />
+                Всички продукти
+              </NuxtLink>
+              <NuxtLink
+                to="/categories"
+                class="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium">
+                <Icon name="ion:list-outline" size="16" />
+                Всички категории
+              </NuxtLink>
+            </div>
+
+            <!-- Бутон за затваряне на мобилни устройства -->
+            <div class="lg:hidden border-t border-gray-200 pt-3 mt-4 text-center">
+              <PopoverButton class="inline-flex items-center gap-1 rounded-md py-2 px-3 text-sm font-medium text-gray-500 hover:bg-gray-100 focus:outline-none">
+                Затвори
+                <ChevronDownIcon class="h-4 w-4 rotate-180 transform" aria-hidden="true" />
+              </PopoverButton>
+            </div>
           </div>
         </div>
       </PopoverPanel>
@@ -84,55 +164,18 @@
 <script setup>
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
 import { ChevronDownIcon } from '@heroicons/vue/20/solid';
-import {
-  BookOpenIcon,
-  BriefcaseIcon,
-  GlobeAltIcon,
-  InformationCircleIcon,
-  NewspaperIcon,
-  ShieldCheckIcon,
-  UserGroupIcon,
-  UsersIcon,
-  VideoCameraIcon,
-} from '@heroicons/vue/24/outline';
 
-const engagement = [
-  { name: 'За нас', href: '#', icon: InformationCircleIcon },
-  { name: 'Клиенти', href: '#', icon: UsersIcon },
-  { name: 'Медия', href: '#', icon: NewspaperIcon },
-  { name: 'Кариери', href: '#', icon: BriefcaseIcon },
-  { name: 'Поверителност', href: '#', icon: ShieldCheckIcon },
-];
-const resources = [
-  { name: 'Общност', href: '#', icon: UserGroupIcon },
-  { name: 'Партньори', href: '#', icon: GlobeAltIcon },
-  { name: 'Наръчници', href: '#', icon: BookOpenIcon },
-  { name: 'Уебинари', href: '#', icon: VideoCameraIcon },
-];
-const recentPosts = [
-  {
-    id: 1,
-    title: 'Увеличете процента на конверсия',
-    href: '#',
-    date: '16 Март, 2023',
-    datetime: '2023-03-16',
-    category: { title: 'Маркетинг', href: '#' },
-    imageUrl:
-      'https://images.unsplash.com/photo-1496128858413-b36217c2ce36?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=3603&q=80',
-    description: 'Достигнете до повече потенциални клиенти и увеличете продажбите си с нашите съвети.',
-  },
-  {
-    id: 2,
-    title: 'Как да използвате SEO за увеличаване на продажбите',
-    href: '#',
-    date: '10 Март, 2023',
-    datetime: '2023-03-10',
-    category: { title: 'Продажби', href: '#' },
-    imageUrl:
-      'https://images.unsplash.com/photo-1547586696-ea22b4d4235d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=3270&q=80',
-    description: 'Оптимизирайте сайта си за по-добро класиране в търсачките и повече потенциални клиенти.',
-  },
-];
+// Зареждаме категориите от админа
+const { data, pending } = await useAsyncGql('getProductCategories', {
+  first: 20, // Лимитираме до 20 основни категории
+  after: null,
+  slug: null,
+});
+
+// Извличаме категориите от отговора
+const productCategories = computed(() => {
+  return data.value?.productCategories?.nodes || [];
+});
 </script>
 
 <style scoped>
@@ -152,7 +195,7 @@ a:focus {
   /* Десктоп стилове */
   @media (min-width: 1024px) {
     position: fixed;
-    top: 70px;
+    top: 110px;
     left: 0;
     right: 0;
     width: 100%;
@@ -166,5 +209,13 @@ a:focus {
 /* Анимация за ротация на стрелката */
 .rotate-180 {
   transform: rotate(180deg);
+}
+
+/* Utility класове */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>
