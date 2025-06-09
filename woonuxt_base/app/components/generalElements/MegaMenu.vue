@@ -1,5 +1,5 @@
 <template>
-  <Popover v-slot="{ open }" class="static lg:relative isolate z-50">
+  <Popover v-slot="{ open, close }" class="static lg:relative isolate z-50">
     <PopoverButton class="inline-flex items-center gap-x-1 text-base font-semibold text-gray-500 hover:text-primary focus:outline-none">
       Магазин
       <ChevronDownIcon :class="['h-6 w-6 transition-transform duration-300', open ? 'rotate-180 transform' : '']" aria-hidden="true" />
@@ -31,7 +31,8 @@
               <div v-for="category in productCategories" :key="category.id" class="group">
                 <NuxtLink
                   :to="`/produkt-kategoriya/${category.slug}`"
-                  class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-200 text-center">
+                  class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-200 text-center"
+                  @click="close">
                   <!-- Иконка или изображение -->
                   <div class="w-16 h-16 mb-2 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
                     <img
@@ -64,7 +65,8 @@
                 <div v-for="category in productCategories.slice(0, 9)" :key="category.id" class="group">
                   <NuxtLink
                     :to="`/produkt-kategoriya/${category.slug}`"
-                    class="flex flex-col items-center p-3 bg-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-lg transition-all duration-200 text-center">
+                    class="flex flex-col items-center p-3 bg-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-lg transition-all duration-200 text-center"
+                    @click="close">
                     <!-- Иконка -->
                     <div class="w-12 h-12 mb-2 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
                       <img
@@ -97,7 +99,8 @@
                     v-for="category in productCategories.slice(9, 15)"
                     :key="category.id"
                     :to="`/produkt-kategoriya/${category.slug}`"
-                    class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-primary/5 hover:text-primary transition-all duration-200 text-xs">
+                    class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-primary/5 hover:text-primary transition-all duration-200 text-xs"
+                    @click="close">
                     <div class="w-6 h-6 rounded overflow-hidden flex-shrink-0">
                       <img
                         v-if="category.image"
@@ -118,7 +121,8 @@
               <div v-if="productCategories.length > 15" class="mt-4 text-center">
                 <NuxtLink
                   to="/categories"
-                  class="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/20 transition-all duration-200">
+                  class="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/20 transition-all duration-200"
+                  @click="close">
                   Виж всички {{ productCategories.length }} категории
                   <Icon name="ion:arrow-forward-outline" size="16" />
                 </NuxtLink>
@@ -135,13 +139,15 @@
             <div class="mt-6 pt-4 border-t border-gray-200 flex flex-wrap justify-center gap-4">
               <NuxtLink
                 to="/products"
-                class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm font-medium">
+                class="inline-flex items-center gap-2 bg-[#9c0100] text-white px-4 py-2 rounded-md hover:bg-[#000000] transition-colors text-sm font-medium"
+                @click="close">
                 <Icon name="ion:grid-outline" size="16" />
                 Всички продукти
               </NuxtLink>
               <NuxtLink
                 to="/categories"
-                class="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium">
+                class="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
+                @click="close">
                 <Icon name="ion:list-outline" size="16" />
                 Всички категории
               </NuxtLink>
