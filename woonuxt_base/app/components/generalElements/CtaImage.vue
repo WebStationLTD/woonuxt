@@ -6,8 +6,8 @@
   <div class="relative bg-gray-800">
     <div class="relative h-80 overflow-hidden bg-indigo-600 md:absolute md:left-0 md:h-full md:w-1/3 lg:w-1/2">
       <NuxtImg
-        alt="Nardis маркова козметика"
-        src="https://nextlevel-shop.admin-panels.com/wp-content/uploads/2025/04/cta-image-bg.jpg"
+        alt="Leaderfitness.bg - Професионални фитнес уреди и аксесоари"
+        src="https://leaderfitness.admin-panels.com/wp-content/uploads/2025/06/shop-leaderfitness.jpg"
         class="absolute inset-0 h-full w-full object-cover"
         sizes="(max-width: 768px) 100vw, 50vw"
         width="800"
@@ -27,17 +27,22 @@
     </div>
     <div class="relative mx-auto max-w-7xl py-12 sm:py-12 lg:px-8 lg:py-12">
       <div class="pr-6 pl-6 md:ml-auto md:w-2/3 md:pl-16 lg:w-1/2 lg:pr-0 lg:pl-24 xl:pl-32">
-        <h2 class="text-xl font-semibold text-[#129160]">Example.bg</h2>
-        <p class="mt-2 text-4xl font-semibold tracking-tight text-white sm:text-5xl">Lorem ipsum</p>
+        <h2 class="text-xl font-semibold text-[#ffffff]">Leaderfitness.bg</h2>
+        <p class="mt-2 text-4xl font-semibold tracking-tight text-white sm:text-5xl">Професионални фитнес уреди и аксесоари</p>
         <p class="mt-6 text-base/7 text-gray-300">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-          quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-          cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+          В магазинът ни на бул. Христо Ботев №67, гр. София ще откриете и различни продукти за бойни спортове – Боксови ръкавици, Протектори за зъби, Бинтове
+          за бокс, Каски, Протектори за крака, Лапи, Обувки за Бокс, Боксови чували и круши, ММА и граплинг ръкавици, спортни сакове, Тренировъчни шорти,
+          тениски, потници, рашгарди, клинове, панталони и суичъри.
+        </p>
+        <p class="mt-6 text-base/7 text-gray-300">
+          Лидерфитнес е вносител и представител на световно известни марки и брандове: VENUM, Body Solid, Amila Fitness, Hayabusa Fightwear, Leone 1947, Super
+          Pro 1978, Twins, Ringhorns, MVS in Motion, Adidas, Sole Fitness, Endurance, Evocardio Fitness, Renegade, Safejawz, Spirit Fitness, UFC, Xterra
+          Fitness.
         </p>
         <div class="mt-8">
           <NuxtLink
             to="#"
-            class="inline-flex rounded-md bg-[#129160] px-3.5 py-2.5 text-sm font-semibold text-white hover:text-black shadow-xs hover:bg-[#ebedeb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+            class="inline-flex rounded-md bg-[#9c0100] px-3.5 py-2.5 text-sm font-semibold text-white hover:text-black shadow-xs hover:bg-[#ebedeb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
             Купете онлайн
           </NuxtLink>
         </div>

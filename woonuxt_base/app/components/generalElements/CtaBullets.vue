@@ -75,7 +75,7 @@ const benefits = [
               73.6% 51.7%
             );
           "
-          class="aspect-[1318/752] w-[82.375rem] flex-none bg-gradient-to-r from-[#129160] to-[#129160] opacity-60" />
+          class="aspect-[1318/752] w-[82.375rem] flex-none bg-gradient-to-r from-[#9c0100] to-[#9c0100] opacity-60" />
       </div>
     </div>
   </div>

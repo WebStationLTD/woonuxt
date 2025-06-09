@@ -27,8 +27,8 @@
       <circle r="512" cx="512" cy="512" fill="url(#8d958450-c69f-4251-94bc-4e091a323369)" fill-opacity="0.9" />
       <defs>
         <radialGradient id="8d958450-c69f-4251-94bc-4e091a323369">
-          <stop stop-color="#129160" />
-          <stop offset="1" stop-color="#129160" />
+          <stop stop-color="#9c0100" />
+          <stop offset="1" stop-color="#9c0100" />
         </radialGradient>
       </defs>
     </svg>

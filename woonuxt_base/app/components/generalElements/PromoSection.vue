@@ -74,7 +74,7 @@ const productColumns = [
 
             <NuxtLink
               to="/categories"
-              class="inline-block relative z-10 cursor-pointer rounded-md border border-transparent bg-[#129160] px-8 py-3 text-center font-medium text-white hover:text-black hover:bg-[#ebedeb] transition-colors duration-300">
+              class="inline-block relative z-10 cursor-pointer rounded-md border border-transparent bg-[#9c0100] px-8 py-3 text-center font-medium text-white hover:text-black hover:bg-[#ebedeb] transition-colors duration-300">
               Разгледайте колекциите
             </NuxtLink>
           </div>

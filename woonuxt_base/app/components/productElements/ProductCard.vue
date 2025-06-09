@@ -197,7 +197,7 @@ watch(cart, () => {
             @click.prevent="addProductToCart"
             type="button"
             :disabled="isButtonDisabled"
-            class="flex items-center justify-center flex-1 h-8 px-3 text-xs font-medium text-white transition-colors bg-gray-800 rounded-md hover:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed">
+            class="flex items-center justify-center flex-1 h-8 px-3 text-xs font-medium text-white transition-colors bg-[#9c0100] rounded-md hover:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed">
             <span>Купи</span>
             <LoadingIcon v-if="isLoading" stroke="3" size="10" color="#fff" class="ml-1" />
           </button>
