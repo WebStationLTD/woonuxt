@@ -1,12 +1,11 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Hero секция -->
-    <div class="bg-gradient-to-br from-primary to-primary-dark">
+    <!-- <div class="bg-gradient-to-br from-primary to-primary-dark"> -->
+    <div class="bg-gray-800">
       <div class="container py-16 text-center text-white">
         <h1 class="text-4xl md:text-5xl font-bold mb-4">{{ $t('messages.general.contact') }}</h1>
-        <p class="text-xl opacity-90 max-w-2xl mx-auto">
-          Свържете се с нас! Готови сме да отговорим на всичките ви въпроси и да ви помогнем.
-        </p>
+        <p class="text-xl opacity-90 max-w-2xl mx-auto">Свържете се с нас! Готови сме да отговорим на всичките ви въпроси и да ви помогнем.</p>
       </div>
     </div>
 
@@ -20,9 +19,7 @@
           </div>
           <h3 class="text-xl font-semibold mb-2">Имейл</h3>
           <p class="text-gray-600 mb-4">Изпратете ни имейл по всяко време</p>
-          <a href="mailto:info@example.bg" class="text-primary hover:text-primary-dark font-medium">
-            info@example.bg
-          </a>
+          <a href="mailto:info@example.bg" class="text-primary hover:text-primary-dark font-medium"> info@example.bg </a>
         </div>
 
         <!-- Телефон -->
@@ -32,9 +29,7 @@
           </div>
           <h3 class="text-xl font-semibold mb-2">Телефон</h3>
           <p class="text-gray-600 mb-4">Обадете ни се в работно време</p>
-          <a href="tel:+359888123456" class="text-primary hover:text-primary-dark font-medium">
-            +359 888 123 456
-          </a>
+          <a href="tel:+359888123456" class="text-primary hover:text-primary-dark font-medium"> +359 888 123 456 </a>
         </div>
 
         <!-- Адрес -->
@@ -45,7 +40,7 @@
           <h3 class="text-xl font-semibold mb-2">Адрес</h3>
           <p class="text-gray-600 mb-4">Посетете ни в офиса</p>
           <p class="text-primary font-medium">
-            гр. София<br>
+            гр. София<br />
             ул. Примерна 123
           </p>
         </div>
@@ -152,8 +147,7 @@
               href="https://www.instagram.com/"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 font-medium"
-            >
+              class="inline-flex items-center gap-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 font-medium">
               <Icon name="ion:logo-instagram" size="20" />
               <span>Последвайте ни в Instagram</span>
             </a>
@@ -198,7 +192,7 @@ const { t } = useI18n();
 // SEO meta
 useSeoMeta({
   title: 'Контакти - Свържете се с нас',
-  description: 'Свържете се с нас за всички ваши въпроси. Телефон: +359 888 123 456, Имейл: info@example.bg, Адрес: гр. София, ул. Примерна 123'
+  description: 'Свържете се с нас за всички ваши въпроси. Телефон: +359 888 123 456, Имейл: info@example.bg, Адрес: гр. София, ул. Примерна 123',
 });
 </script>
 

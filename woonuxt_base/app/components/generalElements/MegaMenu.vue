@@ -33,8 +33,8 @@
                   :to="`/produkt-kategoriya/${category.slug}`"
                   class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-200 text-center"
                   @click="close">
-                  <!-- Иконка или изображение -->
-                  <div class="w-16 h-16 mb-2 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
+                  <!-- Иконка или изображение - уголемени за десктоп -->
+                  <div class="w-20 h-20 lg:w-24 lg:h-24 mb-3 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
                     <img
                       v-if="category.image"
                       :src="category.image.sourceUrl"
@@ -42,18 +42,18 @@
                       class="w-full h-full object-cover"
                       loading="lazy" />
                     <div v-else class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                      <Icon name="ion:folder-outline" size="28" class="text-gray-400" />
+                      <Icon name="ion:folder-outline" size="32" class="text-gray-400 lg:text-[36px]" />
                     </div>
                   </div>
 
-                  <!-- Име на категорията -->
+                  <!-- Име на категорията - уголемен шрифт за десктоп -->
                   <h4
-                    class="text-xs font-medium text-gray-700 group-hover:text-primary transition-colors line-clamp-2 leading-tight min-h-[2rem] flex items-center">
+                    class="text-sm md:text-base lg:text-lg font-medium text-gray-700 group-hover:text-primary transition-colors line-clamp-2 leading-tight min-h-[2rem] md:min-h-[2.5rem] lg:min-h-[3rem] flex items-center">
                     {{ category.name }}
                   </h4>
 
-                  <!-- Брой продукти -->
-                  <p class="text-[10px] text-gray-500 mt-1 font-medium">{{ category.count || 0 }}</p>
+                  <!-- Брой продукти - уголемен шрифт за десктоп -->
+                  <p class="text-xs md:text-sm lg:text-base text-gray-500 mt-1 font-medium">{{ category.count || 0 }}</p>
                 </NuxtLink>
               </div>
             </div>
