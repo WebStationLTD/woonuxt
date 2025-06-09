@@ -1,6 +1,35 @@
 <script setup lang="ts">
 const { wooNuxtVersionInfo } = useHelpers();
 const { wishlistLink } = useAuth();
+
+// Добавяме структурирани данни чрез useHead()
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'Лидерфитнес',
+        description: 'Водещ вносител и представител на голямо разнообразие от бойна екипировка, фитнес уреди и аксесоари',
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: 'бул. Христо Ботев 67',
+          addressLocality: 'София',
+          postalCode: '1303',
+          addressCountry: 'BG',
+        },
+        contactPoint: {
+          '@type': 'ContactPoint',
+          telephone: '+359877277595',
+          email: 'office@leaderfitness.net',
+          contactType: 'customer service',
+        },
+        sameAs: ['https://www.facebook.com/www.leaderfitness.net/', 'https://www.instagram.com/liderfitness/'],
+      }),
+    },
+  ],
+});
 </script>
 
 <template>
@@ -115,30 +144,6 @@ const { wishlistLink } = useAuth();
         </div>
       </div>
     </div>
-
-    <!-- Structured Data -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "Лидерфитнес",
-        "description": "Водещ вносител и представител на голямо разнообразие от бойна екипировка, фитнес уреди и аксесоари",
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "бул. Христо Ботев 67",
-          "addressLocality": "София",
-          "postalCode": "1303",
-          "addressCountry": "BG"
-        },
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "telephone": "+359877277595",
-          "email": "office@leaderfitness.net",
-          "contactType": "customer service"
-        },
-        "sameAs": ["https://www.facebook.com/www.leaderfitness.net/", "https://www.instagram.com/liderfitness/"]
-      }
-    </script>
   </footer>
 </template>
 
