@@ -204,7 +204,7 @@ onUnmounted(() => {
 .custom-next-button:hover {
   opacity: 1;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-  background-color: var(--color-primary, #3b82f6);
+  background-color: var(--color-primary, #9c0100);
 }
 
 .custom-prev-button:hover svg,
@@ -230,7 +230,7 @@ onUnmounted(() => {
 }
 
 :deep(.tns-nav button.tns-nav-active) {
-  background-color: var(--color-primary, #3b82f6);
+  background-color: var(--color-primary, #9c0100);
   opacity: 1;
 }
 
