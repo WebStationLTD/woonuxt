@@ -58,17 +58,17 @@
               </div>
             </div>
 
-            <!-- Мобилна версия - компактна grid подредба -->
+            <!-- Мобилна версия - уголемена grid подредба -->
             <div v-if="productCategories?.length" class="md:hidden">
               <!-- Основни категории в grid -->
-              <div class="grid grid-cols-3 gap-3 mb-4">
+              <div class="grid grid-cols-3 gap-4 mb-6">
                 <div v-for="category in productCategories.slice(0, 9)" :key="category.id" class="group">
                   <NuxtLink
                     :to="`/produkt-kategoriya/${category.slug}`"
-                    class="flex flex-col items-center p-3 bg-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-lg transition-all duration-200 text-center"
+                    class="flex flex-col items-center p-4 bg-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-lg transition-all duration-200 text-center"
                     @click="close">
-                    <!-- Иконка -->
-                    <div class="w-12 h-12 mb-2 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
+                    <!-- Уголемена иконка -->
+                    <div class="w-20 h-20 mb-3 rounded-xl overflow-hidden flex-shrink-0 shadow-md">
                       <img
                         v-if="category.image"
                         :src="category.image.sourceUrl"
@@ -76,32 +76,33 @@
                         class="w-full h-full object-cover"
                         loading="lazy" />
                       <div v-else class="w-full h-full bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
-                        <Icon name="ion:folder-outline" size="20" class="text-primary/60" />
+                        <Icon name="ion:folder-outline" size="28" class="text-primary/60" />
                       </div>
                     </div>
 
-                    <!-- Име на категорията -->
-                    <h4 class="text-xs font-medium text-gray-700 group-hover:text-primary transition-colors line-clamp-2 leading-tight text-center">
+                    <!-- Уголемено име на категорията -->
+                    <h4
+                      class="text-sm font-semibold text-gray-700 group-hover:text-primary transition-colors line-clamp-2 leading-tight text-center min-h-[2.5rem] flex items-center">
                       {{ category.name }}
                     </h4>
 
-                    <!-- Брой продукти -->
-                    <p class="text-[10px] text-gray-500 mt-1">{{ category.count || 0 }}</p>
+                    <!-- Уголемен брой продукти -->
+                    <p class="text-xs text-gray-500 mt-2 font-medium">{{ category.count || 0 }} продукта</p>
                   </NuxtLink>
                 </div>
               </div>
 
-              <!-- Допълнителни категории като компактен списък -->
-              <div v-if="productCategories.length > 9" class="space-y-2">
-                <h5 class="text-sm font-medium text-gray-600 px-2">Още категории:</h5>
-                <div class="grid grid-cols-2 gap-2">
+              <!-- Допълнителни категории като уголемен списък -->
+              <div v-if="productCategories.length > 9" class="space-y-3">
+                <h5 class="text-base font-semibold text-gray-700 px-2">Още категории:</h5>
+                <div class="grid grid-cols-2 gap-3">
                   <NuxtLink
                     v-for="category in productCategories.slice(9, 15)"
                     :key="category.id"
                     :to="`/produkt-kategoriya/${category.slug}`"
-                    class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-primary/5 hover:text-primary transition-all duration-200 text-xs"
+                    class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-primary/5 hover:text-primary transition-all duration-200 text-sm"
                     @click="close">
-                    <div class="w-6 h-6 rounded overflow-hidden flex-shrink-0">
+                    <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
                       <img
                         v-if="category.image"
                         :src="category.image.sourceUrl"
@@ -109,22 +110,22 @@
                         class="w-full h-full object-cover"
                         loading="lazy" />
                       <div v-else class="w-full h-full bg-primary/20 flex items-center justify-center">
-                        <Icon name="ion:folder-outline" size="12" class="text-primary/60" />
+                        <Icon name="ion:folder-outline" size="16" class="text-primary/60" />
                       </div>
                     </div>
-                    <span class="truncate">{{ category.name }}</span>
+                    <span class="truncate font-medium">{{ category.name }}</span>
                   </NuxtLink>
                 </div>
               </div>
 
               <!-- Виж всички категории бутон -->
-              <div v-if="productCategories.length > 15" class="mt-4 text-center">
+              <div v-if="productCategories.length > 15" class="mt-6 text-center">
                 <NuxtLink
                   to="/categories"
-                  class="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/20 transition-all duration-200"
+                  class="inline-flex items-center gap-2 bg-primary/10 text-primary px-6 py-3 rounded-xl font-semibold text-base hover:bg-primary/20 transition-all duration-200 shadow-sm"
                   @click="close">
                   Виж всички {{ productCategories.length }} категории
-                  <Icon name="ion:arrow-forward-outline" size="16" />
+                  <Icon name="ion:arrow-forward-outline" size="18" />
                 </NuxtLink>
               </div>
             </div>
@@ -135,29 +136,30 @@
               <p class="text-gray-500 text-sm">Няма налични категории</p>
             </div>
 
-            <!-- Футър с линкове -->
-            <div class="mt-6 pt-4 border-t border-gray-200 flex flex-wrap justify-center gap-4">
+            <!-- Футър с уголемени линкове -->
+            <div class="mt-8 pt-6 border-t border-gray-200 flex flex-wrap justify-center gap-4">
               <NuxtLink
                 to="/products"
-                class="inline-flex items-center gap-2 bg-[#9c0100] text-white px-4 py-2 rounded-md hover:bg-[#000000] transition-colors text-sm font-medium"
+                class="inline-flex items-center gap-3 bg-[#9c0100] text-white px-6 py-3 rounded-xl hover:bg-[#000000] transition-colors text-base font-semibold shadow-md"
                 @click="close">
-                <Icon name="ion:grid-outline" size="16" />
+                <Icon name="ion:grid-outline" size="20" />
                 Всички продукти
               </NuxtLink>
               <NuxtLink
                 to="/categories"
-                class="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
+                class="inline-flex items-center gap-3 border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all text-base font-semibold"
                 @click="close">
-                <Icon name="ion:list-outline" size="16" />
+                <Icon name="ion:list-outline" size="20" />
                 Всички категории
               </NuxtLink>
             </div>
 
-            <!-- Бутон за затваряне на мобилни устройства -->
-            <div class="lg:hidden border-t border-gray-200 pt-3 mt-4 text-center">
-              <PopoverButton class="inline-flex items-center gap-1 rounded-md py-2 px-3 text-sm font-medium text-gray-500 hover:bg-gray-100 focus:outline-none">
+            <!-- Уголемен бутон за затваряне на мобилни устройства -->
+            <div class="lg:hidden border-t border-gray-200 pt-4 mt-6 text-center">
+              <PopoverButton
+                class="inline-flex items-center gap-2 rounded-xl py-3 px-6 text-base font-semibold text-gray-600 hover:bg-gray-100 hover:text-gray-800 focus:outline-none transition-all">
                 Затвори
-                <ChevronDownIcon class="h-4 w-4 rotate-180 transform" aria-hidden="true" />
+                <ChevronDownIcon class="h-5 w-5 rotate-180 transform" aria-hidden="true" />
               </PopoverButton>
             </div>
           </div>
