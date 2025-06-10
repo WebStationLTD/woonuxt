@@ -137,8 +137,8 @@ export function useFiltering() {
     // Update the filter query
     filterQuery.value = newFilterQuery;
 
-    // remove pagination from the url
-    const path = route.path.includes('/page/') ? route.path.split('/page/')[0] : route.path;
+    // Премахваме pagination само ако сме на страница > 1, за да избегнем проблеми с несъществуващи страници при нови филтри
+    const path = route.path.includes('/page/') && !route.path.endsWith('/page/1') ? route.path.split('/page/')[0] : route.path;
 
     // if the filter query is empty, remove it from the url
     if (!newFilterQuery) {
@@ -153,26 +153,8 @@ export function useFiltering() {
       });
     }
 
-    // Изчакваме URL-а да се обнови и после зареждаме продуктите
-    await nextTick();
-
-    const filters = buildGraphQLFilters();
-
-    // Получаваме текущата категория от route ако е налична
-    let categorySlug: string[] | undefined;
-    if (route.params.slug) {
-      categorySlug = [route.params.slug as string];
-    }
-
-    // Получаваме и orderby ако е налично
-    let graphqlOrderBy = 'DATE';
-    if (route.query.orderby === 'price') graphqlOrderBy = 'PRICE';
-    else if (route.query.orderby === 'rating') graphqlOrderBy = 'RATING';
-    else if (route.query.orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
-    else if (route.query.orderby === 'date') graphqlOrderBy = 'DATE';
-    else if (route.query.orderby === 'discount') graphqlOrderBy = 'DATE';
-
-    await loadProductsWithFilters(categorySlug, graphqlOrderBy, filters);
+    // Навигацията ще trigger-не watcher-а в products.vue който ще зареди продуктите
+    // Премахваме loadProductsWithFilters за да избегнем race conditions
   }
 
   /**
