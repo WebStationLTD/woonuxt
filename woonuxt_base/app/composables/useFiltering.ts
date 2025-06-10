@@ -34,7 +34,13 @@ export function useFiltering() {
    * @example getFilter('pa_color') // ["green", "blue"]
    */
   function getFilter(filterName: string): string[] {
-    return filterQuery.value?.split(`${filterName}[`)[1]?.split(']')[0]?.split(',') || [];
+    if (!filterQuery.value) return [];
+
+    const match = filterQuery.value.match(new RegExp(`${filterName}\\[([^\\]]*)\\]`));
+    if (!match || !match[1]) return [];
+
+    const values = match[1].split(',').filter((val) => val && val.trim());
+    return values;
   }
 
   /**
@@ -46,26 +52,30 @@ export function useFiltering() {
     // Ценови филтър
     const priceRange = getFilter('price');
     if (priceRange.length === 2 && priceRange[0] && priceRange[1]) {
-      filters.minPrice = parseFloat(priceRange[0]);
-      filters.maxPrice = parseFloat(priceRange[1]);
+      const minPrice = parseFloat(priceRange[0]);
+      const maxPrice = parseFloat(priceRange[1]);
+      if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+        filters.minPrice = minPrice;
+        filters.maxPrice = maxPrice;
+      }
     }
 
-    // OnSale филтър
+    // OnSale филтър - само ако има валидна стойност
     const onSale = getFilter('sale');
-    if (onSale.length > 0) {
+    if (onSale.length > 0 && onSale.includes('true')) {
       filters.onSale = true;
     }
 
     // Search филтър (ако е наличен в URL)
     const searchTerm = getFilter('search');
-    if (searchTerm.length > 0) {
+    if (searchTerm.length > 0 && searchTerm[0]) {
       filters.search = searchTerm[0];
     }
 
     // Category филтър - ще се предава като categorySlug array към GraphQL
     const categoryFilter = getFilter('category');
     if (categoryFilter.length > 0) {
-      filters.categorySlug = categoryFilter;
+      filters.categorySlug = categoryFilter.filter((cat) => cat && cat.trim());
     }
 
     // ВРЕМЕННО СКРИТ - Rating филтър
@@ -100,14 +110,22 @@ export function useFiltering() {
     const route = useRoute();
     let newFilterQuery = filterQuery.value || '';
 
+    // Filter out empty or whitespace-only values
+    const cleanFilterValue = filterValue.filter((val) => val && val.trim());
+
     // If there are filters and filterName is not one of them, add the filter query
     if (!filterQuery.value?.includes(filterName)) {
-      newFilterQuery = filterQuery.value ? `${filterQuery.value},${filterName}[${filterValue}]` : `${filterName}[${filterValue}]`;
+      newFilterQuery =
+        filterQuery.value && cleanFilterValue.length > 0
+          ? `${filterQuery.value},${filterName}[${cleanFilterValue}]`
+          : cleanFilterValue.length > 0
+            ? `${filterName}[${cleanFilterValue}]`
+            : filterQuery.value;
     } else {
-      // If filterValue is empty, remove the filter query
-      newFilterQuery = !filterValue.length
+      // If cleanFilterValue is empty, remove the filter query
+      newFilterQuery = !cleanFilterValue.length
         ? filterQuery.value.replace(`${filterName}[${getFilter(filterName)}]`, '')
-        : filterQuery.value.replace(`${filterName}[${getFilter(filterName)}]`, `${filterName}[${filterValue}]`);
+        : filterQuery.value.replace(`${filterName}[${getFilter(filterName)}]`, `${filterName}[${cleanFilterValue}]`);
     }
 
     // remove the first or last comma

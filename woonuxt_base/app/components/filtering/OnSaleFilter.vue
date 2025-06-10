@@ -32,13 +32,12 @@ watch(isFiltersActive, (newValue) => {
   }
 });
 
-const checkboxClicked = (e) => {
+const checkboxClicked = () => {
   if (selectedTerms.value.length === 0) {
-    selectedTerms.value = [e.target.value];
+    selectedTerms.value = ['true'];
   } else {
     selectedTerms.value = [];
   }
-  // selectedTerms.value промяната автоматично ще извика computed setter
 };
 </script>
 
@@ -52,12 +51,12 @@ const checkboxClicked = (e) => {
       <div class="flex gap-2 items-center">
         <input
           id="sale-true"
-          v-model="selectedTerms"
+          :checked="selectedTerms.length > 0"
           type="checkbox"
-          :value="true"
+          value="true"
           aria-label="Sale Products Only"
           class="mt-0.5 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-          @click="checkboxClicked" />
+          @change="checkboxClicked" />
         <label for="sale-true" class="cursor-pointer m-0 text-sm select-none" aria-label="Only show products on sale"> Само продукти с отстъпки </label>
       </div>
     </div>

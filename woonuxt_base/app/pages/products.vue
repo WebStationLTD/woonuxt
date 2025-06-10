@@ -25,40 +25,48 @@ const route = useRoute();
 // Race condition protection
 let isNavigating = false;
 
-// Функция за локално парсене на филтри от query string
+// Функция за локално парсане на филтри от query string
 const parseFiltersFromQuery = (filterQuery: string) => {
   const filters: any = {};
 
-  if (!filterQuery) return filters;
+  if (!filterQuery || typeof filterQuery !== 'string') return filters;
 
-  // Функция за извличане на филтър стойности
+  // Функция за извличане на филтър стойности с validation
   const getFilterValues = (filterName: string): string[] => {
-    return filterQuery?.split(`${filterName}[`)[1]?.split(']')[0]?.split(',') || [];
+    const match = filterQuery.match(new RegExp(`${filterName}\\[([^\\]]*)\\]`));
+    if (!match || !match[1]) return [];
+
+    const values = match[1].split(',').filter((val) => val && val.trim());
+    return values;
   };
 
   // Ценови филтър
   const priceRange = getFilterValues('price');
   if (priceRange.length === 2 && priceRange[0] && priceRange[1]) {
-    filters.minPrice = parseFloat(priceRange[0]);
-    filters.maxPrice = parseFloat(priceRange[1]);
+    const minPrice = parseFloat(priceRange[0]);
+    const maxPrice = parseFloat(priceRange[1]);
+    if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+      filters.minPrice = minPrice;
+      filters.maxPrice = maxPrice;
+    }
   }
 
-  // OnSale филтър
+  // OnSale филтър - само ако има валидна стойност
   const onSale = getFilterValues('sale');
-  if (onSale.length > 0) {
+  if (onSale.length > 0 && onSale.includes('true')) {
     filters.onSale = true;
   }
 
   // Search филтър
   const searchTerm = getFilterValues('search');
-  if (searchTerm.length > 0) {
+  if (searchTerm.length > 0 && searchTerm[0]) {
     filters.search = searchTerm[0];
   }
 
-  // Category филтър
+  // Category филтър - само ако има валидни стойности
   const categoryFilter = getFilterValues('category');
   if (categoryFilter.length > 0) {
-    filters.categorySlug = categoryFilter;
+    filters.categorySlug = categoryFilter.filter((cat) => cat && cat.trim());
   }
 
   return filters;
@@ -77,21 +85,12 @@ const loadProductsFromRoute = async () => {
     // Reset products състоянието за чист старт
     resetProductsState();
 
-    // Определяме страницата от URL
+    // Използваме route.params.pageNumber вместо мануално парсване от path
     let pageNumber = 1;
-
-    // Проверяваме дали сме в /products/page/N формат
-    if (route.path.startsWith('/products/page/')) {
-      const pathParts = route.path.split('/');
-      const pageIndex = pathParts.indexOf('page');
-      if (pageIndex !== -1 && pathParts[pageIndex + 1]) {
-        const pageParam = pathParts[pageIndex + 1];
-        if (pageParam) {
-          const parsedPage = parseInt(pageParam);
-          if (!isNaN(parsedPage) && parsedPage > 0) {
-            pageNumber = parsedPage;
-          }
-        }
+    if (route.params.pageNumber) {
+      const parsedPage = parseInt(route.params.pageNumber as string);
+      if (!isNaN(parsedPage) && parsedPage > 0) {
+        pageNumber = parsedPage;
       }
     }
 
@@ -102,7 +101,7 @@ const loadProductsFromRoute = async () => {
     if (hasFilters || hasOrderBy) {
       // Ако има филтри или сортиране, зареждаме със серверните филтри
 
-      // Парсваме филтрите директно от route.query.filter за да избегнем timing проблеми
+      // Парсваме филтрите директно от route.query.filter с validation
       const filters = hasFilters ? parseFiltersFromQuery(route.query.filter as string) : {};
 
       // Конвертираме orderby в GraphQL формат
@@ -118,7 +117,7 @@ const loadProductsFromRoute = async () => {
 
       await loadProductsPage(pageNumber, undefined, graphqlOrderBy, filters);
     } else {
-      // Ако няма филтри, зареждаме първата страница
+      // Ако няма филтри, зареждаме конкретната страница
       await loadProductsPage(pageNumber);
     }
 
