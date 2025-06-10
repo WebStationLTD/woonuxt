@@ -100,13 +100,41 @@ const loadCategoryProducts = async () => {
       // Ако има филтри или сортиране, зареждаме със серверните филтри
       let filters: any = {};
 
-      // Директно строим филтрите от route query вместо да използваме buildGraphQLFilters
+      // Използваме същата логика за парсене на филтри като в /products страницата
       if (hasFilters) {
-        const filterParam = route.query.filter;
-        if (filterParam === 'onSale') {
+        const filterQuery = route.query.filter as string;
+
+        // Функция за извличане на филтър стойности с validation (copy от products.vue)
+        const getFilterValues = (filterName: string): string[] => {
+          const match = filterQuery.match(new RegExp(`${filterName}\\[([^\\]]*)\\]`));
+          if (!match || !match[1]) return [];
+
+          const values = match[1].split(',').filter((val) => val && val.trim());
+          return values;
+        };
+
+        // OnSale филтър - само ако има валидна стойност
+        const onSale = getFilterValues('sale');
+        if (onSale.length > 0 && onSale.includes('true')) {
           filters.onSale = true;
         }
-        // Може да добавим други филтри тук ако е нужно
+
+        // Ценови филтър
+        const priceRange = getFilterValues('price');
+        if (priceRange.length === 2 && priceRange[0] && priceRange[1]) {
+          const minPrice = parseFloat(priceRange[0]);
+          const maxPrice = parseFloat(priceRange[1]);
+          if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+            filters.minPrice = minPrice;
+            filters.maxPrice = maxPrice;
+          }
+        }
+
+        // Search филтър
+        const searchTerm = getFilterValues('search');
+        if (searchTerm.length > 0 && searchTerm[0]) {
+          filters.search = searchTerm[0];
+        }
       }
 
       // Конвертираме orderby в GraphQL формат
