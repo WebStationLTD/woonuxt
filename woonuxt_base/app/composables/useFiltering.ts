@@ -110,8 +110,11 @@ export function useFiltering() {
     const route = useRoute();
     let newFilterQuery = filterQuery.value || '';
 
-    // Filter out empty or whitespace-only values
-    const cleanFilterValue = filterValue.filter((val) => val && val.trim());
+    // Filter out empty or whitespace-only values - конвертираме към string преди validation
+    const cleanFilterValue = filterValue
+      .map((val) => String(val)) // Конвертираме към string (numbers станат strings)
+      .filter((val) => val && val.trim()) // След това safely извикваме trim
+      .filter((val) => val !== 'null' && val !== 'undefined'); // Премахваме null/undefined strings
 
     // If there are filters and filterName is not one of them, add the filter query
     if (!filterQuery.value?.includes(filterName)) {

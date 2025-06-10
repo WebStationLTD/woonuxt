@@ -1,14 +1,50 @@
 <script setup>
 const { getOrderQuery, setOrderQuery } = await useSorting();
 const { storeSettings } = useAppConfig();
-const selectedOrder = ref(getOrderQuery());
-const orderby = ref(selectedOrder.value.orderBy || 'date');
-const order = ref(selectedOrder.value.order);
+const route = useRoute();
 
-// Update the URL when the checkbox is changed
-watch([orderby, order], () => {
-  setOrderQuery(orderby.value, order.value);
-});
+// Reactive refs که се синхронизират с URL-а
+const orderby = ref('date');
+const order = ref('DESC');
+
+// Функция за синхронизация със състоянието от URL
+const syncWithURL = () => {
+  const currentOrder = getOrderQuery();
+  orderby.value = currentOrder.orderBy || 'date';
+  order.value = currentOrder.order || 'DESC';
+};
+
+// Инициална синхронизация
+syncWithURL();
+
+// Флаг за предотвратяване на endless loops
+let isUpdatingFromURL = false;
+
+// Слушаме за промени в URL за да синхронизираме състоянието
+watch(
+  () => route.query,
+  () => {
+    if (!isUpdatingFromURL) {
+      isUpdatingFromURL = true;
+      syncWithURL();
+      nextTick(() => {
+        isUpdatingFromURL = false;
+      });
+    }
+  },
+  { deep: true },
+);
+
+// Update the URL when the dropdown is changed
+watch(
+  [orderby, order],
+  () => {
+    if (!isUpdatingFromURL) {
+      setOrderQuery(orderby.value, order.value);
+    }
+  },
+  { flush: 'post' },
+);
 </script>
 
 <template>

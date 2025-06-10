@@ -26,30 +26,8 @@ export function useSorting() {
     const route = useRoute();
     router.push({ query: { ...route.query, orderby: orderby ?? undefined, order: order ?? undefined } });
 
-    // Изчакваме URL-а да се обнови и после зареждаме продуктите
-    await nextTick();
-
-    const filters = buildGraphQLFilters();
-
-    // Получаваме текущата категория от route ако е налична
-    let categorySlug: string[] | undefined;
-    if (route.params.slug) {
-      categorySlug = [route.params.slug as string];
-    }
-
-    // Конвертираме orderby в GraphQL формат
-    let graphqlOrderBy = 'DATE';
-    if (orderby === 'price') graphqlOrderBy = 'PRICE';
-    else if (orderby === 'rating') graphqlOrderBy = 'RATING';
-    else if (orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
-    else if (orderby === 'date') graphqlOrderBy = 'DATE';
-    else if (orderby === 'discount') {
-      // За discount използваме DATE и ще сортираме клиентски
-      // защото WooCommerce GraphQL не поддържа директно discount сортиране
-      graphqlOrderBy = 'DATE';
-    }
-
-    await loadProductsWithFilters(categorySlug, graphqlOrderBy, filters);
+    // Навигацията ще trigger-не watcher-а в страниците който ще зареди продуктите
+    // Премахваме loadProductsWithFilters за да избегнем race conditions
   }
 
   const isSortingActive = computed<boolean>(() => !!orderQuery.value);

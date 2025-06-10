@@ -3,6 +3,7 @@ query getProducts(
   $slug: [String]
   $first: Int = 12
   $orderby: ProductsOrderByEnum = DATE
+  $order: OrderEnum = DESC
   $minPrice: Float
   $maxPrice: Float
   $onSale: Boolean
@@ -18,7 +19,7 @@ query getProducts(
       maxPrice: $maxPrice
       onSale: $onSale
       search: $search
-      orderby: { field: $orderby, order: DESC }
+      orderby: { field: $orderby, order: $order }
       status: "publish"
     }
   ) {
