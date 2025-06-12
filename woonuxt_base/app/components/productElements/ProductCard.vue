@@ -106,6 +106,27 @@ watch(cart, () => {
     variationError.value = '';
   }, 300);
 });
+
+// Изчисляване на вариациите за текстово показване (използваме същата логика като в селекта)
+const availableVariationsText = computed(() => {
+  if (!hasVariations.value) return '';
+
+  const variations = props.node?.variations?.nodes || [];
+  const variationTexts = variations
+    .map((variation) => {
+      if (variation.attributes?.nodes?.length) {
+        return variation.attributes.nodes
+          .map((attr) => attr.value)
+          .filter(Boolean)
+          .join(' / ');
+      } else {
+        return variation.name;
+      }
+    })
+    .filter(Boolean);
+
+  return variationTexts.join(' | ');
+});
 </script>
 
 <template>
@@ -201,6 +222,14 @@ watch(cart, () => {
             <span>Купи</span>
             <LoadingIcon v-if="isLoading" stroke="3" size="10" color="#fff" class="ml-1" />
           </button>
+        </div>
+      </div>
+
+      <!-- Показване на наличните вариации като текст (най-долу вдясно) -->
+      <div v-if="hasVariations && availableVariationsText" class="mt-2 text-left">
+        <div class="text-xs text-gray-500 leading-relaxed">
+          <span class="font-medium">Вариации:</span>
+          <span class="ml-1">{{ availableVariationsText }}</span>
         </div>
       </div>
     </div>
