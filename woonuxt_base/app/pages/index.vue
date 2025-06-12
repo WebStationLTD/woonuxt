@@ -133,7 +133,7 @@ if (homeSeo?.schema?.raw) {
       </div>
     </section>
 
-    <CtaImage />
+    <!-- <CtaImage /> -->
 
     <!-- <PromoSection /> -->
 
