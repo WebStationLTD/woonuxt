@@ -29,7 +29,7 @@ useSeoMeta({
   twitterTitle: homeSeo?.twitterTitle || siteName,
   twitterDescription: homeSeo?.twitterDescription || description,
   twitterImage: homeSeo?.twitterImage?.sourceUrl || siteImage,
-  robots: homeSeo?.metaRobotsNoindex ? 'noindex' : undefined,
+  robots: homeSeo?.metaRobotsNoindex ? 'index' : undefined,
 });
 
 // Добавяне на структурирани данни (schema.org) ако са налични в Yoast

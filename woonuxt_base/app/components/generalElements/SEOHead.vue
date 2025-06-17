@@ -70,8 +70,8 @@ if (info.seo?.schema?.raw) {
     <Meta name="twitter:url" hid="twitter:url" :content="canonical" />
     <Link rel="canonical" hid="canonical" :href="canonical" />
     <!-- Add meta robots if specified in Yoast SEO -->
-    <Meta v-if="info.seo?.metaRobotsNoindex" name="robots" content="noindex" />
-    <Meta v-if="info.seo?.metaRobotsNofollow" name="robots" content="nofollow" />
+    <Meta v-if="info.seo?.metaRobotsNoindex" name="robots" content="index" />
+    <Meta v-if="info.seo?.metaRobotsNofollow" name="robots" content="follow" />
     <!-- Schema.org data is now added using useHead in the script section -->
   </Head>
 </template>
