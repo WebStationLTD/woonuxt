@@ -18,7 +18,7 @@ const basePath = computed(() => {
   } else if (route.path.startsWith('/produkt-kategoriya/') && route.params.categorySlug) {
     return `/produkt-kategoriya/${route.params.categorySlug}`;
   }
-  return '/products';
+  return '/magazin';
 });
 
 const queryParams = computed(() => ({ ...route.query }));

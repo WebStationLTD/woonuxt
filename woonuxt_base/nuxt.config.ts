@@ -65,7 +65,7 @@ export default defineNuxtConfig({
         pages.push({ name, path, file: resolve(`./app/pages/${file}`) });
       };
 
-      addPage('product-page-pager', '/products/page/:pageNumber', 'products.vue');
+      addPage('magazin-page-pager', '/magazin/page/:pageNumber', 'magazin.vue');
 
       // Йерархични маршрути за категории (parent/child)
       addPage('produkt-kategoriya-parent-child', '/produkt-kategoriya/:parent/:child', 'produkt-kategoriya/[parent]/[child].vue');
@@ -88,6 +88,7 @@ export default defineNuxtConfig({
       '/checkout/order-received/**': { ssr: false },
       '/order-summary/**': { ssr: false },
       '/product/**': { redirect: { to: '/produkt/**', statusCode: 301 } },
+      '/products/**': { redirect: { to: '/magazin/**', statusCode: 301 } },
     },
   },
 

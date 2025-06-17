@@ -60,7 +60,7 @@ export default defineNuxtConfig({
       "/oauth/**",
     ],
     cacheTime: 1000 * 60 * 15,
-    routes: ["/", "/products", "/categories", "/contact", "/wishlist"],
+    routes: ["/", "/magazin", "/categories", "/contact", "/wishlist"],
   },
 
   "graphql-client": {
@@ -85,7 +85,7 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
-      routes: ["/", "/products", "/categories", "/contact"],
+      routes: ["/", "/magazin", "/categories", "/contact"],
       concurrency: 10,
       interval: 1000,
       failOnError: false,
@@ -95,7 +95,7 @@ export default defineNuxtConfig({
     routeRules: {
       // Генерирани по време на билд
       "/": { static: true },
-      "/products": {
+      "/magazin": {
         // isr: {
         //   expiration: 300, // 5 минути за продукти
         // },

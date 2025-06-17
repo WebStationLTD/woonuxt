@@ -8,7 +8,7 @@ const { toggleCart } = useCart();
     <div class="mb-2 text-xl font-semibold">{{ $t('messages.shop.cartEmpty') }}</div>
     <span class="mb-8">{{ $t('messages.shop.addProductsInYourCart') }}</span>
     <NuxtLink
-      to="/products"
+      to="/magazin"
       @click="toggleCart(false)"
       class="flex items-center justify-center gap-3 p-2 px-3 mt-4 font-semibold text-center text-white rounded-lg shadow-md bg-primary hover:bg-primary-dark">
       {{ $t('messages.shop.browseOurProducts') }}

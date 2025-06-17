@@ -29,29 +29,27 @@ const numberOfPages = computed<number>(() => Math.ceil((products.value?.length |
 
 const prevSrc = (pageNumber: number) => {
   if (currentQuery.value === '') {
-    return decodeURIComponent(`/products/page/${pageNumber > 1 ? pageNumber - 1 : pageNumber}`);
+    return decodeURIComponent(`/magazin/page/${pageNumber > 1 ? pageNumber - 1 : pageNumber}`);
   } else {
-    return decodeURIComponent(
-      pageNumber > 1 ? `/products/page/${pageNumber - 1}/?${currentQuery.value}` : `/products/page/${pageNumber}/?${currentQuery.value}`,
-    );
+    return decodeURIComponent(pageNumber > 1 ? `/magazin/page/${pageNumber - 1}/?${currentQuery.value}` : `/magazin/page/${pageNumber}/?${currentQuery.value}`);
   }
 };
 
 const nextSrc = (pageNumber: number) => {
   if (currentQuery.value === '') {
-    return decodeURIComponent(`/products/page/${pageNumber < numberOfPages.value ? pageNumber + 1 : pageNumber}`);
+    return decodeURIComponent(`/magazin/page/${pageNumber < numberOfPages.value ? pageNumber + 1 : pageNumber}`);
   } else {
     return decodeURIComponent(
-      pageNumber < numberOfPages.value ? `/products/page/${pageNumber + 1}/?${currentQuery.value}` : `/products/page/${pageNumber}/?${currentQuery.value}`,
+      pageNumber < numberOfPages.value ? `/magazin/page/${pageNumber + 1}/?${currentQuery.value}` : `/magazin/page/${pageNumber}/?${currentQuery.value}`,
     );
   }
 };
 
 const numberSrc = (pageNumber: number) => {
   if (currentQuery.value === '') {
-    return decodeURIComponent(`/products/page/${pageNumber}`);
+    return decodeURIComponent(`/magazin/page/${pageNumber}`);
   } else {
-    return decodeURIComponent(`/products/page/${pageNumber}/?${currentQuery.value}`);
+    return decodeURIComponent(`/magazin/page/${pageNumber}/?${currentQuery.value}`);
   }
 };
 </script>

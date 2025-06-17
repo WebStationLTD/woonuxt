@@ -4,8 +4,8 @@ const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
 const { isQueryEmpty } = useHelpers();
 
-let shopTitle = 'Products';
-let shopDescription = 'Discover our products';
+let shopTitle = 'Магазин';
+let shopDescription = 'Открийте нашите продукти';
 let seoDataSet = false;
 
 // Проследяваме дали някога сме зареждали данни

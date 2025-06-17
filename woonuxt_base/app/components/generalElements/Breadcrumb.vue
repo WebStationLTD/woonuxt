@@ -10,7 +10,7 @@ const { data: categoriesData } = await useAsyncGql('getProductCategories');
 const allCategories = computed(() => categoriesData.value?.productCategories?.nodes || []);
 
 const format = computed(() => [
-  { name: 'Products', slug: '/products' },
+  { name: 'Магазин', slug: '/magazin' },
   {
     name: primaryCategory.value?.name,
     slug: primaryCategory.value ? generateCategoryUrl(primaryCategory.value, allCategories.value) : '',

@@ -41,7 +41,7 @@
         </p>
         <div class="mt-8">
           <NuxtLink
-            to="/products"
+            to="/magazin"
             class="inline-flex rounded-md bg-[#9c0100] px-3.5 py-2.5 text-sm font-semibold text-white hover:text-black shadow-xs hover:bg-[#ebedeb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
             Пазарувайте онлайн
           </NuxtLink>

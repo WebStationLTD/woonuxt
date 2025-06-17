@@ -73,7 +73,7 @@ onUnmounted(() => {
   <section v-if="newProducts.length" class="my-4">
     <div class="flex items-end justify-between mb-8">
       <h2 class="text-2xl font-semibold md:text-3xl px-4">{{ $t('messages.shop.newArrivals') }}</h2>
-      <NuxtLink class="text-primary px-4" to="/products">{{ $t('messages.general.viewAll') }}</NuxtLink>
+      <NuxtLink class="text-primary px-4" to="/magazin">{{ $t('messages.general.viewAll') }}</NuxtLink>
     </div>
 
     <client-only>

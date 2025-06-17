@@ -100,7 +100,7 @@ const loadCategoryProducts = async () => {
       // Ако има филтри или сортиране, зареждаме със серверните филтри
       let filters: any = {};
 
-      // Използваме същата логика за парсене на филтри като в /products страницата
+      // Използваме същата логика за парсене на филтри като в /magazin страницата
       if (hasFilters) {
         const filterQuery = route.query.filter as string;
 
