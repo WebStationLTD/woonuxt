@@ -18,7 +18,7 @@ useHead({
     { property: 'og:title', content: categoriesSeo?.opengraphTitle || categoriesTitle },
     { property: 'og:description', content: categoriesSeo?.opengraphDescription || categoriesDescription },
   ],
-  link: [{ rel: 'canonical', href: categoriesSeo?.canonical || 'https://v3.woonuxt.com/produkt-kategoriya' }],
+  link: [{ rel: 'canonical', href: categoriesSeo?.canonical || '/categories' }],
 });
 
 // Добавяне на структурирани данни (schema.org) ако са налични в Yoast
