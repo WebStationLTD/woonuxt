@@ -22,9 +22,25 @@ query getProductCategories($first: Int, $after: String, $slug: [String]) {
           databaseId
           description
           count
+          uri
           image {
             ...Image
           }
+          parent {
+            node {
+              slug
+              name
+              databaseId
+            }
+          }
+          ...SeoCategoryFragment
+        }
+      }
+      parent {
+        node {
+          slug
+          name
+          databaseId
         }
       }
       ...SeoCategoryFragment

@@ -66,8 +66,15 @@ export default defineNuxtConfig({
       };
 
       addPage('product-page-pager', '/products/page/:pageNumber', 'products.vue');
+
+      // Йерархични маршрути за категории (parent/child)
+      addPage('produkt-kategoriya-parent-child', '/produkt-kategoriya/:parent/:child', 'produkt-kategoriya/[parent]/[child].vue');
+      addPage('produkt-kategoriya-parent-child-pager', '/produkt-kategoriya/:parent/:child/page/:pageNumber', 'produkt-kategoriya/[parent]/[child].vue');
+
+      // Основни маршрути за категории (fallback за плоски URL-и)
       addPage('produkt-kategoriya-slug', '/produkt-kategoriya/:categorySlug', 'produkt-kategoriya/[slug].vue');
       addPage('produkt-kategoriya-page-pager', '/produkt-kategoriya/:categorySlug/page/:pageNumber', 'produkt-kategoriya/[slug].vue');
+
       addPage('order-received', '/checkout/order-received/:orderId', 'order-summary.vue');
       addPage('order-summary', '/order-summary/:orderId', 'order-summary.vue');
 

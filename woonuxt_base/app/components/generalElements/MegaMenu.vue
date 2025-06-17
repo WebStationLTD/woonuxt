@@ -30,7 +30,7 @@
             <div v-else-if="productCategories?.length" class="hidden md:grid grid-cols-12 gap-1">
               <div v-for="category in productCategories" :key="category.id" class="group">
                 <NuxtLink
-                  :to="`/produkt-kategoriya/${category.slug}`"
+                  :to="getCategoryUrl(category)"
                   class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-200 text-center"
                   @click="close">
                   <!-- Иконка или изображение - уголемени за десктоп -->
@@ -64,7 +64,7 @@
               <div class="grid grid-cols-3 gap-4 mb-6">
                 <div v-for="category in productCategories.slice(0, 9)" :key="category.id" class="group">
                   <NuxtLink
-                    :to="`/produkt-kategoriya/${category.slug}`"
+                    :to="getCategoryUrl(category)"
                     class="flex flex-col items-center p-4 bg-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-lg transition-all duration-200 text-center"
                     @click="close">
                     <!-- Уголемена иконка -->
@@ -99,7 +99,7 @@
                   <NuxtLink
                     v-for="category in productCategories.slice(9, 15)"
                     :key="category.id"
-                    :to="`/produkt-kategoriya/${category.slug}`"
+                    :to="getCategoryUrl(category)"
                     class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-primary/5 hover:text-primary transition-all duration-200 text-sm"
                     @click="close">
                     <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
@@ -173,6 +173,8 @@
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
 import { ChevronDownIcon } from '@heroicons/vue/20/solid';
 
+const { generateCategoryUrl } = useCategoryUrls();
+
 // Зареждаме категориите от админа
 const { data, pending } = await useAsyncGql('getProductCategories', {
   first: 20, // Лимитираме до 20 основни категории
@@ -184,6 +186,11 @@ const { data, pending } = await useAsyncGql('getProductCategories', {
 const productCategories = computed(() => {
   return data.value?.productCategories?.nodes || [];
 });
+
+// Функция за генериране на правилен URL за категория
+const getCategoryUrl = (category) => {
+  return generateCategoryUrl(category, productCategories.value);
+};
 </script>
 
 <style scoped>

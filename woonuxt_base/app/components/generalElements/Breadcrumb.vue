@@ -1,16 +1,19 @@
 <script setup lang="ts">
-const runtimeConfig = useRuntimeConfig();
+const { generateCategoryUrl } = useCategoryUrls();
 
 const { product } = defineProps<{ product: Product }>();
 
-// TODO fetch perma link from WP API
-const productCategoryPermallink = runtimeConfig?.public?.PRODUCT_CATEGORY_PERMALINK || '/produkt-kategoriya/';
 const primaryCategory = computed(() => product.productCategories?.nodes[0]);
+
+// Получаваме всички категории за да можем да генерираме правилните URL-и
+const { data: categoriesData } = await useAsyncGql('getProductCategories');
+const allCategories = computed(() => categoriesData.value?.productCategories?.nodes || []);
+
 const format = computed(() => [
   { name: 'Products', slug: '/products' },
   {
     name: primaryCategory.value?.name,
-    slug: `${String(productCategoryPermallink)}${primaryCategory.value?.slug}`,
+    slug: primaryCategory.value ? generateCategoryUrl(primaryCategory.value, allCategories.value) : '',
   },
   { name: product.name },
 ]);

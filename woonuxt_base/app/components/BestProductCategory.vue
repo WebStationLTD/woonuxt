@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { FALLBACK_IMG } = useHelpers();
-const runtimeConfig = useRuntimeConfig();
+const { generateCategoryUrl, safeDecodeURI } = useCategoryUrls();
+
 const props = defineProps({
   categoryId: { type: Number, default: 21 }, // По подразбиране ще показваме категория с ID 21 (Бокс)
 });
@@ -19,12 +20,9 @@ const subcategories = computed(() => {
   return category.value?.children?.nodes || [];
 });
 
-const productCategoryPermalink = runtimeConfig?.public?.PRODUCT_CATEGORY_PERMALINK || '/produkt-kategoriya/';
-
-// Функция за безопасно декодиране на URL
-const safeDecodeURI = (uri: string | null | undefined): string => {
-  if (!uri) return '';
-  return decodeURIComponent(uri);
+// Функция за генериране на правилен URL за категория
+const getCategoryUrl = (category: any) => {
+  return generateCategoryUrl(category, allCategories);
 };
 </script>
 
@@ -34,9 +32,7 @@ const safeDecodeURI = (uri: string | null | undefined): string => {
       <!-- Банер за категорията с линк към страницата на категорията -->
       <div class="flex flex-col md:flex-row rounded-xl overflow-hidden mb-8 relative category-banner">
         <div class="bg-gray-800 text-white p-6 flex items-center md:w-1/2 h-[120px] black-bg">
-          <NuxtLink
-            :to="`/produkt-kategoriya/${safeDecodeURI(category.slug)}`"
-            class="text-2xl md:text-3xl lg:text-4xl font-bold hover:text-primary transition-colors">
+          <NuxtLink :to="getCategoryUrl(category)" class="text-2xl md:text-3xl lg:text-4xl font-bold hover:text-primary transition-colors">
             {{ category.name }}
           </NuxtLink>
         </div>
@@ -56,7 +52,7 @@ const safeDecodeURI = (uri: string | null | undefined): string => {
         <NuxtLink
           v-for="subcategory in subcategories"
           :key="subcategory.databaseId"
-          :to="`/produkt-kategoriya/${safeDecodeURI(subcategory.slug)}`"
+          :to="getCategoryUrl(subcategory)"
           class="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-primary hover:shadow-md transition-all">
           <!-- <div class="w-full h-48 overflow-hidden mb-4 rounded-lg">
             <NuxtImg

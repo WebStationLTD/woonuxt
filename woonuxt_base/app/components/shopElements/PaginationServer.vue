@@ -4,8 +4,16 @@ const route = useRoute();
 
 // Cached computed properties за оптимизация
 const basePath = computed(() => {
-  // Проверяваме за новите български пътища
-  if (route.name === 'produkt-kategoriya-slug' && route.params.categorySlug) {
+  // Проверяваме за йерархични категории (parent/child)
+  if (
+    (route.name === 'produkt-kategoriya-parent-child' || route.name === 'produkt-kategoriya-parent-child-pager') &&
+    route.params.parent &&
+    route.params.child
+  ) {
+    return `/produkt-kategoriya/${route.params.parent}/${route.params.child}`;
+  }
+  // Проверяваме за новите български пътища (плоски категории)
+  else if (route.name === 'produkt-kategoriya-slug' && route.params.categorySlug) {
     return `/produkt-kategoriya/${route.params.categorySlug}`;
   } else if (route.path.startsWith('/produkt-kategoriya/') && route.params.categorySlug) {
     return `/produkt-kategoriya/${route.params.categorySlug}`;
