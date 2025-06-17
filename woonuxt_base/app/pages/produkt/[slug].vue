@@ -47,8 +47,7 @@ onMounted(async () => {
     const { product } = await GqlGetStockStatus({ slug });
     if (product) mergeLiveStockStatus(product as Product);
   } catch (error: any) {
-    const errorMessage = error?.gqlErrors?.[0].message;
-    if (errorMessage) console.error(errorMessage);
+    // Error loading stock status
   }
 });
 

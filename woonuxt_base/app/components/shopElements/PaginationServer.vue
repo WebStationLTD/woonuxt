@@ -18,12 +18,6 @@ const basePath = computed(() => {
   } else if (route.path.startsWith('/produkt-kategoriya/') && route.params.categorySlug) {
     return `/produkt-kategoriya/${route.params.categorySlug}`;
   }
-  // Резервна проверка за старите пътища (ако все още се използват)
-  else if (route.name === 'product-category-slug' && route.params.slug) {
-    return `/product-category/${route.params.slug}`;
-  } else if (route.path.startsWith('/product-category/') && route.params.slug) {
-    return `/product-category/${route.params.slug}`;
-  }
   return '/products';
 });
 

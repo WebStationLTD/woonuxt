@@ -14,8 +14,6 @@ export const useBlog = () => {
   const setPosts = (newPosts: Post[]) => {
     if (newPosts && newPosts.length > 0) {
       posts.value = newPosts;
-    } else {
-      console.warn('Опит за задаване на празен масив от публикации');
     }
   };
 
@@ -54,7 +52,6 @@ export const useBlog = () => {
       }
     } catch (err: any) {
       error.value = err.message || 'Грешка при зареждане на публикации';
-      console.error('Грешка при зареждане на още публикации:', err);
     } finally {
       loading.value = false;
     }
@@ -77,14 +74,11 @@ export const useBlog = () => {
       if (data.value?.post) {
         setCurrentPost(data.value.post);
         return data.value.post;
-      } else {
-        console.warn('Публикацията не е намерена:', slug);
       }
 
       return null;
     } catch (err: any) {
       error.value = err.message || 'Грешка при зареждане на публикацията';
-      console.error('Грешка при зареждане на публикация:', err);
       return null;
     } finally {
       loading.value = false;

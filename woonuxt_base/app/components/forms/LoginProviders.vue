@@ -13,7 +13,7 @@ if (code && state && provider) {
       router.replace({ query: {} });
     })
     .catch((error) => {
-      console.error('Login failed:', error);
+      // Login failed
     });
 }
 

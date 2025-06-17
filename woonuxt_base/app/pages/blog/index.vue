@@ -13,7 +13,6 @@ try {
   });
   seoDataSet = true;
 } catch (error) {
-  console.error('Грешка при зареждане на SEO данни:', error);
   useHead({
     title: 'Блог',
     meta: [{ name: 'description', content: 'Всички публикации от нашия блог' }],
@@ -32,11 +31,9 @@ try {
   debugData.value = data.value;
   if (data.value?.posts?.nodes) {
     setPosts(data.value.posts.nodes);
-  } else {
-    console.warn('Не са намерени публикации в блога. Данни:', data.value);
   }
 } catch (error) {
-  console.error('Грешка при зареждане на публикации:', error);
+  // Грешка при зареждане на публикации
 }
 </script>
 

@@ -47,7 +47,6 @@ nuxtApp.hook('app:mounted', () => {
     if (process.client) {
       const loadingIndicator = document.querySelector('.nuxt-loading-indicator');
       if (loadingIndicator && getComputedStyle(loadingIndicator).opacity !== '0') {
-        console.log('🔧 Принудително завършване на loading indicator при app:mounted');
         (loadingIndicator as HTMLElement).style.width = '100%';
         setTimeout(() => {
           (loadingIndicator as HTMLElement).style.opacity = '0';
@@ -62,7 +61,6 @@ if (process.client) {
   setTimeout(() => {
     const loadingIndicator = document.querySelector('.nuxt-loading-indicator');
     if (loadingIndicator && getComputedStyle(loadingIndicator).opacity !== '0') {
-      console.log('🔧 Глобална резервна защита - принудително завършване на loading indicator');
       (loadingIndicator as HTMLElement).style.width = '100%';
       setTimeout(() => {
         (loadingIndicator as HTMLElement).style.opacity = '0';

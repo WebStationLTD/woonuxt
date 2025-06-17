@@ -34,7 +34,7 @@ export function useCheckout() {
 
       if (updateCustomer) await refreshCart();
     } catch (error) {
-      console.error('Error updating shipping location:', error);
+      // Error updating shipping location
     } finally {
       isUpdatingCart.value = false;
     }
@@ -117,7 +117,7 @@ export function useCheckout() {
             }),
           );
         } catch (e) {
-          console.error('Не може да се запише поръчката в localStorage', e);
+          // Не може да се запише поръчката в localStorage
         }
       }
 

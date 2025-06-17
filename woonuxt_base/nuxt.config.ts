@@ -88,7 +88,6 @@ export default defineNuxtConfig({
       '/checkout/order-received/**': { ssr: false },
       '/order-summary/**': { ssr: false },
       '/product/**': { redirect: { to: '/produkt/**', statusCode: 301 } },
-      '/product-category/**': { redirect: { to: '/produkt-kategoriya/**', statusCode: 301 } },
     },
   },
 

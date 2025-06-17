@@ -13,7 +13,7 @@ onMounted(() => {
         order.value = JSON.parse(savedOrder);
       }
     } catch (e) {
-      console.error('Грешка при извличане на данни за поръчката', e);
+      // Грешка при извличане на данни за поръчката
     }
   }
 });

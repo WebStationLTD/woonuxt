@@ -75,7 +75,6 @@ const parseFiltersFromQuery = (filterQuery: string) => {
 // Функция за зареждане на продукти според URL
 const loadProductsFromRoute = async () => {
   if (isNavigating) {
-    console.log('🚫 Navigation already in progress, skipping...');
     return;
   }
 
@@ -130,7 +129,6 @@ const loadProductsFromRoute = async () => {
     // Принудително завършване на loading състоянието
     await nextTick();
   } catch (error) {
-    console.error('Грешка при зареждане на продукти:', error);
     hasEverLoaded.value = true; // Маркираме като опитано дори при грешка
   } finally {
     isNavigating = false;

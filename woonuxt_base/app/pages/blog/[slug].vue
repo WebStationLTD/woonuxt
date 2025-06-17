@@ -22,7 +22,6 @@ try {
       meta: [{ name: 'description', content: data.value.post.excerpt || 'Прочетете нашата блог публикация' }],
     });
   } else {
-    console.warn('Публикацията не е намерена:', slug);
     // Ако публикацията не е намерена
     useHead({
       title: 'Публикацията не е намерена',
@@ -34,7 +33,6 @@ try {
   }
 } catch (err) {
   error.value = err;
-  console.error('Грешка при зареждане на публикация:', err);
 
   // Базови SEO метаданни при грешка
   useHead({

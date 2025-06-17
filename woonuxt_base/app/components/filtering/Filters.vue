@@ -48,7 +48,6 @@ if (terms.filter((term) => term.taxonomyName === 'product_cat').length === 0) {
     }
   } catch (error) {
     // Тихо игнорираме грешки от fallback заявките
-    console.warn('Fallback category loading failed, using available terms');
   }
 }
 

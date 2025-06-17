@@ -3,7 +3,7 @@
     <div class="grid p-8 gap-6 md:grid-cols-2">
       <h3 class="font-semibold text-xl col-span-full">{{ $t('messages.account.changePassword') }}</h3>
 
-      <input type="text" v-model="viewer.username" name="username" autocomplete="username" style="display: none;"/>
+      <input type="text" v-model="viewer.username" name="username" autocomplete="username" style="display: none" />
 
       <div class="w-full">
         <label for="new-password">{{ $t('messages.account.newPassword') }}</label>
@@ -63,7 +63,6 @@ const updatePassword = async () => {
       }
     }
   } catch (error) {
-    console.error(error);
     const gqlError = error?.gqlErrors?.[0]?.message;
     errorMessage.value = gqlError || 'An error occurred. Please try again.';
     button.value = { text: t('messages.account.failed'), color: 'bg-red-500' };

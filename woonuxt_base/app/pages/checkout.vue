@@ -36,7 +36,7 @@ const payNow = async () => {
       const cardElement = elements.value.getElement('card') as StripeCardElement;
 
       const { setupIntent } = await stripe.confirmCardSetup(clientSecret, {
-        payment_method: { card: cardElement }
+        payment_method: { card: cardElement },
       });
 
       const { source } = await stripe.createSource(cardElement as CreateSourceData);
@@ -61,11 +61,9 @@ const payNow = async () => {
     if (order?.databaseId) {
       router.push('/thank-you');
     } else {
-      console.error('❌ Няма order.databaseId → не може да се направи redirect');
       throw new Error('Няма order ID за redirect!');
     }
   } catch (error) {
-    console.error('❌ Грешка при плащане или завършване на поръчката:', error);
     buttonText.value = t('messages.shop.placeOrder');
   }
 };
@@ -96,7 +94,9 @@ useSeoMeta({
         <Icon name="ion:cart-outline" size="156" class="opacity-25 mb-5" />
         <h2 class="text-2xl font-bold mb-2">{{ $t('messages.shop.cartEmpty') }}</h2>
         <span class="text-gray-400 mb-4">{{ $t('messages.shop.addProductsInYourCart') }}</span>
-        <NuxtLink to="/products" class="flex items-center justify-center gap-3 p-2 px-3 mt-4 font-semibold text-center text-white rounded-lg shadow-md bg-primary hover:bg-primary-dark">
+        <NuxtLink
+          to="/products"
+          class="flex items-center justify-center gap-3 p-2 px-3 mt-4 font-semibold text-center text-white rounded-lg shadow-md bg-primary hover:bg-primary-dark">
           {{ $t('messages.shop.browseOurProducts') }}
         </NuxtLink>
       </div>

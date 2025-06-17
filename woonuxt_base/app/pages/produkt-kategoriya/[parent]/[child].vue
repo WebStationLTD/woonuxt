@@ -256,7 +256,6 @@ const loadCategoryProducts = async () => {
     // Маркираме че сме зареждали данни поне веднъж
     hasEverLoaded.value = true;
   } catch (error) {
-    console.error('Грешка при зареждане на продукти:', error);
     hasEverLoaded.value = true;
   }
 };

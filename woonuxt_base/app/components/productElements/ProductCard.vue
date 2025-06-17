@@ -90,7 +90,6 @@ const addProductToCart = async () => {
 
     await addToCart(input);
   } catch (error) {
-    console.error('Грешка при добавяне в количката:', error);
     variationError.value = 'Възникна грешка при добавяне в количката';
   } finally {
     setTimeout(() => {
