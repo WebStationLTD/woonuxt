@@ -173,23 +173,28 @@
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
 import { ChevronDownIcon } from '@heroicons/vue/20/solid';
 
-const { generateCategoryUrl } = useCategoryUrls();
+const { generateCategoryUrl, ensureValidUrl } = useCategoryUrls();
 
-// Зареждаме категориите от админа
+// Зареждаме всички категории за правилно генериране на URL-и
 const { data, pending } = await useAsyncGql('getProductCategories', {
-  first: 20, // Лимитираме до 20 основни категории
+  first: 100, // Зареждаме всички категории за правилни URL-и
   after: null,
   slug: null,
 });
 
-// Извличаме категориите от отговора
-const productCategories = computed(() => {
+// Извличаме всички категории от отговора
+const allCategories = computed(() => {
   return data.value?.productCategories?.nodes || [];
+});
+
+// Показваме само първите 20 категории в менюто за UX
+const productCategories = computed(() => {
+  return allCategories.value.slice(0, 20);
 });
 
 // Функция за генериране на правилен URL за категория
 const getCategoryUrl = (category) => {
-  return generateCategoryUrl(category, productCategories.value);
+  return ensureValidUrl(category, allCategories.value);
 };
 </script>
 

@@ -185,11 +185,15 @@ const loadCategoryProducts = async () => {
       matchingCategory.value = findCategoryInHierarchy(allCategories.value, childSlug);
     }
 
-    // Ако няма намерена категория, излизаме
+    // Ако няма намерена категория, използваме childSlug директно
+    // Това ще работи за повечето случаи дори и да няма перфектно съвпадение
     if (!matchingCategory.value) {
-      hasEverLoaded.value = true;
-      return;
+      // Не излизаме, а продължаваме с childSlug директно
+      matchingCategory.value = { slug: childSlug, name: childSlug } as Category;
     }
+
+    // Използваме childSlug директно за по-надеждно зареждане
+    const categoryIdentifier = [childSlug];
 
     // Проверяваме дали има филтри или сортиране в URL
     const hasFilters = route.query.filter;
@@ -247,10 +251,10 @@ const loadCategoryProducts = async () => {
         else if (orderBy === 'discount') graphqlOrderBy = 'DATE';
       }
 
-      await loadProductsPage(pageNumber, [childSlug], graphqlOrderBy, filters);
+      await loadProductsPage(pageNumber, categoryIdentifier, graphqlOrderBy, filters);
     } else {
       // Ако няма филтри, зареждаме конкретната страница
-      await loadProductsPage(pageNumber, [childSlug]);
+      await loadProductsPage(pageNumber, categoryIdentifier);
     }
 
     // Маркираме че сме зареждали данни поне веднъж

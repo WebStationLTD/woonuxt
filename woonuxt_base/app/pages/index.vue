@@ -10,8 +10,8 @@ const { siteName, description, shortDescription, siteImage } = useAppConfig();
 const { data: seoData } = await useAsyncGql('getHomeSeo');
 const homeSeo = seoData.value?.page?.seo || null;
 
-// Получаване на категории
-const { data } = await useAsyncGql('getProductCategories', { first: 10 });
+// Получаване на всички категории
+const { data } = await useAsyncGql('getProductCategories', { first: 100 });
 const productCategories = data.value?.productCategories?.nodes || [];
 
 // Получаване на популярни продукти

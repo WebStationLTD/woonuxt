@@ -4,7 +4,7 @@ const { data: seoData } = await useAsyncGql('getCategoriesPage');
 const categoriesSeo = seoData.value?.page?.seo || null;
 
 // Получаване на всички продуктови категории
-const { data } = await useAsyncGql('getProductCategories');
+const { data } = await useAsyncGql('getProductCategories', { first: 100 });
 const productCategories = data.value.productCategories?.nodes as ProductCategory[];
 
 // Използване на SEO данни от Yoast ако са налични

@@ -20,31 +20,15 @@ export const useCategoryUrls = () => {
    * Генерира правилен URL за категория, като отчита йерархичната структура
    */
   const generateCategoryUrl = (category: Category, allCategories: Category[] = []): string => {
-    if (!category?.slug) return '/categories';
-
-    // Проверяваме дали категорията има родител
-    const parentSlug = category.parent?.node?.slug;
-
-    if (parentSlug) {
-      // Ако има родител, връщаме йерархичен URL
-      return `${productCategoryPermalink}${parentSlug}/${category.slug}`;
-    }
-
-    // Ако няма родител в category.parent, проверяваме дали тази категория е дете на някоя друга
-    const parentCategory = findParentCategory(category, allCategories);
-
-    if (parentCategory) {
-      return `${productCategoryPermalink}${parentCategory.slug}/${category.slug}`;
-    }
-
-    // Ако няма родител, връщаме плоския URL
-    return `${productCategoryPermalink}${category.slug}`;
+    return ensureValidUrl(category, allCategories);
   };
 
   /**
    * Намира родителската категория за дадена категория в списъка от всички категории
    */
   const findParentCategory = (targetCategory: Category, allCategories: Category[]): Category | null => {
+    if (!targetCategory.slug) return null;
+
     for (const category of allCategories) {
       if (category.children?.nodes) {
         const found = category.children.nodes.find((child) => child.slug === targetCategory.slug);
@@ -54,6 +38,36 @@ export const useCategoryUrls = () => {
       }
     }
     return null;
+  };
+
+  /**
+   * Проверява дали даден URL е валиден, ако не - връща fallback
+   */
+  const ensureValidUrl = (category: Category, allCategories: Category[] = []): string => {
+    if (!category?.slug) return '/categories';
+
+    const safeSlug = safeDecodeURI(category.slug);
+
+    // Първо опитваме йерархичен URL
+    const parentSlug = category.parent?.node?.slug;
+    if (parentSlug) {
+      const safeParentSlug = safeDecodeURI(parentSlug);
+      // Проверяваме дали parent категорията съществува в allCategories
+      const parentExists = allCategories.some((cat) => cat.slug === parentSlug);
+      if (parentExists) {
+        return `${productCategoryPermalink}${safeParentSlug}/${safeSlug}`;
+      }
+    }
+
+    // Ако parent в category.parent не съществува, търсим в allCategories
+    const parentCategory = findParentCategory(category, allCategories);
+    if (parentCategory && parentCategory.slug) {
+      const safeParentSlug = safeDecodeURI(parentCategory.slug);
+      return `${productCategoryPermalink}${safeParentSlug}/${safeSlug}`;
+    }
+
+    // Fallback към плосък URL
+    return `${productCategoryPermalink}${safeSlug}`;
   };
 
   /**
@@ -97,6 +111,7 @@ export const useCategoryUrls = () => {
 
   return {
     generateCategoryUrl,
+    ensureValidUrl,
     findParentCategory,
     hasChildren,
     isSubcategory,
