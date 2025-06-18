@@ -49,21 +49,21 @@ if (homeSeo?.schema?.raw) {
   <main>
     <!-- <HeroBanner /> -->
 
-    <PromoSection />
-
-    <NewProductsCarousel />
-
-    <BestProductCategory :categoryId="21" />
+    <!-- <PromoSection /> -->
 
     <section class="mt-4 mb-16 px-6">
-      <div class="flex items-end justify-between">
+      <!-- <div class="flex items-end justify-between">
         <h2 class="text-lg font-semibold md:text-2xl">{{ $t('messages.shop.shopByCategory') }}</h2>
         <NuxtLink class="text-primary" to="/categories">{{ $t('messages.general.viewAll') }}</NuxtLink>
-      </div>
+      </div> -->
       <div class="grid justify-center grid-cols-2 gap-4 mt-8 md:grid-cols-3 lg:grid-cols-5">
         <CategoryCard v-for="(category, i) in productCategories" :key="i" class="w-full" :node="category" :all-categories="productCategories" />
       </div>
     </section>
+
+    <NewProductsCarousel />
+
+    <!-- <BestProductCategory :categoryId="21" /> -->
 
     <CtaBullets />
 
@@ -77,61 +77,6 @@ if (homeSeo?.schema?.raw) {
     </div>
 
     <CtaQuality />
-
-    <section class="container grid gap-4 my-24 md:grid-cols-2 lg:grid-cols-4">
-      <div class="flex items-center gap-8 p-8 bg-white rounded-lg">
-        <img
-          src="/icons/box.svg"
-          width="60"
-          height="60"
-          alt="Безплатна доставка"
-          loading="lazy"
-          style="filter: brightness(0) saturate(100%) invert(13%) sepia(96%) saturate(7471%) hue-rotate(356deg) brightness(95%) contrast(118%)" />
-        <div>
-          <h3 class="text-xl font-semibold">Безплатна доставка</h3>
-          <p class="text-sm">Безплатна доставка при поръчка над 50 лв.</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-8 p-8 bg-white rounded-lg">
-        <img
-          src="/icons/moneyback.svg"
-          width="60"
-          height="60"
-          alt="Връщане на пари"
-          loading="lazy"
-          style="filter: brightness(0) saturate(100%) invert(13%) sepia(96%) saturate(7471%) hue-rotate(356deg) brightness(95%) contrast(118%)" />
-        <div>
-          <h3 class="text-xl font-semibold">Спокойствие</h3>
-          <p class="text-sm">30 дни гаранция за връщане на парите</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-8 p-8 bg-white rounded-lg">
-        <img
-          src="/icons/secure.svg"
-          width="60"
-          height="60"
-          alt="Сигурно плащане"
-          loading="lazy"
-          style="filter: brightness(0) saturate(100%) invert(13%) sepia(96%) saturate(7471%) hue-rotate(356deg) brightness(95%) contrast(118%)" />
-        <div>
-          <h3 class="text-xl font-semibold">100% Сигурност на плащането</h3>
-          <p class="text-sm">Вашите плащания са сигурни при нас.</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-8 p-8 bg-white rounded-lg">
-        <img
-          src="/icons/support.svg"
-          width="60"
-          height="60"
-          alt="Поддръжка 24/7"
-          loading="lazy"
-          style="filter: brightness(0) saturate(100%) invert(13%) sepia(96%) saturate(7471%) hue-rotate(356deg) brightness(95%) contrast(118%)" />
-        <div>
-          <h3 class="text-xl font-semibold">Поддръжка 24/7</h3>
-          <p class="text-sm">24/7 онлайн поддръжка</p>
-        </div>
-      </div>
-    </section>
 
     <!-- <CtaImage /> -->
 
