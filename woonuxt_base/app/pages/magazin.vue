@@ -4,23 +4,112 @@ const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
 const { isQueryEmpty } = useHelpers();
 
-let shopTitle = 'Магазин';
-let shopDescription = 'Открийте нашите продукти';
-let seoDataSet = false;
-
 // Проследяваме дали някога сме зареждали данни
 const hasEverLoaded = ref(false);
 
-// Резервни SEO данни веднага
-useHead({
-  title: shopTitle,
-  meta: [{ name: 'description', content: shopDescription }],
-});
-
-// SEO данни са в резервните метаданни горе
-
 // Get route instance once
 const route = useRoute();
+
+// Зареждаме Yoast SEO данните за shop страницата
+const { data: seoData } = await useAsyncGql('getShopPage');
+const shopSeo = seoData.value?.page?.seo || null;
+
+// Функция за генериране на SEO данни според страницата
+const generateSeoMeta = () => {
+  // Получаваме номера на страницата
+  let pageNumber = 1;
+  if (route.params.pageNumber) {
+    const parsedPage = parseInt(route.params.pageNumber as string);
+    if (!isNaN(parsedPage) && parsedPage > 0) {
+      pageNumber = parsedPage;
+    }
+  }
+
+  // Използваме Yoast данните като база, но с fallback
+  const baseTitle = shopSeo?.title || 'Магазин - Спортно оборудване и фитнес уреди';
+  const baseDescription =
+    shopSeo?.metaDesc || 'Разгледайте цялата ни колекция от спортно оборудване, фитнес уреди и аксесоари. Високо качество, конкурентни цени и бърза доставка.';
+
+  // Генерираме динамичен title и description
+  let finalTitle = baseTitle;
+  let finalDescription = baseDescription;
+
+  if (pageNumber > 1) {
+    finalTitle = `${baseTitle} - Страница ${pageNumber}`;
+    finalDescription = `${baseDescription} - Страница ${pageNumber}`;
+  }
+
+  const canonicalUrl =
+    pageNumber === 1
+      ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin`
+      : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${pageNumber}`;
+
+  return {
+    title: finalTitle,
+    description: finalDescription,
+    canonicalUrl: canonicalUrl,
+    pageNumber: pageNumber,
+  };
+};
+
+// Генерираме и задаваме SEO метаданните
+const seoMeta = generateSeoMeta();
+
+useSeoMeta({
+  title: seoMeta.title,
+  description: seoMeta.description,
+  ogTitle: shopSeo?.opengraphTitle || seoMeta.title,
+  ogDescription: shopSeo?.opengraphDescription || seoMeta.description,
+  ogType: 'website',
+  ogUrl: seoMeta.canonicalUrl,
+  ogImage: shopSeo?.opengraphImage?.sourceUrl,
+  twitterCard: 'summary_large_image',
+  twitterTitle: shopSeo?.twitterTitle || seoMeta.title,
+  twitterDescription: shopSeo?.twitterDescription || seoMeta.description,
+  twitterImage: shopSeo?.twitterImage?.sourceUrl,
+  robots: shopSeo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
+});
+
+// Canonical URL (използваме Yoast canonical ако е зададен за първата страница)
+const canonicalUrl = seoMeta.pageNumber === 1 && shopSeo?.canonical ? shopSeo.canonical : seoMeta.canonicalUrl;
+
+useHead({
+  link: [{ rel: 'canonical', href: canonicalUrl }],
+});
+
+// Schema markup от Yoast ако е наличен
+if (shopSeo?.schema?.raw) {
+  useHead({
+    script: [
+      {
+        type: 'application/ld+json',
+        innerHTML: shopSeo.schema.raw,
+      },
+    ],
+  });
+}
+
+// Prev/Next links за pagination SEO
+if (seoMeta.pageNumber > 1) {
+  const prevUrl =
+    seoMeta.pageNumber === 2
+      ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin`
+      : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber - 1}`;
+
+  useHead({
+    link: [{ rel: 'prev', href: prevUrl }],
+  });
+}
+
+// Next link ще добавим динамично когато знаем че има още страници
+const updateNextPrevLinks = () => {
+  if (pageInfo?.hasNextPage) {
+    const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber + 1}`;
+    useHead({
+      link: [{ rel: 'next', href: nextUrl }],
+    });
+  }
+};
 
 // Race condition protection
 let isNavigating = false;
@@ -126,6 +215,10 @@ const loadProductsFromRoute = async () => {
     // Принудително обновяване на currentPage за правилна синхронизация с pagination
     currentPage.value = pageNumber;
 
+    // Обновяваме next/prev links след зареждане на данните
+    await nextTick();
+    updateNextPrevLinks();
+
     // Принудително завършване на loading състоянието
     await nextTick();
   } catch (error) {
@@ -179,6 +272,17 @@ watch(
       loadProductsFromRoute();
     }
   },
+);
+
+// Watcher за pageInfo за динамично обновяване на next/prev links
+watch(
+  () => pageInfo,
+  () => {
+    if (process.client) {
+      updateNextPrevLinks();
+    }
+  },
+  { deep: true },
 );
 
 // Computed за показване на loading състояние

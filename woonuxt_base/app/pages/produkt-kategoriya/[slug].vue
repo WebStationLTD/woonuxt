@@ -46,37 +46,29 @@ const routeSlug = route.params.categorySlug || route.params.slug; // Първо 
 const decodedSlug = routeSlug ? decodeURIComponent(String(routeSlug)) : '';
 
 const slug = decodedSlug;
-console.log('🔍 DEBUG: Final slug to use:', slug);
 
 // Заявяваме всички категории ВКЛЮЧИТЕЛНО празни (hideEmpty: false)
 const { data: categoryData } = await useAsyncGql('getProductCategories', { first: 100, hideEmpty: false });
-
-console.log('📊 DEBUG: All categories loaded:', categoryData.value?.productCategories?.nodes?.length || 0);
 
 let matchingCategory: Category | null = null;
 
 if (categoryData.value?.productCategories?.nodes) {
   // Търсим в основните категории
   matchingCategory = (categoryData.value.productCategories.nodes.find((cat: any) => cat.slug === slug) as Category) || null;
-  console.log('🎯 DEBUG: Found in main categories:', matchingCategory?.name || 'NOT FOUND');
 
   // Ако не е намерена в основните, търсим в дъщерните
   if (!matchingCategory) {
-    console.log('🔍 DEBUG: Searching in child categories...');
     for (const parentCat of categoryData.value.productCategories.nodes) {
       if (parentCat.children?.nodes) {
         const foundChild = parentCat.children.nodes.find((child: any) => child.slug === slug) as Category;
         if (foundChild) {
           matchingCategory = foundChild;
-          console.log('🎯 DEBUG: Found in child categories:', foundChild.name, 'under parent:', parentCat.name);
           break;
         }
       }
     }
   }
 }
-
-console.log('✅ DEBUG: Final matching category:', matchingCategory?.name || 'NOT FOUND');
 
 // Задаваме SEO само ако имаме категория
 if (matchingCategory) {

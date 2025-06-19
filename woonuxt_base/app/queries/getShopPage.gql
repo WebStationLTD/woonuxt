@@ -1,5 +1,5 @@
 query getShopPage {
-  page(id: 8, idType: DATABASE_ID) {
+  page(id: 6, idType: DATABASE_ID) {
     id
     databaseId
     title

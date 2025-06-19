@@ -19,17 +19,31 @@ const { data: productData } = await useAsyncGql('getProducts', { first: 5, order
 const popularProducts = productData.value.products?.nodes || [];
 
 // Използване на SEO данни от Yoast ако са налични, иначе използване на данни от конфигурацията
+const seoTitle = homeSeo?.title || siteName || 'WooNuxt - Най-добрият онлайн магазин за спортно оборудване';
+const seoDescription =
+  homeSeo?.metaDesc ||
+  description ||
+  'Открийте висококачествено спортно оборудване, фитнес уреди и аксесоари в нашия онлайн магазин. Бързи доставки, конкурентни цени и професионално обслужване.';
+const canonicalUrl = process.env.APP_HOST || 'https://woonuxt-ten.vercel.app';
+
 useSeoMeta({
-  title: homeSeo?.title || 'Home',
-  ogTitle: homeSeo?.opengraphTitle || siteName,
-  description: homeSeo?.metaDesc || description,
-  ogDescription: homeSeo?.opengraphDescription || shortDescription,
+  title: seoTitle,
+  ogTitle: homeSeo?.opengraphTitle || seoTitle,
+  description: seoDescription,
+  ogDescription: homeSeo?.opengraphDescription || seoDescription,
+  ogType: 'website',
+  ogUrl: canonicalUrl,
   ogImage: homeSeo?.opengraphImage?.sourceUrl || siteImage,
   twitterCard: 'summary_large_image',
-  twitterTitle: homeSeo?.twitterTitle || siteName,
-  twitterDescription: homeSeo?.twitterDescription || description,
+  twitterTitle: homeSeo?.twitterTitle || seoTitle,
+  twitterDescription: homeSeo?.twitterDescription || seoDescription,
   twitterImage: homeSeo?.twitterImage?.sourceUrl || siteImage,
-  robots: homeSeo?.metaRobotsNoindex ? 'index' : undefined,
+  robots: homeSeo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
+});
+
+// Canonical URL
+useHead({
+  link: [{ rel: 'canonical', href: canonicalUrl }],
 });
 
 // Добавяне на структурирани данни (schema.org) ако са налични в Yoast
