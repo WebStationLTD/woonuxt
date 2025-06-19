@@ -7,7 +7,7 @@ const props = defineProps({
 });
 
 // Получаване на данните за категорията чрез GraphQL заявка
-const { data } = await useAsyncGql('getProductCategories');
+const { data } = await useAsyncGql('getProductCategories', { hideEmpty: true });
 const allCategories = data.value?.productCategories?.nodes || [];
 
 // Намиране на категорията по ID

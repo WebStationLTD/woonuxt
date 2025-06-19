@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, nextTick, watchEffect } from 'vue';
+import { ref, onMounted, watch, computed, nextTick } from 'vue';
 
 const { loadProductsPage, loadProductsWithFilters, products, isLoading, resetProductsState } = useProducts();
 const { buildGraphQLFilters } = useFiltering();
@@ -60,55 +60,73 @@ interface Category {
 const currentParentSlug = ref('');
 const currentChildSlug = ref('');
 const currentPageNumber = ref(1);
-const matchingCategory = ref<Category | null>(null);
-const parentCategory = ref<Category | null>(null);
 
-// Зареждаме категориите
-const { data: categoriesData } = await useAsyncGql('getProductCategories');
-const allCategories = computed(() => categoriesData.value?.productCategories?.nodes || []);
+// КЛЮЧОВО: Зареждаме ДИРЕКТНО категорията по child slug (същия подход като single product)
+const parentSlug = route.params.parent as string;
+const childSlug = route.params.child as string;
+const { data: categoryData } = await useAsyncGql('getProductCategories', { slug: [childSlug], hideEmpty: true });
 
-// Функция за намиране на категория по slug в йерархията
-const findCategoryInHierarchy = (categories: Category[], slug: string): Category | null => {
-  for (const category of categories) {
-    if (category.slug === slug) {
-      return category;
-    }
-    // Проверяваме в децата
-    if (category.children?.nodes) {
-      const found = findCategoryInHierarchy(category.children.nodes, slug);
-      if (found) return found;
-    }
+let matchingCategory: Category | null = null;
+let parentCategory: Category | null = null;
+
+if (categoryData.value?.productCategories?.nodes?.[0]) {
+  matchingCategory = categoryData.value.productCategories.nodes[0];
+
+  // Ако има parent информация в данните
+  if (matchingCategory.parent?.node) {
+    parentCategory = matchingCategory.parent.node as Category;
   }
-  return null;
-};
 
-// Безопасно декодиране на URI
-const safeDecodeURI = (uri: string): string => {
-  try {
-    return decodeURIComponent(uri);
-  } catch {
-    return uri;
+  // ВЕДНАГА задаваме SEO метаданни (същия принцип като single product)
+  const seoTitle = matchingCategory.seo?.title || `${matchingCategory.name} | ${parentCategory?.name || 'Категории'}` || `${childSlug} | ${parentSlug}`;
+  const seoDescription = matchingCategory.seo?.metaDesc || matchingCategory.description || `Продукти в категория ${matchingCategory.name || childSlug}`;
+  const canonicalUrl =
+    matchingCategory.seo?.canonical || `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}`;
+
+  useSeoMeta({
+    title: seoTitle,
+    description: seoDescription,
+    keywords: matchingCategory.seo?.metaKeywords,
+    ogTitle: matchingCategory.seo?.opengraphTitle || seoTitle,
+    ogDescription: matchingCategory.seo?.opengraphDescription || seoDescription,
+    ogType: 'website',
+    ogUrl: canonicalUrl,
+    twitterCard: 'summary_large_image',
+    twitterTitle: matchingCategory.seo?.twitterTitle || seoTitle,
+    twitterDescription: matchingCategory.seo?.twitterDescription || seoDescription,
+    robots: matchingCategory.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
+    ogImage: matchingCategory.seo?.opengraphImage?.sourceUrl,
+    twitterImage: matchingCategory.seo?.twitterImage?.sourceUrl,
+  });
+
+  // Canonical URL
+  useHead({
+    link: [{ rel: 'canonical', href: canonicalUrl }],
+  });
+
+  // Schema markup
+  if (matchingCategory.seo?.schema?.raw) {
+    useHead({
+      script: [
+        {
+          type: 'application/ld+json',
+          innerHTML: matchingCategory.seo.schema.raw,
+        },
+      ],
+    });
   }
-};
+}
 
-// Функция за намиране на родителска категория по slug
-const findParentCategory = (categories: Category[], parentSlug: string): Category | null => {
-  const decodedParentSlug = safeDecodeURI(parentSlug);
-  return categories.find((cat) => cat.slug === parentSlug || cat.slug === decodedParentSlug || safeDecodeURI(cat.slug || '') === decodedParentSlug) || null;
-};
+// Fallback ако няма категория
+if (!matchingCategory) {
+  throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
+}
 
-// Функция за намиране на детска категория в рамките на родител
-const findChildInParent = (parent: Category, childSlug: string): Category | null => {
-  if (!parent.children?.nodes) return null;
-  const decodedChildSlug = safeDecodeURI(childSlug);
-  return (
-    parent.children.nodes.find(
-      (child) => child.slug === childSlug || child.slug === decodedChildSlug || safeDecodeURI(child.slug || '') === decodedChildSlug,
-    ) || null
-  );
-};
+// Reactive refs за runtime промени
+const matchingCategoryRef = ref<Category | null>(matchingCategory);
+const parentCategoryRef = ref<Category | null>(parentCategory);
 
-// Извличаме route параметри
+// Функция за извличане на параметри от route
 const extractRouteParams = () => {
   let parentSlug = '';
   let childSlug = '';
@@ -137,10 +155,11 @@ const extractRouteParams = () => {
       childSlug = String(route.params.child);
     }
   }
+
   return { parentSlug, childSlug, pageNumber };
 };
 
-// Основна функция за зареждане
+// Основна функция за зареждане на продукти
 const loadCategoryProducts = async () => {
   const { parentSlug, childSlug, pageNumber } = extractRouteParams();
 
@@ -161,37 +180,6 @@ const loadCategoryProducts = async () => {
   currentPageNumber.value = pageNumber;
 
   try {
-    // Изчакваме категориите да се заредят
-    if (!categoriesData.value) {
-      await nextTick();
-      if (!categoriesData.value) {
-        hasEverLoaded.value = true;
-        return;
-      }
-    }
-
-    // Намираме родителската категория
-    if (allCategories.value.length > 0) {
-      parentCategory.value = findParentCategory(allCategories.value, parentSlug);
-
-      if (parentCategory.value) {
-        // Намираме детската категория в рамките на родителя
-        matchingCategory.value = findChildInParent(parentCategory.value, childSlug);
-      }
-    }
-
-    // Ако не намерим точно съвпадение, опитваме се да намерим детската категория в цялата йерархия
-    if (!matchingCategory.value && allCategories.value.length > 0) {
-      matchingCategory.value = findCategoryInHierarchy(allCategories.value, childSlug);
-    }
-
-    // Ако няма намерена категория, използваме childSlug директно
-    // Това ще работи за повечето случаи дори и да няма перфектно съвпадение
-    if (!matchingCategory.value) {
-      // Не излизаме, а продължаваме с childSlug директно
-      matchingCategory.value = { slug: childSlug, name: childSlug } as Category;
-    }
-
     // Използваме childSlug директно за по-надеждно зареждане
     const categoryIdentifier = [childSlug];
 
@@ -264,68 +252,6 @@ const loadCategoryProducts = async () => {
   }
 };
 
-// SEO данни
-const seoTitle = computed(() => {
-  if (matchingCategory.value?.seo?.title) {
-    return matchingCategory.value.seo.title;
-  }
-  if (matchingCategory.value?.name) {
-    return `${matchingCategory.value.name} | ${parentCategory.value?.name || 'Категории'}`;
-  }
-  return `${currentChildSlug.value} | ${currentParentSlug.value}`;
-});
-
-const seoDescription = computed(() => {
-  if (matchingCategory.value?.seo?.metaDesc) {
-    return matchingCategory.value.seo.metaDesc;
-  }
-  if (matchingCategory.value?.description) {
-    return matchingCategory.value.description;
-  }
-  return `Продукти в категория ${matchingCategory.value?.name || currentChildSlug.value}`;
-});
-
-const canonicalUrl = computed(() => {
-  if (matchingCategory.value?.seo?.canonical) {
-    return matchingCategory.value.seo.canonical;
-  }
-  return `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${currentParentSlug.value}/${currentChildSlug.value}`;
-});
-
-const ogTitle = computed(() => {
-  return matchingCategory.value?.seo?.opengraphTitle || seoTitle.value;
-});
-
-const ogDescription = computed(() => {
-  return matchingCategory.value?.seo?.opengraphDescription || seoDescription.value;
-});
-
-const ogImage = computed(() => {
-  return matchingCategory.value?.seo?.opengraphImage?.sourceUrl || null;
-});
-
-const twitterTitle = computed(() => {
-  return matchingCategory.value?.seo?.twitterTitle || seoTitle.value;
-});
-
-const twitterDescription = computed(() => {
-  return matchingCategory.value?.seo?.twitterDescription || seoDescription.value;
-});
-
-const twitterImage = computed(() => {
-  return matchingCategory.value?.seo?.twitterImage?.sourceUrl || ogImage.value;
-});
-
-const metaRobots = computed(() => {
-  const noindex = matchingCategory.value?.seo?.metaRobotsNoindex === 'noindex';
-  const nofollow = matchingCategory.value?.seo?.metaRobotsNofollow === 'nofollow';
-
-  if (noindex && nofollow) return 'noindex, nofollow';
-  if (noindex) return 'noindex';
-  if (nofollow) return 'nofollow';
-  return 'index, follow';
-});
-
 // Зареждаме при mount
 onMounted(async () => {
   await nextTick();
@@ -352,45 +278,6 @@ const shouldShowLoading = computed(() => {
 const shouldShowNoProducts = computed(() => {
   return hasEverLoaded.value && !isLoading.value && (!products.value || products.value.length === 0);
 });
-
-// SEO setup - изчакваме данните да се заредят преди да задаваме мета тагове
-watchEffect(() => {
-  // Задаваме SEO само когато имаме зареденa категория
-  if (matchingCategory.value) {
-    useSeoMeta({
-      title: seoTitle,
-      description: seoDescription,
-      keywords: matchingCategory.value?.seo?.metaKeywords,
-      ogTitle: ogTitle,
-      ogDescription: ogDescription,
-      ogType: 'website',
-      ogUrl: canonicalUrl,
-      twitterCard: 'summary_large_image',
-      twitterTitle: twitterTitle,
-      twitterDescription: twitterDescription,
-      robots: metaRobots,
-      ogImage: ogImage,
-      twitterImage: twitterImage,
-    });
-
-    // Canonical URL
-    useHead({
-      link: [{ rel: 'canonical', href: canonicalUrl.value }],
-    });
-
-    // Schema markup
-    if (matchingCategory.value?.seo?.schema?.raw) {
-      useHead({
-        script: [
-          {
-            type: 'application/ld+json',
-            innerHTML: matchingCategory.value.seo.schema.raw,
-          },
-        ],
-      });
-    }
-  }
-});
 </script>
 
 <template>
@@ -407,20 +294,20 @@ watchEffect(() => {
       <!-- Main съдържание - отдясно -->
       <main v-if="currentChildSlug" class="flex-1 min-w-0">
         <!-- Breadcrumb навигация -->
-        <nav v-if="parentCategory && matchingCategory" class="mb-6 text-sm text-gray-600">
+        <nav v-if="parentCategoryRef && matchingCategoryRef" class="mb-6 text-sm text-gray-600">
           <ol class="flex items-center space-x-2">
             <li>
               <NuxtLink to="/" class="hover:text-gray-900">Начало</NuxtLink>
             </li>
             <li>
               <span class="mx-2">/</span>
-              <NuxtLink :to="`/produkt-kategoriya/${parentCategory.slug}`" class="hover:text-gray-900">
-                {{ parentCategory.name }}
+              <NuxtLink :to="`/produkt-kategoriya/${parentCategoryRef.slug}`" class="hover:text-gray-900">
+                {{ parentCategoryRef.name }}
               </NuxtLink>
             </li>
             <li>
               <span class="mx-2">/</span>
-              <span class="text-gray-900 font-medium">{{ matchingCategory.name }}</span>
+              <span class="text-gray-900 font-medium">{{ matchingCategoryRef.name }}</span>
             </li>
           </ol>
         </nav>
@@ -483,8 +370,8 @@ watchEffect(() => {
             <h2 class="text-xl font-bold mb-4">Не са намерени продукти в тази категория</h2>
             <div class="mt-4 text-sm text-gray-600">
               <p>Опитайте да промените филтрите или изберете друга категория.</p>
-              <div v-if="matchingCategory?.name && parentCategory?.name" class="mt-2">
-                <p>Категория: {{ parentCategory.name }} > {{ matchingCategory.name }}</p>
+              <div v-if="matchingCategoryRef?.name && parentCategoryRef?.name" class="mt-2">
+                <p>Категория: {{ parentCategoryRef.name }} > {{ matchingCategoryRef.name }}</p>
               </div>
             </div>
           </div>

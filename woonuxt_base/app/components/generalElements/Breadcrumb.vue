@@ -6,7 +6,7 @@ const { product } = defineProps<{ product: Product }>();
 const primaryCategory = computed(() => product.productCategories?.nodes[0]);
 
 // Получаваме всички категории за да можем да генерираме правилните URL-и
-const { data: categoriesData } = await useAsyncGql('getProductCategories');
+const { data: categoriesData } = await useAsyncGql('getProductCategories', { hideEmpty: false });
 const allCategories = computed(() => categoriesData.value?.productCategories?.nodes || []);
 
 const format = computed(() => [

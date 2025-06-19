@@ -11,7 +11,7 @@ const { data: seoData } = await useAsyncGql('getHomeSeo');
 const homeSeo = seoData.value?.page?.seo || null;
 
 // Получаване на всички категории
-const { data } = await useAsyncGql('getProductCategories', { first: 100 });
+const { data } = await useAsyncGql('getProductCategories', { first: 100, hideEmpty: true });
 const productCategories = data.value?.productCategories?.nodes || [];
 
 // Получаване на популярни продукти

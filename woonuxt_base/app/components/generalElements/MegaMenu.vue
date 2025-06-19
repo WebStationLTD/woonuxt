@@ -180,6 +180,7 @@ const { data, pending } = await useAsyncGql('getProductCategories', {
   first: 100, // Зареждаме всички категории за правилни URL-и
   after: null,
   slug: null,
+  hideEmpty: true, // За менюто показваме само категории с продукти
 });
 
 // Извличаме всички категории от отговора

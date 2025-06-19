@@ -19,16 +19,112 @@ interface Category {
     opengraphTitle?: string | null;
     opengraphDescription?: string | null;
     canonical?: string | null;
+    metaKeywords?: string | null;
+    metaRobotsNoindex?: string | null;
+    metaRobotsNofollow?: string | null;
+    twitterTitle?: string | null;
+    twitterDescription?: string | null;
+    opengraphImage?: {
+      sourceUrl?: string | null;
+      altText?: string | null;
+    } | null;
+    twitterImage?: {
+      sourceUrl?: string | null;
+      altText?: string | null;
+    } | null;
+    schema?: {
+      raw?: string | null;
+    } | null;
   } | null;
 }
 
 const currentSlug = ref('');
 const currentPageNumber = ref(1);
-const matchingCategory = ref<Category | null>(null);
 
-// Зареждаме категориите
-const { data: categoriesData } = await useAsyncGql('getProductCategories');
-const allCategories = computed(() => categoriesData.value?.productCategories?.nodes || []);
+// ПОПРАВКА: Използваме правилния параметър и декодираме URL-а
+const routeSlug = route.params.categorySlug || route.params.slug; // Първо опитваме categorySlug, после slug
+const decodedSlug = routeSlug ? decodeURIComponent(String(routeSlug)) : '';
+
+const slug = decodedSlug;
+console.log('🔍 DEBUG: Final slug to use:', slug);
+
+// Заявяваме всички категории ВКЛЮЧИТЕЛНО празни (hideEmpty: false)
+const { data: categoryData } = await useAsyncGql('getProductCategories', { first: 100, hideEmpty: false });
+
+console.log('📊 DEBUG: All categories loaded:', categoryData.value?.productCategories?.nodes?.length || 0);
+
+let matchingCategory: Category | null = null;
+
+if (categoryData.value?.productCategories?.nodes) {
+  // Търсим в основните категории
+  matchingCategory = (categoryData.value.productCategories.nodes.find((cat: any) => cat.slug === slug) as Category) || null;
+  console.log('🎯 DEBUG: Found in main categories:', matchingCategory?.name || 'NOT FOUND');
+
+  // Ако не е намерена в основните, търсим в дъщерните
+  if (!matchingCategory) {
+    console.log('🔍 DEBUG: Searching in child categories...');
+    for (const parentCat of categoryData.value.productCategories.nodes) {
+      if (parentCat.children?.nodes) {
+        const foundChild = parentCat.children.nodes.find((child: any) => child.slug === slug) as Category;
+        if (foundChild) {
+          matchingCategory = foundChild;
+          console.log('🎯 DEBUG: Found in child categories:', foundChild.name, 'under parent:', parentCat.name);
+          break;
+        }
+      }
+    }
+  }
+}
+
+console.log('✅ DEBUG: Final matching category:', matchingCategory?.name || 'NOT FOUND');
+
+// Задаваме SEO само ако имаме категория
+if (matchingCategory) {
+  // ВЕДНАГА задаваме SEO метаданни (същия принцип като single product)
+  const seoTitle = matchingCategory.seo?.title || matchingCategory.name || 'Категория';
+  const seoDescription = matchingCategory.seo?.metaDesc || matchingCategory.description || `Продукти в категория ${matchingCategory.name}`;
+  const canonicalUrl = matchingCategory.seo?.canonical || `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`;
+
+  useSeoMeta({
+    title: seoTitle,
+    description: seoDescription,
+    ogTitle: matchingCategory.seo?.opengraphTitle || seoTitle,
+    ogDescription: matchingCategory.seo?.opengraphDescription || seoDescription,
+    ogType: 'website',
+    ogUrl: canonicalUrl,
+    twitterCard: 'summary_large_image',
+    twitterTitle: matchingCategory.seo?.twitterTitle || seoTitle,
+    twitterDescription: matchingCategory.seo?.twitterDescription || seoDescription,
+    robots: matchingCategory.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
+    ogImage: matchingCategory.seo?.opengraphImage?.sourceUrl,
+    twitterImage: matchingCategory.seo?.twitterImage?.sourceUrl,
+  });
+
+  // Canonical URL
+  useHead({
+    link: [{ rel: 'canonical', href: canonicalUrl }],
+  });
+
+  // Schema markup
+  if (matchingCategory.seo?.schema?.raw) {
+    useHead({
+      script: [
+        {
+          type: 'application/ld+json',
+          innerHTML: matchingCategory.seo.schema.raw,
+        },
+      ],
+    });
+  }
+}
+
+// Fallback ако няма категория
+if (!matchingCategory) {
+  throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
+}
+
+// Reactive ref за runtime промени
+const matchingCategoryRef = ref<Category | null>(matchingCategory);
 
 // Извличаме slug и страница от route
 const extractRouteParams = () => {
@@ -59,39 +155,22 @@ const extractRouteParams = () => {
   return { slug, pageNumber };
 };
 
-// Основна функция за зареждане
+// Основна функция за зареждане на продукти
 const loadCategoryProducts = async () => {
   const { slug, pageNumber } = extractRouteParams();
 
-  // Ако няма slug, reset-ваме и излизаме
   if (!slug) {
     resetProductsState();
     currentSlug.value = '';
-    hasEverLoaded.value = true; // Маркираме като опитано
+    hasEverLoaded.value = true;
     return;
   }
 
-  // Винаги reset-ваме за чисто състояние при зареждане
   resetProductsState();
-
   currentSlug.value = slug;
   currentPageNumber.value = pageNumber;
 
   try {
-    // Изчакваме категориите да се заредят
-    if (!categoriesData.value) {
-      await nextTick();
-      if (!categoriesData.value) {
-        hasEverLoaded.value = true;
-        return;
-      }
-    }
-
-    // Намираме категорията
-    if (allCategories.value.length > 0) {
-      matchingCategory.value = allCategories.value.find((cat: Category) => cat.slug === slug) || null;
-    }
-
     // Проверяваме дали има филтри или сортиране в URL
     const hasFilters = route.query.filter;
     const hasOrderBy = route.query.orderby;
@@ -161,21 +240,6 @@ const loadCategoryProducts = async () => {
   }
 };
 
-// SEO данни
-const seoTitle = computed(() => {
-  if (matchingCategory.value) {
-    return matchingCategory.value.seo?.title || matchingCategory.value.name || currentSlug.value;
-  }
-  return currentSlug.value || 'Категории';
-});
-
-const seoDescription = computed(() => {
-  if (matchingCategory.value) {
-    return matchingCategory.value.seo?.metaDesc || matchingCategory.value.description || `Продукти в категория ${matchingCategory.value.name}`;
-  }
-  return 'Продукти по категории';
-});
-
 // Зареждаме при mount
 onMounted(async () => {
   await nextTick();
@@ -202,17 +266,6 @@ const shouldShowLoading = computed(() => {
 const shouldShowNoProducts = computed(() => {
   return hasEverLoaded.value && !isLoading.value && (!products.value || products.value.length === 0);
 });
-
-// SEO head
-useHead(() => ({
-  title: seoTitle.value,
-  meta: [
-    { name: 'description', content: seoDescription.value },
-    { property: 'og:title', content: matchingCategory.value?.seo?.opengraphTitle || seoTitle.value },
-    { property: 'og:description', content: matchingCategory.value?.seo?.opengraphDescription || seoDescription.value },
-  ],
-  link: [{ rel: 'canonical', href: matchingCategory.value?.seo?.canonical || '' }],
-}));
 </script>
 
 <template>

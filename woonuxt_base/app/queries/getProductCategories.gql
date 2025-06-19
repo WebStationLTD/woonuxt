@@ -1,5 +1,5 @@
-query getProductCategories($first: Int, $after: String, $slug: [String]) {
-  productCategories(first: $first, after: $after, where: { hideEmpty: true, slug: $slug }) {
+query getProductCategories($first: Int, $after: String, $slug: [String], $hideEmpty: Boolean = true) {
+  productCategories(first: $first, after: $after, where: { hideEmpty: $hideEmpty, slug: $slug }) {
     pageInfo {
       hasNextPage
       endCursor
