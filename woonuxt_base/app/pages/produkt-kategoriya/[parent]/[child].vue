@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, nextTick } from 'vue';
 
-const { loadProductsPage, loadProductsWithFilters, products, isLoading, resetProductsState } = useProducts();
+const { loadProductsPage, loadProductsWithFilters, products, isLoading, resetProductsState, pageInfo } = useProducts();
 const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
 const route = useRoute();
@@ -76,45 +76,6 @@ if (categoryData.value?.productCategories?.nodes?.[0]) {
   if (matchingCategory.parent?.node) {
     parentCategory = matchingCategory.parent.node as Category;
   }
-
-  // ВЕДНАГА задаваме SEO метаданни (същия принцип като single product)
-  const seoTitle = matchingCategory.seo?.title || `${matchingCategory.name} | ${parentCategory?.name || 'Категории'}` || `${childSlug} | ${parentSlug}`;
-  const seoDescription = matchingCategory.seo?.metaDesc || matchingCategory.description || `Продукти в категория ${matchingCategory.name || childSlug}`;
-  const canonicalUrl =
-    matchingCategory.seo?.canonical || `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}`;
-
-  useSeoMeta({
-    title: seoTitle,
-    description: seoDescription,
-    keywords: matchingCategory.seo?.metaKeywords,
-    ogTitle: matchingCategory.seo?.opengraphTitle || seoTitle,
-    ogDescription: matchingCategory.seo?.opengraphDescription || seoDescription,
-    ogType: 'website',
-    ogUrl: canonicalUrl,
-    twitterCard: 'summary_large_image',
-    twitterTitle: matchingCategory.seo?.twitterTitle || seoTitle,
-    twitterDescription: matchingCategory.seo?.twitterDescription || seoDescription,
-    robots: matchingCategory.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
-    ogImage: matchingCategory.seo?.opengraphImage?.sourceUrl,
-    twitterImage: matchingCategory.seo?.twitterImage?.sourceUrl,
-  });
-
-  // Canonical URL
-  useHead({
-    link: [{ rel: 'canonical', href: canonicalUrl }],
-  });
-
-  // Schema markup
-  if (matchingCategory.seo?.schema?.raw) {
-    useHead({
-      script: [
-        {
-          type: 'application/ld+json',
-          innerHTML: matchingCategory.seo.schema.raw,
-        },
-      ],
-    });
-  }
 }
 
 // Fallback ако няма категория
@@ -125,6 +86,104 @@ if (!matchingCategory) {
 // Reactive refs за runtime промени
 const matchingCategoryRef = ref<Category | null>(matchingCategory);
 const parentCategoryRef = ref<Category | null>(parentCategory);
+
+// Функция за генериране на SEO данни според страницата (взета от основната категория)
+const generateChildCategorySeoMeta = () => {
+  // Получаваме номера на страницата
+  let pageNumber = 1;
+  if (route.params.pageNumber) {
+    const parsedPage = parseInt(route.params.pageNumber as string);
+    if (!isNaN(parsedPage) && parsedPage > 0) {
+      pageNumber = parsedPage;
+    }
+  }
+
+  // Използваме категорийните SEO данни като база
+  const baseTitle = matchingCategory?.seo?.title || `${matchingCategory?.name} | ${parentCategory?.name || 'Категории'}` || `${childSlug} | ${parentSlug}`;
+  const baseDescription = matchingCategory?.seo?.metaDesc || matchingCategory?.description || `Продукти в категория ${matchingCategory?.name || childSlug}`;
+
+  // Генерираме динамичен title и description
+  let finalTitle = baseTitle;
+  let finalDescription = baseDescription;
+
+  if (pageNumber > 1) {
+    finalTitle = `${baseTitle} - Страница ${pageNumber}`;
+    finalDescription = `${baseDescription} - Страница ${pageNumber}`;
+  }
+
+  const canonicalUrl =
+    pageNumber === 1
+      ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}`
+      : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${pageNumber}`;
+
+  return {
+    title: finalTitle,
+    description: finalDescription,
+    canonicalUrl: canonicalUrl,
+    pageNumber: pageNumber,
+  };
+};
+
+// Генерираме и задаваме SEO метаданните
+const childCategorySeoMeta = generateChildCategorySeoMeta();
+
+useSeoMeta({
+  title: childCategorySeoMeta.title,
+  description: childCategorySeoMeta.description,
+  keywords: matchingCategory?.seo?.metaKeywords,
+  ogTitle: matchingCategory?.seo?.opengraphTitle || childCategorySeoMeta.title,
+  ogDescription: matchingCategory?.seo?.opengraphDescription || childCategorySeoMeta.description,
+  ogType: 'website',
+  ogUrl: childCategorySeoMeta.canonicalUrl,
+  ogImage: matchingCategory?.seo?.opengraphImage?.sourceUrl,
+  twitterCard: 'summary_large_image',
+  twitterTitle: matchingCategory?.seo?.twitterTitle || childCategorySeoMeta.title,
+  twitterDescription: matchingCategory?.seo?.twitterDescription || childCategorySeoMeta.description,
+  twitterImage: matchingCategory?.seo?.twitterImage?.sourceUrl,
+  robots: matchingCategory?.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
+});
+
+// Canonical URL (използваме категорийния canonical ако е зададен за първата страница)
+const canonicalUrl =
+  childCategorySeoMeta.pageNumber === 1 && matchingCategory?.seo?.canonical ? matchingCategory.seo.canonical : childCategorySeoMeta.canonicalUrl;
+
+useHead({
+  link: [{ rel: 'canonical', href: canonicalUrl }],
+});
+
+// Schema markup от категорията ако е наличен
+if (matchingCategory?.seo?.schema?.raw) {
+  useHead({
+    script: [
+      {
+        type: 'application/ld+json',
+        innerHTML: matchingCategory.seo.schema.raw,
+      },
+    ],
+  });
+}
+
+// Prev/Next links за pagination SEO
+if (childCategorySeoMeta.pageNumber > 1) {
+  const prevUrl =
+    childCategorySeoMeta.pageNumber === 2
+      ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}`
+      : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${childCategorySeoMeta.pageNumber - 1}`;
+
+  useHead({
+    link: [{ rel: 'prev', href: prevUrl }],
+  });
+}
+
+// Next link ще добавим динамично когато знаем че има още страници
+const updateChildCategoryNextPrevLinks = () => {
+  if (pageInfo?.hasNextPage) {
+    const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${childCategorySeoMeta.pageNumber + 1}`;
+    useHead({
+      link: [{ rel: 'next', href: nextUrl }],
+    });
+  }
+};
 
 // Функция за извличане на параметри от route
 const extractRouteParams = () => {
@@ -247,9 +306,57 @@ const loadCategoryProducts = async () => {
 
     // Маркираме че сме зареждали данни поне веднъж
     hasEverLoaded.value = true;
+
+    // Обновяваме next/prev links след като данните са заредени
+    updateChildCategoryNextPrevLinks();
   } catch (error) {
     hasEverLoaded.value = true;
   }
+};
+
+// Функция за обновяване на SEO метаданните при промяна на route
+const updateChildCategorySeoMeta = () => {
+  const newSeoMeta = generateChildCategorySeoMeta();
+
+  useSeoMeta({
+    title: newSeoMeta.title,
+    description: newSeoMeta.description,
+    keywords: matchingCategory?.seo?.metaKeywords,
+    ogTitle: matchingCategory?.seo?.opengraphTitle || newSeoMeta.title,
+    ogDescription: matchingCategory?.seo?.opengraphDescription || newSeoMeta.description,
+    ogUrl: newSeoMeta.canonicalUrl,
+    twitterTitle: matchingCategory?.seo?.twitterTitle || newSeoMeta.title,
+    twitterDescription: matchingCategory?.seo?.twitterDescription || newSeoMeta.description,
+  });
+
+  // Обновяваме canonical URL
+  const newCanonicalUrl = newSeoMeta.pageNumber === 1 && matchingCategory?.seo?.canonical ? matchingCategory.seo.canonical : newSeoMeta.canonicalUrl;
+
+  useHead({
+    link: [{ rel: 'canonical', href: newCanonicalUrl }],
+  });
+
+  // Обновяваме prev/next links
+  const prevNextLinks: any[] = [];
+
+  if (newSeoMeta.pageNumber > 1) {
+    const prevUrl =
+      newSeoMeta.pageNumber === 2
+        ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}`
+        : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${newSeoMeta.pageNumber - 1}`;
+
+    prevNextLinks.push({ rel: 'prev', href: prevUrl });
+  }
+
+  // Next link ще се добави когато знаем че има още страници
+  if (pageInfo?.hasNextPage) {
+    const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${newSeoMeta.pageNumber + 1}`;
+    prevNextLinks.push({ rel: 'next', href: nextUrl });
+  }
+
+  useHead({
+    link: prevNextLinks,
+  });
 };
 
 // Зареждаме при mount
@@ -265,8 +372,21 @@ watch(
     if (newPath !== oldPath && process.client) {
       await nextTick();
       loadCategoryProducts();
+      // Обновяваме и SEO данните при навигация
+      updateChildCategorySeoMeta();
     }
   },
+);
+
+// Watcher за pageInfo промени
+watch(
+  () => pageInfo,
+  () => {
+    if (pageInfo && process.client) {
+      updateChildCategorySeoMeta();
+    }
+  },
+  { deep: true },
 );
 
 // Computed за показване на loading състояние

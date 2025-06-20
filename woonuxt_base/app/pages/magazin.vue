@@ -90,25 +90,46 @@ if (shopSeo?.schema?.raw) {
 }
 
 // Prev/Next links за pagination SEO
+const initialPrevNextLinks: any[] = [];
+
 if (seoMeta.pageNumber > 1) {
   const prevUrl =
     seoMeta.pageNumber === 2
       ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin`
       : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber - 1}`;
 
-  useHead({
-    link: [{ rel: 'prev', href: prevUrl }],
-  });
+  initialPrevNextLinks.push({ rel: 'prev', href: prevUrl });
 }
 
-// Next link ще добавим динамично когато знаем че има още страници
+// Добавяме next link изначално като placeholder - ще се обновява динамично
+const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber + 1}`;
+initialPrevNextLinks.push({ rel: 'next', href: nextUrl });
+
+useHead({
+  link: initialPrevNextLinks,
+});
+
+// Функция за динамично обновяване на next/prev links
 const updateNextPrevLinks = () => {
+  const updatedLinks: any[] = [];
+
+  if (seoMeta.pageNumber > 1) {
+    const prevUrl =
+      seoMeta.pageNumber === 2
+        ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin`
+        : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber - 1}`;
+
+    updatedLinks.push({ rel: 'prev', href: prevUrl });
+  }
+
   if (pageInfo?.hasNextPage) {
     const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber + 1}`;
-    useHead({
-      link: [{ rel: 'next', href: nextUrl }],
-    });
+    updatedLinks.push({ rel: 'next', href: nextUrl });
   }
+
+  useHead({
+    link: updatedLinks,
+  });
 };
 
 // Race condition protection

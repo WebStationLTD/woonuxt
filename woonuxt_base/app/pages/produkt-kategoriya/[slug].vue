@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, nextTick } from 'vue';
 
-const { loadProductsPage, loadProductsWithFilters, products, isLoading, resetProductsState } = useProducts();
+const { loadProductsPage, loadProductsWithFilters, products, isLoading, resetProductsState, pageInfo } = useProducts();
 const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
 const route = useRoute();
@@ -70,46 +70,6 @@ if (categoryData.value?.productCategories?.nodes) {
   }
 }
 
-// Задаваме SEO само ако имаме категория
-if (matchingCategory) {
-  // ВЕДНАГА задаваме SEO метаданни (същия принцип като single product)
-  const seoTitle = matchingCategory.seo?.title || matchingCategory.name || 'Категория';
-  const seoDescription = matchingCategory.seo?.metaDesc || matchingCategory.description || `Продукти в категория ${matchingCategory.name}`;
-  const canonicalUrl = matchingCategory.seo?.canonical || `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`;
-
-  useSeoMeta({
-    title: seoTitle,
-    description: seoDescription,
-    ogTitle: matchingCategory.seo?.opengraphTitle || seoTitle,
-    ogDescription: matchingCategory.seo?.opengraphDescription || seoDescription,
-    ogType: 'website',
-    ogUrl: canonicalUrl,
-    twitterCard: 'summary_large_image',
-    twitterTitle: matchingCategory.seo?.twitterTitle || seoTitle,
-    twitterDescription: matchingCategory.seo?.twitterDescription || seoDescription,
-    robots: matchingCategory.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
-    ogImage: matchingCategory.seo?.opengraphImage?.sourceUrl,
-    twitterImage: matchingCategory.seo?.twitterImage?.sourceUrl,
-  });
-
-  // Canonical URL
-  useHead({
-    link: [{ rel: 'canonical', href: canonicalUrl }],
-  });
-
-  // Schema markup
-  if (matchingCategory.seo?.schema?.raw) {
-    useHead({
-      script: [
-        {
-          type: 'application/ld+json',
-          innerHTML: matchingCategory.seo.schema.raw,
-        },
-      ],
-    });
-  }
-}
-
 // Fallback ако няма категория
 if (!matchingCategory) {
   throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
@@ -117,6 +77,123 @@ if (!matchingCategory) {
 
 // Reactive ref за runtime промени
 const matchingCategoryRef = ref<Category | null>(matchingCategory);
+
+// Функция за генериране на SEO данни според страницата (взета от /magazin)
+const generateCategorySeoMeta = () => {
+  // Получаваме номера на страницата точно като в /magazin
+  let pageNumber = 1;
+  if (route.params.pageNumber) {
+    const parsedPage = parseInt(route.params.pageNumber as string);
+    if (!isNaN(parsedPage) && parsedPage > 0) {
+      pageNumber = parsedPage;
+    }
+  }
+
+  // Използваме категорийните SEO данни като база (вместо Yoast)
+  const baseTitle = matchingCategory?.seo?.title || matchingCategory?.name || 'Категория';
+  const baseDescription = matchingCategory?.seo?.metaDesc || matchingCategory?.description || `Продукти в категория ${matchingCategory?.name}`;
+
+  // Генерираме динамичен title и description точно като в /magazin
+  let finalTitle = baseTitle;
+  let finalDescription = baseDescription;
+
+  if (pageNumber > 1) {
+    finalTitle = `${baseTitle} - Страница ${pageNumber}`;
+    finalDescription = `${baseDescription} - Страница ${pageNumber}`;
+  }
+
+  const canonicalUrl =
+    pageNumber === 1
+      ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
+      : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${pageNumber}`;
+
+  return {
+    title: finalTitle,
+    description: finalDescription,
+    canonicalUrl: canonicalUrl,
+    pageNumber: pageNumber,
+  };
+};
+
+// Генерираме и задаваме SEO метаданните
+const categorySeoMeta = generateCategorySeoMeta();
+
+useSeoMeta({
+  title: categorySeoMeta.title,
+  description: categorySeoMeta.description,
+  ogTitle: matchingCategory?.seo?.opengraphTitle || categorySeoMeta.title,
+  ogDescription: matchingCategory?.seo?.opengraphDescription || categorySeoMeta.description,
+  ogType: 'website',
+  ogUrl: categorySeoMeta.canonicalUrl,
+  ogImage: matchingCategory?.seo?.opengraphImage?.sourceUrl,
+  twitterCard: 'summary_large_image',
+  twitterTitle: matchingCategory?.seo?.twitterTitle || categorySeoMeta.title,
+  twitterDescription: matchingCategory?.seo?.twitterDescription || categorySeoMeta.description,
+  twitterImage: matchingCategory?.seo?.twitterImage?.sourceUrl,
+  robots: matchingCategory?.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
+});
+
+// Canonical URL (използваме категорийния canonical ако е зададен за първата страница)
+const canonicalUrl = categorySeoMeta.pageNumber === 1 && matchingCategory?.seo?.canonical ? matchingCategory.seo.canonical : categorySeoMeta.canonicalUrl;
+
+useHead({
+  link: [{ rel: 'canonical', href: canonicalUrl }],
+});
+
+// Schema markup от категорията ако е наличен
+if (matchingCategory?.seo?.schema?.raw) {
+  useHead({
+    script: [
+      {
+        type: 'application/ld+json',
+        innerHTML: matchingCategory.seo.schema.raw,
+      },
+    ],
+  });
+}
+
+// Prev/Next links за pagination SEO (взети от /magazin)
+const initialCategoryPrevNextLinks: any[] = [];
+
+if (categorySeoMeta.pageNumber > 1) {
+  const prevUrl =
+    categorySeoMeta.pageNumber === 2
+      ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
+      : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber - 1}`;
+
+  initialCategoryPrevNextLinks.push({ rel: 'prev', href: prevUrl });
+}
+
+// Добавяме next link изначално като placeholder - ще се обновява динамично
+const categoryNextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber + 1}`;
+initialCategoryPrevNextLinks.push({ rel: 'next', href: categoryNextUrl });
+
+useHead({
+  link: initialCategoryPrevNextLinks,
+});
+
+// Функция за динамично обновяване на next/prev links
+const updateCategoryNextPrevLinks = () => {
+  const updatedCategoryLinks: any[] = [];
+
+  if (categorySeoMeta.pageNumber > 1) {
+    const prevUrl =
+      categorySeoMeta.pageNumber === 2
+        ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
+        : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber - 1}`;
+
+    updatedCategoryLinks.push({ rel: 'prev', href: prevUrl });
+  }
+
+  if (pageInfo?.hasNextPage) {
+    const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber + 1}`;
+    updatedCategoryLinks.push({ rel: 'next', href: nextUrl });
+  }
+
+  useHead({
+    link: updatedCategoryLinks,
+  });
+};
 
 // Извличаме slug и страница от route
 const extractRouteParams = () => {
@@ -227,9 +304,56 @@ const loadCategoryProducts = async () => {
 
     // Маркираме че сме зареждали данни поне веднъж
     hasEverLoaded.value = true;
+
+    // Обновяваме next/prev links след като данните са заредени
+    updateCategoryNextPrevLinks();
   } catch (error) {
     hasEverLoaded.value = true; // Маркираме като опитано дори при грешка
   }
+};
+
+// Функция за обновяване на SEO метаданните при промяна на route (като в /magazin)
+const updateCategorySeoMeta = () => {
+  const newSeoMeta = generateCategorySeoMeta();
+
+  useSeoMeta({
+    title: newSeoMeta.title,
+    description: newSeoMeta.description,
+    ogTitle: matchingCategory?.seo?.opengraphTitle || newSeoMeta.title,
+    ogDescription: matchingCategory?.seo?.opengraphDescription || newSeoMeta.description,
+    ogUrl: newSeoMeta.canonicalUrl,
+    twitterTitle: matchingCategory?.seo?.twitterTitle || newSeoMeta.title,
+    twitterDescription: matchingCategory?.seo?.twitterDescription || newSeoMeta.description,
+  });
+
+  // Обновяваме canonical URL
+  const newCanonicalUrl = newSeoMeta.pageNumber === 1 && matchingCategory?.seo?.canonical ? matchingCategory.seo.canonical : newSeoMeta.canonicalUrl;
+
+  useHead({
+    link: [{ rel: 'canonical', href: newCanonicalUrl }],
+  });
+
+  // Обновяваме prev/next links
+  const prevNextLinks: any[] = [];
+
+  if (newSeoMeta.pageNumber > 1) {
+    const prevUrl =
+      newSeoMeta.pageNumber === 2
+        ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
+        : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${newSeoMeta.pageNumber - 1}`;
+
+    prevNextLinks.push({ rel: 'prev', href: prevUrl });
+  }
+
+  // Next link ще се добави когато знаем че има още страници
+  if (pageInfo?.hasNextPage) {
+    const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${newSeoMeta.pageNumber + 1}`;
+    prevNextLinks.push({ rel: 'next', href: nextUrl });
+  }
+
+  useHead({
+    link: prevNextLinks,
+  });
 };
 
 // Зареждаме при mount
@@ -245,8 +369,21 @@ watch(
     if (newPath !== oldPath && process.client) {
       await nextTick();
       loadCategoryProducts();
+      // Обновяваме и SEO данните при навигация
+      updateCategorySeoMeta();
     }
   },
+);
+
+// Watcher за pageInfo промени (като в /magazin)
+watch(
+  () => pageInfo,
+  () => {
+    if (pageInfo && process.client) {
+      updateCategorySeoMeta();
+    }
+  },
+  { deep: true },
 );
 
 // Computed за показване на loading състояние

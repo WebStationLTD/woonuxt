@@ -1,9 +1,11 @@
+import { reactive } from 'vue';
+
 let allProducts = [] as Product[];
 let currentPageProducts = [] as Product[];
-let pageInfo = {
+const pageInfo = reactive({
   hasNextPage: false,
   endCursor: '',
-};
+});
 
 // Добавяме състояние за активните филтри
 let activeFilters: {
@@ -119,18 +121,16 @@ export function useProducts() {
       const result = data.value?.products;
 
       if (result && result.pageInfo) {
-        // Обновяваме pageInfo с данните от GraphQL
-        pageInfo.hasNextPage = result.pageInfo.hasNextPage || false;
-        pageInfo.endCursor = result.pageInfo.endCursor || '';
-
         // Взимаме продуктите за конкретната страница от всички заредени
         const allLoadedProducts = result.nodes || [];
         const startIndex = (page - 1) * productsPerPage.value;
         const endIndex = startIndex + productsPerPage.value;
         let productsToShow = allLoadedProducts.slice(startIndex, endIndex);
 
-        // Проверяваме дали има още страници след текущата
-        pageInfo.hasNextPage = allLoadedProducts.length > page * productsPerPage.value;
+        // ВАЖНО: Използваме данните от GraphQL сървъра, не локална логика
+        // GraphQL сървърът знае най-добре дали има още продукти
+        pageInfo.hasNextPage = result.pageInfo.hasNextPage || false;
+        pageInfo.endCursor = result.pageInfo.endCursor || '';
 
         // ВРЕМЕННО СКРИТО - Клиентски филтри за rating
         // Прилагаме клиентски филтри които не се поддържат от GraphQL
