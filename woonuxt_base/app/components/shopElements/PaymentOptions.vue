@@ -29,6 +29,7 @@ onMounted(() => {
       :title="gateway?.description || gateway?.title || 'Payment Method'">
       <icon v-if="gateway.id === 'stripe'" name="ion:card-outline" size="20" />
       <icon v-else-if="gateway.id === 'paypal'" name="ion:logo-paypal" size="20" />
+      <icon v-else-if="gateway.id === 'borica_emv'" name="ion:card" size="20" />
       <icon v-else name="ion:cash-outline" size="20" />
       <span class="whitespace-nowrap" v-html="gateway.title" />
       <icon name="ion:checkmark-circle" size="20" class="ml-auto text-primary checkmark opacity-0" />

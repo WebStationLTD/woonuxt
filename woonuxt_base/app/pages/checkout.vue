@@ -21,7 +21,34 @@ const isPaid = ref<boolean>(false);
 
 onBeforeMount(async () => {
   if (query.cancel_order) window.close();
+
+  // Показваме грешки за Borica плащания
+  if (query.payment_error) {
+    const errorMessage = getPaymentErrorMessage(query.payment_error as string);
+    if (errorMessage) {
+      alert(errorMessage);
+    }
+  }
 });
+
+function getPaymentErrorMessage(errorType: string): string {
+  switch (errorType) {
+    case 'borica':
+      return 'Плащането чрез Борика е неуспешно. Моля, опитайте отново.';
+    case 'borica_unknown':
+      return 'Възникна неочаквана грешка при плащането чрез Борика.';
+    case 'missing_params':
+      return 'Липсват параметри за обработка на плащането.';
+    case 'processing_failed':
+      return 'Грешка при обработка на плащането. Моля, свържете се с нас.';
+    case 'borica_generation':
+      return 'Не може да се генерира Borica payment URL. Моля, опитайте отново.';
+    case 'borica_cancelled':
+      return 'Плащането чрез Borica е отменено.';
+    default:
+      return 'Възникна грешка при плащането. Моля, опитайте отново.';
+  }
+}
 
 const payNow = async () => {
   buttonText.value = t('messages.general.processing');

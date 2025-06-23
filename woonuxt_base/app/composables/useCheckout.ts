@@ -100,6 +100,7 @@ export function useCheckout() {
       const orderKey = checkout?.order?.orderKey;
       const orderInputPaymentId = orderInput.value.paymentMethod.id;
       const isPayPal = orderInputPaymentId === 'paypal' || orderInputPaymentId === 'ppcp-gateway';
+      const isBorica = orderInputPaymentId === 'borica_emv';
 
       // Съхраняваме данните за поръчката в localStorage
       if (checkout?.order) {
@@ -143,6 +144,15 @@ export function useCheckout() {
             router.push('/thank-you');
           }
         }
+      }
+      // Borica redirect
+      else if ((await checkout?.redirect) && isBorica) {
+        const redirectUrl = checkout?.redirect ?? '';
+
+        // За Borica просто пренасочваме към тяхната страница
+        // Borica ще направи callback към WordPress директно
+        window.location.href = redirectUrl;
+        return checkout;
       } else {
         // За регистрирани потребители, продължаваме към страницата с детайли за поръчката
         if (customer.value?.email && customer.value.email !== 'guest') {
