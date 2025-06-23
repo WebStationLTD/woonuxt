@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { OrderStatusEnum } from '#woo';
-
-const route = useRoute();
+const { query, params } = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
-const orderId = computed(() => route.params.orderId as string);
-const orderKey = computed(() => route.query.key as string);
-const paymentMethod = computed(() => route.query.payment_method as string);
+const orderId = computed(() => params.orderId as string);
+const orderKey = computed(() => query.key as string);
+const paymentMethod = computed(() => query.payment_method as string);
 
 const isLoading = ref(true);
 const errorMessage = ref('');
@@ -21,59 +19,47 @@ onMounted(async () => {
   }
 
   try {
-    // Получаваме информация за поръчката
-    const { order } = await GqlGetOrder({
-      id: orderId.value,
+    console.log('Order-pay параметри:', {
+      orderId: orderId.value,
+      orderKey: orderKey.value,
+      paymentMethod: paymentMethod.value,
     });
 
-    if (!order) {
-      errorMessage.value = 'Поръчката не е намерена';
-      isLoading.value = false;
-      return;
-    }
-
-    // Ако поръчката е вече платена, пренасочваме към успех
-    if (order.status === OrderStatusEnum.PROCESSING || order.status === OrderStatusEnum.COMPLETED) {
-      await router.push(`/thank-you?order=${orderId.value}&key=${orderKey.value}`);
-      return;
-    }
-
-    // За Borica плащания, генерираме payment URL
-    if (paymentMethod.value === 'borica_emv') {
-      await processBoricaPayment();
-    } else {
-      // За други payment methods
-      await router.push(`/checkout?order=${orderId.value}`);
-    }
-  } catch (error) {
+    // Директно пренасочваме към WordPress order-pay
+    // WordPress ще обработи плащането автоматично
+    await processBoricaPayment();
+  } catch (error: any) {
     console.error('Грешка при обработка на order-pay:', error);
-    errorMessage.value = 'Възникна грешка при обработка на поръчката';
+
+    errorMessage.value = error?.message || 'Възникна грешка при обработка на поръчката';
     isLoading.value = false;
   }
 });
 
 async function processBoricaPayment() {
   try {
+    // Опростен подход - пренасочваме директно към WooCommerce order-pay URL
+    // WordPress ще генерира Borica redirect автоматично
     const runtimeConfig = useRuntimeConfig();
     const baseUrl = runtimeConfig.public?.GQL_HOST?.replace('/graphql', '') || '';
 
-    // Заявка към WordPress за генериране на Borica payment URL
-    const response = (await $fetch(`${baseUrl}/wp-json/wc/v3/orders/${orderId.value}/payment-url`, {
-      method: 'GET',
-      query: {
-        payment_method: 'borica_emv',
-        order_key: orderKey.value,
-      },
-    })) as { payment_url?: string };
+    // Построяване на order-pay URL със всички нужни параметри
+    const wpOrderPayUrl = new URL(`${baseUrl}/checkout/order-pay/${orderId.value}/`);
+    wpOrderPayUrl.searchParams.set('pay_for_order', 'true');
+    wpOrderPayUrl.searchParams.set('key', orderKey.value || '');
 
-    if (response?.payment_url) {
-      // Пренасочваме към Borica
-      window.location.href = response.payment_url;
-    } else {
-      throw new Error('Не може да се генерира payment URL');
-    }
-  } catch (error) {
+    console.log('Пренасочване към WordPress order-pay:', wpOrderPayUrl.toString());
+
+    // Пренасочваме към WordPress order-pay страницата
+    window.location.href = wpOrderPayUrl.toString();
+  } catch (error: any) {
     console.error('Грешка при генериране на Borica URL:', error);
+    console.error('Borica error details:', {
+      message: error?.message,
+      statusCode: error?.statusCode,
+      orderId: orderId.value,
+      orderKey: orderKey.value,
+    });
 
     // Fallback - пренасочваме към checkout
     await router.push(`/checkout?payment_error=borica_generation&order=${orderId.value}`);
