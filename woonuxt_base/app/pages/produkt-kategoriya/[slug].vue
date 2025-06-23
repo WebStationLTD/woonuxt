@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, nextTick } from 'vue';
 
-const { loadProductsPage, loadProductsWithFilters, products, isLoading, resetProductsState, pageInfo } = useProducts();
+const { loadProductsPage, loadProductsWithFilters, products, isLoading, resetProductsState, pageInfo, currentPage } = useProducts();
 const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
 const route = useRoute();
@@ -82,8 +82,17 @@ const matchingCategoryRef = ref<Category | null>(matchingCategory);
 const generateCategorySeoMeta = () => {
   // Получаваме номера на страницата точно като в /magazin
   let pageNumber = 1;
+
+  // Първо проверяваме route.params.pageNumber (от URL структурата)
   if (route.params.pageNumber) {
     const parsedPage = parseInt(route.params.pageNumber as string);
+    if (!isNaN(parsedPage) && parsedPage > 0) {
+      pageNumber = parsedPage;
+    }
+  }
+  // След това проверяваме route.query.page (от redirect-ите)
+  else if (route.query.page) {
+    const parsedPage = parseInt(route.query.page as string);
     if (!isNaN(parsedPage) && parsedPage > 0) {
       pageNumber = parsedPage;
     }
@@ -152,7 +161,7 @@ if (matchingCategory?.seo?.schema?.raw) {
   });
 }
 
-// Prev/Next links за pagination SEO (взети от /magazin)
+// Prev/Next links за pagination SEO (точно като в /magazin)
 const initialCategoryPrevNextLinks: any[] = [];
 
 if (categorySeoMeta.pageNumber > 1) {
@@ -164,7 +173,7 @@ if (categorySeoMeta.pageNumber > 1) {
   initialCategoryPrevNextLinks.push({ rel: 'prev', href: prevUrl });
 }
 
-// Добавяме next link изначално като placeholder - ще се обновява динамично
+// Добавяме next link изначално като placeholder - ще се обновява динамично (точно като в /magazin)
 const categoryNextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber + 1}`;
 initialCategoryPrevNextLinks.push({ rel: 'next', href: categoryNextUrl });
 
@@ -172,8 +181,10 @@ useHead({
   link: initialCategoryPrevNextLinks,
 });
 
-// Функция за динамично обновяване на next/prev links
+// Функция за динамично обновяване на next/prev links (точно като в /magazin)
 const updateCategoryNextPrevLinks = () => {
+  console.log('🔍 Category Debug - pageInfo:', pageInfo, 'hasNextPage:', pageInfo?.hasNextPage);
+
   const updatedCategoryLinks: any[] = [];
 
   if (categorySeoMeta.pageNumber > 1) {
@@ -185,10 +196,16 @@ const updateCategoryNextPrevLinks = () => {
     updatedCategoryLinks.push({ rel: 'prev', href: prevUrl });
   }
 
+  // Добавяме next link САМО ако има следваща страница (точно като в /magazin)
   if (pageInfo?.hasNextPage) {
     const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber + 1}`;
     updatedCategoryLinks.push({ rel: 'next', href: nextUrl });
+    console.log('✅ Adding rel="next":', nextUrl);
+  } else {
+    console.log('❌ NOT adding rel="next" - hasNextPage is false');
   }
+
+  console.log('🔗 Final category links:', updatedCategoryLinks);
 
   useHead({
     link: updatedCategoryLinks,
@@ -221,25 +238,47 @@ const extractRouteParams = () => {
     slug = String(route.params.slug);
   }
 
+  // Проверяваме и query.page параметъра (от redirect-ите)
+  if (route.query.page) {
+    const parsed = parseInt(String(route.query.page));
+    if (!isNaN(parsed) && parsed > 0) {
+      pageNumber = parsed;
+    }
+  }
+
   return { slug, pageNumber };
 };
 
+// Race condition protection (точно като в /magazin)
+let isNavigating = false;
+
 // Основна функция за зареждане на продукти
 const loadCategoryProducts = async () => {
-  const { slug, pageNumber } = extractRouteParams();
+  console.log('🚀 Category: loadCategoryProducts called');
 
-  if (!slug) {
-    resetProductsState();
-    currentSlug.value = '';
-    hasEverLoaded.value = true;
+  if (isNavigating) {
+    console.log('⏳ Category: Already navigating, skipping...');
     return;
   }
 
-  resetProductsState();
-  currentSlug.value = slug;
-  currentPageNumber.value = pageNumber;
+  isNavigating = true;
 
   try {
+    const { slug, pageNumber } = extractRouteParams();
+    console.log('📍 Category: Extracted params - slug:', slug, 'pageNumber:', pageNumber);
+
+    if (!slug) {
+      resetProductsState();
+      currentSlug.value = '';
+      hasEverLoaded.value = true;
+      console.log('❌ Category: No slug found, exiting');
+      return;
+    }
+
+    resetProductsState();
+    currentSlug.value = slug;
+    currentPageNumber.value = pageNumber;
+
     // Проверяваме дали има филтри или сортиране в URL
     const hasFilters = route.query.filter;
     const hasOrderBy = route.query.orderby;
@@ -296,81 +335,78 @@ const loadCategoryProducts = async () => {
         else if (orderBy === 'discount') graphqlOrderBy = 'DATE';
       }
 
+      console.log('🔍 Category: Loading with filters/orderBy - slug:', [slug], 'orderBy:', graphqlOrderBy, 'filters:', filters);
       await loadProductsPage(pageNumber, [slug], graphqlOrderBy, filters);
     } else {
       // Ако няма филтри, зареждаме конкретната страница
+      console.log('🔍 Category: Loading simple page - pageNumber:', pageNumber, 'slug:', [slug]);
       await loadProductsPage(pageNumber, [slug]);
     }
 
     // Маркираме че сме зареждали данни поне веднъж
     hasEverLoaded.value = true;
 
+    // Принудително обновяване на currentPage за правилна синхронизация с pagination (като в /magazin)
+    currentPage.value = pageNumber;
+
     // Обновяваме next/prev links след като данните са заредени
+    console.log('🔄 Category: About to call updateCategoryNextPrevLinks');
+    await nextTick();
     updateCategoryNextPrevLinks();
+
+    // Принудително завършване на loading състоянието
+    await nextTick();
+    console.log('✅ Category: loadCategoryProducts completed successfully');
   } catch (error) {
+    console.error('❌ Category: Error in loadCategoryProducts:', error);
     hasEverLoaded.value = true; // Маркираме като опитано дори при грешка
+  } finally {
+    isNavigating = false;
   }
-};
-
-// Функция за обновяване на SEO метаданните при промяна на route (като в /magazin)
-const updateCategorySeoMeta = () => {
-  const newSeoMeta = generateCategorySeoMeta();
-
-  useSeoMeta({
-    title: newSeoMeta.title,
-    description: newSeoMeta.description,
-    ogTitle: matchingCategory?.seo?.opengraphTitle || newSeoMeta.title,
-    ogDescription: matchingCategory?.seo?.opengraphDescription || newSeoMeta.description,
-    ogUrl: newSeoMeta.canonicalUrl,
-    twitterTitle: matchingCategory?.seo?.twitterTitle || newSeoMeta.title,
-    twitterDescription: matchingCategory?.seo?.twitterDescription || newSeoMeta.description,
-  });
-
-  // Обновяваме canonical URL
-  const newCanonicalUrl = newSeoMeta.pageNumber === 1 && matchingCategory?.seo?.canonical ? matchingCategory.seo.canonical : newSeoMeta.canonicalUrl;
-
-  useHead({
-    link: [{ rel: 'canonical', href: newCanonicalUrl }],
-  });
-
-  // Обновяваме prev/next links
-  const prevNextLinks: any[] = [];
-
-  if (newSeoMeta.pageNumber > 1) {
-    const prevUrl =
-      newSeoMeta.pageNumber === 2
-        ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
-        : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${newSeoMeta.pageNumber - 1}`;
-
-    prevNextLinks.push({ rel: 'prev', href: prevUrl });
-  }
-
-  // Next link ще се добави когато знаем че има още страници
-  if (pageInfo?.hasNextPage) {
-    const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${newSeoMeta.pageNumber + 1}`;
-    prevNextLinks.push({ rel: 'next', href: nextUrl });
-  }
-
-  useHead({
-    link: prevNextLinks,
-  });
 };
 
 // Зареждаме при mount
 onMounted(async () => {
+  // Изчакваме един tick за да се установи правилно route състоянието (точно като в /magazin)
   await nextTick();
-  loadCategoryProducts();
+  await loadCategoryProducts();
 });
+
+// За SSR зареждане при извикване на страницата (точно като в /magazin)
+if (process.server) {
+  loadCategoryProducts();
+}
 
 // Следене на промени в route
 watch(
   () => route.fullPath,
-  async (newPath, oldPath) => {
+  (newPath, oldPath) => {
     if (newPath !== oldPath && process.client) {
-      await nextTick();
       loadCategoryProducts();
-      // Обновяваме и SEO данните при навигация
-      updateCategorySeoMeta();
+    }
+  },
+);
+
+// Допълнителен watcher за промени в path за да се улавя навигацията между страници (точно като в /magazin)
+watch(
+  () => route.path,
+  (newPath, oldPath) => {
+    if (newPath !== oldPath && process.client) {
+      // Reset loading състоянието при навигация за да се покаже skeleton
+      hasEverLoaded.value = false;
+      loadCategoryProducts();
+    }
+  },
+);
+
+// Watcher за промени в query параметрите (филтри и сортиране) (точно като в /magazin)
+watch(
+  () => route.query,
+  (newQuery, oldQuery) => {
+    if (process.client && JSON.stringify(newQuery) !== JSON.stringify(oldQuery)) {
+      // Reset loading състоянието при промяна на филтри
+      hasEverLoaded.value = false;
+      loadCategoryProducts();
     }
   },
 );
@@ -379,8 +415,10 @@ watch(
 watch(
   () => pageInfo,
   () => {
-    if (pageInfo && process.client) {
-      updateCategorySeoMeta();
+    console.log('🔔 Category: pageInfo watcher triggered - process.client:', process.client, 'pageInfo:', pageInfo);
+    if (process.client) {
+      console.log('🔄 Category: Calling updateCategoryNextPrevLinks from watcher');
+      updateCategoryNextPrevLinks();
     }
   },
   { deep: true },

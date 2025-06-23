@@ -89,10 +89,19 @@ const parentCategoryRef = ref<Category | null>(parentCategory);
 
 // Функция за генериране на SEO данни според страницата (взета от основната категория)
 const generateChildCategorySeoMeta = () => {
-  // Получаваме номера на страницата
+  // Получаваме номера на страницата (проверяваме и params и query)
   let pageNumber = 1;
+
+  // Първо проверяваме route.params.pageNumber (от URL структурата)
   if (route.params.pageNumber) {
     const parsedPage = parseInt(route.params.pageNumber as string);
+    if (!isNaN(parsedPage) && parsedPage > 0) {
+      pageNumber = parsedPage;
+    }
+  }
+  // След това проверяваме route.query.page (от redirect-ите)
+  else if (route.query.page) {
+    const parsedPage = parseInt(route.query.page as string);
     if (!isNaN(parsedPage) && parsedPage > 0) {
       pageNumber = parsedPage;
     }
@@ -147,6 +156,7 @@ useSeoMeta({
 const canonicalUrl =
   childCategorySeoMeta.pageNumber === 1 && matchingCategory?.seo?.canonical ? matchingCategory.seo.canonical : childCategorySeoMeta.canonicalUrl;
 
+// Инициализираме само canonical URL - prev/next links ще се управляват динамично
 useHead({
   link: [{ rel: 'canonical', href: canonicalUrl }],
 });
@@ -163,26 +173,56 @@ if (matchingCategory?.seo?.schema?.raw) {
   });
 }
 
-// Prev/Next links за pagination SEO
+// Initial Prev/Next links за pagination SEO (точно като в /magazin)
+const initialChildCategoryPrevNextLinks: any[] = [];
+
 if (childCategorySeoMeta.pageNumber > 1) {
   const prevUrl =
     childCategorySeoMeta.pageNumber === 2
       ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}`
       : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${childCategorySeoMeta.pageNumber - 1}`;
 
-  useHead({
-    link: [{ rel: 'prev', href: prevUrl }],
-  });
+  initialChildCategoryPrevNextLinks.push({ rel: 'prev', href: prevUrl });
 }
 
-// Next link ще добавим динамично когато знаем че има още страници
+// Добавяме next link изначално като placeholder - ще се обновява динамично (точно като в /magazin)
+const childCategoryNextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${childCategorySeoMeta.pageNumber + 1}`;
+initialChildCategoryPrevNextLinks.push({ rel: 'next', href: childCategoryNextUrl });
+
+useHead({
+  link: initialChildCategoryPrevNextLinks,
+});
+
+// Функция за динамично обновяване на next/prev links (точно като в /magazin)
 const updateChildCategoryNextPrevLinks = () => {
+  console.log('🔍 Child Category Debug - pageInfo:', pageInfo, 'hasNextPage:', pageInfo?.hasNextPage);
+  console.log('🔍 Child Category Debug - currentPageNumber:', childCategorySeoMeta.pageNumber, 'parentSlug:', parentSlug, 'childSlug:', childSlug);
+
+  const updatedChildLinks: any[] = [];
+
+  if (childCategorySeoMeta.pageNumber > 1) {
+    const prevUrl =
+      childCategorySeoMeta.pageNumber === 2
+        ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}`
+        : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${childCategorySeoMeta.pageNumber - 1}`;
+
+    updatedChildLinks.push({ rel: 'prev', href: prevUrl });
+  }
+
   if (pageInfo?.hasNextPage) {
     const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${childCategorySeoMeta.pageNumber + 1}`;
-    useHead({
-      link: [{ rel: 'next', href: nextUrl }],
-    });
+    updatedChildLinks.push({ rel: 'next', href: nextUrl });
+    console.log('✅ Child Category Adding rel="next":', nextUrl);
+  } else {
+    console.log('❌ Child Category NOT adding rel="next" - hasNextPage is false');
   }
+
+  console.log('🔗 Final child category links:', updatedChildLinks);
+
+  // КЛЮЧОВО: Заменяме ЦЕЛИЯ списък от links (като в /magazin)
+  useHead({
+    link: updatedChildLinks,
+  });
 };
 
 // Функция за извличане на параметри от route
@@ -212,6 +252,14 @@ const extractRouteParams = () => {
     }
     if (route.params.child) {
       childSlug = String(route.params.child);
+    }
+  }
+
+  // Проверяваме и query.page параметъра (от redirect-ите)
+  if (route.query.page) {
+    const parsed = parseInt(String(route.query.page));
+    if (!isNaN(parsed) && parsed > 0) {
+      pageNumber = parsed;
     }
   }
 
@@ -307,8 +355,12 @@ const loadCategoryProducts = async () => {
     // Маркираме че сме зареждали данни поне веднъж
     hasEverLoaded.value = true;
 
-    // Обновяваме next/prev links след като данните са заредени
+    // Обновяваме next/prev links след като данните са заредени (като в /magazin)
+    await nextTick();
     updateChildCategoryNextPrevLinks();
+
+    // Принудително завършване на loading състоянието
+    await nextTick();
   } catch (error) {
     hasEverLoaded.value = true;
   }
@@ -327,35 +379,6 @@ const updateChildCategorySeoMeta = () => {
     ogUrl: newSeoMeta.canonicalUrl,
     twitterTitle: matchingCategory?.seo?.twitterTitle || newSeoMeta.title,
     twitterDescription: matchingCategory?.seo?.twitterDescription || newSeoMeta.description,
-  });
-
-  // Обновяваме canonical URL
-  const newCanonicalUrl = newSeoMeta.pageNumber === 1 && matchingCategory?.seo?.canonical ? matchingCategory.seo.canonical : newSeoMeta.canonicalUrl;
-
-  useHead({
-    link: [{ rel: 'canonical', href: newCanonicalUrl }],
-  });
-
-  // Обновяваме prev/next links
-  const prevNextLinks: any[] = [];
-
-  if (newSeoMeta.pageNumber > 1) {
-    const prevUrl =
-      newSeoMeta.pageNumber === 2
-        ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}`
-        : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${newSeoMeta.pageNumber - 1}`;
-
-    prevNextLinks.push({ rel: 'prev', href: prevUrl });
-  }
-
-  // Next link ще се добави когато знаем че има още страници
-  if (pageInfo?.hasNextPage) {
-    const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${newSeoMeta.pageNumber + 1}`;
-    prevNextLinks.push({ rel: 'next', href: nextUrl });
-  }
-
-  useHead({
-    link: prevNextLinks,
   });
 };
 
@@ -378,12 +401,14 @@ watch(
   },
 );
 
-// Watcher за pageInfo промени
+// Watcher за pageInfo промени (точно като в /magazin)
 watch(
   () => pageInfo,
   () => {
-    if (pageInfo && process.client) {
-      updateChildCategorySeoMeta();
+    console.log('🔔 Child Category: pageInfo watcher triggered - process.client:', process.client, 'pageInfo:', pageInfo);
+    if (process.client) {
+      console.log('🔄 Child Category: Calling updateChildCategoryNextPrevLinks from watcher');
+      updateChildCategoryNextPrevLinks();
     }
   },
   { deep: true },
