@@ -77,6 +77,10 @@ const payNow = async () => {
       isPaid.value = false;
       orderInput.value.transactionId = new Date().getTime().toString();
       orderInput.value.metaData.push({ key: '_chosen_payment_method', value: 'cash_on_delivery' });
+    } else if (method === 'borica_emv') {
+      isPaid.value = false;
+      orderInput.value.transactionId = new Date().getTime().toString();
+      orderInput.value.metaData.push({ key: '_chosen_payment_method', value: 'borica_emv' });
     } else {
       isPaid.value = false;
       orderInput.value.transactionId = new Date().getTime().toString();

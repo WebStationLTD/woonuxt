@@ -21,8 +21,9 @@
 ### Нови файлове:
 
 ```
-woonuxt_base/app/pages/order-pay/[orderId].vue              # Основна страница
-woonuxt_base/app/pages/porachka-2/order-pay/[orderId].vue   # Българска локализация
+woonuxt_base/app/pages/order-pay/[orderId].vue                   # Основна страница
+woonuxt_base/app/pages/checkout/order-pay/[orderId].vue          # /checkout/order-pay/ redirect
+woonuxt_base/app/pages/porachka-2/order-pay/[orderId].vue        # Българска локализация
 ```
 
 ### Как работи решението:

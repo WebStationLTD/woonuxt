@@ -149,6 +149,14 @@ export function useCheckout() {
       else if ((await checkout?.redirect) && isBorica) {
         const redirectUrl = checkout?.redirect ?? '';
 
+        console.log('Borica redirect detected:', {
+          redirectUrl,
+          orderId,
+          orderKey,
+          isBorica,
+          checkoutResult: checkout?.result,
+        });
+
         // За Borica просто пренасочваме към тяхната страница
         // Borica ще направи callback към WordPress директно
         window.location.href = redirectUrl;
