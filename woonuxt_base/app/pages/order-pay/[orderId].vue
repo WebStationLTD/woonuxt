@@ -43,20 +43,15 @@ async function processBoricaPayment() {
     const runtimeConfig = useRuntimeConfig();
     const baseUrl = runtimeConfig.public?.GQL_HOST?.replace('/graphql', '') || '';
 
-    console.log('Runtime config:', {
-      GQL_HOST: runtimeConfig.public?.GQL_HOST,
-      baseUrl: baseUrl,
-      orderId: orderId.value,
-      orderKey: orderKey.value,
-    });
+    // Построяване на order-pay URL със всички нужни параметри
+    const wpOrderPayUrl = new URL(`${baseUrl}/checkout/order-pay/${orderId.value}/`);
+    wpOrderPayUrl.searchParams.set('pay_for_order', 'true');
+    wpOrderPayUrl.searchParams.set('key', orderKey.value || '');
 
-    // Опитваме различни URL варианти за WordPress
-    const wpOrderPayUrl = `${baseUrl}/checkout/order-pay/${orderId.value}/?pay_for_order=true&key=${orderKey.value || ''}`;
+    console.log('Пренасочване към WordPress order-pay:', wpOrderPayUrl.toString());
 
-    console.log('Пренасочване към WordPress:', wpOrderPayUrl);
-
-    // Пренасочваме към WordPress
-    window.location.href = wpOrderPayUrl;
+    // Пренасочваме към WordPress order-pay страницата
+    window.location.href = wpOrderPayUrl.toString();
   } catch (error: any) {
     console.error('Грешка при генериране на Borica URL:', error);
     console.error('Borica error details:', {
