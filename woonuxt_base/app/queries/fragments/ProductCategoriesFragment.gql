@@ -5,6 +5,11 @@ fragment ProductCategories on Product {
       slug
       name
       count
+      parent {
+        node {
+          slug
+        }
+      }
     }
   }
 }
