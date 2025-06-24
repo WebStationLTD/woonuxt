@@ -21,23 +21,50 @@ try {
   if (targetPost) {
     // Заявка за конкретната публикация по ID
     // @ts-ignore
-    const { data } = await useAsyncGql("GetBlogPost", {
+    const { data } = await useAsyncGql("GetBlogPostWithSeo", {
       id: targetPost.id,
     });
 
     if (data.value?.post) {
       post.value = data.value.post;
+
+      // Използване на Yoast SEO данни ако са налични
+      const postSeo = (data.value.post as any).seo;
+      const title =
+        postSeo?.title || data.value.post.title || "Блог публикация";
+      const description =
+        postSeo?.metaDesc ||
+        data.value.post.excerpt ||
+        "Прочетете нашата блог публикация";
+
       // Задаване на SEO метаданни
       useHead({
-        title: data.value.post.title || "Блог публикация",
+        title: title,
         meta: [
+          { name: "description", content: description },
+          { name: "robots", content: "index, follow" },
+          { property: "og:title", content: postSeo?.opengraphTitle || title },
           {
-            name: "description",
-            content:
-              data.value.post.excerpt || "Прочетете нашата блог публикация",
+            property: "og:description",
+            content: postSeo?.opengraphDescription || description,
           },
         ],
+        link: [
+          { rel: "canonical", href: postSeo?.canonical || `/blog/${slug}` },
+        ],
       });
+
+      // Добавяне на структурирани данни (schema.org) ако са налични в Yoast
+      if (postSeo?.schema?.raw) {
+        useHead({
+          script: [
+            {
+              type: "application/ld+json",
+              innerHTML: postSeo.schema.raw,
+            },
+          ],
+        });
+      }
     } else {
       // Ако публикацията не е намерена
       useHead({

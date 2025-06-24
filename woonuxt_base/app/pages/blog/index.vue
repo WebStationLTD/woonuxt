@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { setPosts, posts, pageInfo } = useBlog();
-let blogTitle = 'Блог';
-let blogDescription = 'Всички публикации от нашия блог';
+let blogTitle = 'Статии, новини и ревюта на марки и продукти - Лидерфитнес';
+let blogDescription = 'Статии, новини и ревюта на марки и продукти. Следете нашите новини, както и страницата ни във Facebook | Leaderfitness.com';
 let seoDataSet = false;
 const debugData = ref(null);
 
@@ -9,13 +9,22 @@ try {
   // Зареждаме SEO данни за блог страницата
   useHead({
     title: blogTitle,
-    meta: [{ name: 'description', content: blogDescription }],
+    meta: [
+      { name: 'description', content: blogDescription },
+      { name: 'robots', content: 'index, follow' },
+    ],
   });
   seoDataSet = true;
 } catch (error) {
   useHead({
-    title: 'Блог',
-    meta: [{ name: 'description', content: 'Всички публикации от нашия блог' }],
+    title: 'Статии, новини и ревюта на марки и продукти - Лидерфитнес',
+    meta: [
+      {
+        name: 'description',
+        content: 'Статии, новини и ревюта на марки и продукти. Следете нашите новини, както и страницата ни във Facebook | Leaderfitness.com',
+      },
+      { name: 'robots', content: 'index, follow' },
+    ],
   });
   seoDataSet = true;
 }

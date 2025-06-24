@@ -8,13 +8,14 @@ const { data } = await useAsyncGql('getProductCategories', { first: 100, hideEmp
 const productCategories = data.value.productCategories?.nodes as ProductCategory[];
 
 // Използване на SEO данни от Yoast ако са налични
-const categoriesTitle = categoriesSeo?.title || 'Categories';
-const categoriesDescription = categoriesSeo?.metaDesc || 'All product categories';
+const categoriesTitle = categoriesSeo?.title || 'Leaderfitness - всички продуктови категории';
+const categoriesDescription = categoriesSeo?.metaDesc || 'Leaderfitness - всички продуктови категории | Фитнес екипировка, дрехи, тренировъчно оборудване';
 
 useHead({
   title: categoriesTitle,
   meta: [
     { name: 'description', content: categoriesDescription },
+    { name: 'robots', content: 'index, follow' },
     { property: 'og:title', content: categoriesSeo?.opengraphTitle || categoriesTitle },
     { property: 'og:description', content: categoriesSeo?.opengraphDescription || categoriesDescription },
   ],

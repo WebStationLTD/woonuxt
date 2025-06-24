@@ -1,12 +1,17 @@
 <script setup lang="ts">
 const { setPosts, posts, pageInfo } = useBlog();
-let blogTitle = "Блог";
-let blogDescription = "Всички публикации от нашия блог";
+let blogTitle = "Статии, новини и ревюта на марки и продукти - Лидерфитнес";
+let blogDescription =
+  "Статии, новини и ревюта на марки и продукти. Следете нашите новини, както и страницата ни във Facebook | Leaderfitness.com";
 
 // Задаване на SEO метаданни
 useHead({
   title: blogTitle,
-  meta: [{ name: "description", content: blogDescription }],
+  meta: [
+    { name: "description", content: blogDescription },
+    { name: "robots", content: "index, follow" },
+  ],
+  link: [{ rel: "canonical", href: "/blog" }],
 });
 
 // Получаване на всички публикации
@@ -22,7 +27,7 @@ try {
     // Задаваме информация за пагинация
     if (data.value.posts.pageInfo) {
       pageInfo.hasNextPage = data.value.posts.pageInfo.hasNextPage;
-      pageInfo.endCursor = data.value.posts.pageInfo.endCursor;
+      pageInfo.endCursor = data.value.posts.pageInfo.endCursor || null;
     }
   }
 } catch (error) {

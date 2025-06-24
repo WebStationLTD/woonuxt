@@ -1,4 +1,6 @@
-query GetBlogPost($id: ID!) {
+# import "../woonuxt_base/app/queries/fragments/PostSeoFragment.gql"
+
+query GetBlogPostWithSeo($id: ID!) {
   post(id: $id) {
     id
     databaseId
@@ -13,5 +15,6 @@ query GetBlogPost($id: ID!) {
         altText
       }
     }
+    ...PostSeoFragment
   }
 }
