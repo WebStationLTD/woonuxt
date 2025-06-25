@@ -2,7 +2,7 @@
 const { loadProductsPage, loadProductsWithFilters, products, isLoading, currentPage, pageInfo, resetProductsState } = useProducts();
 const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
-const { isQueryEmpty } = useHelpers();
+const { isQueryEmpty, frontEndUrl } = useHelpers();
 
 // Проследяваме дали някога сме зареждали данни
 const hasEverLoaded = ref(false);
@@ -41,8 +41,8 @@ const generateSeoMeta = () => {
 
   const canonicalUrl =
     pageNumber === 1
-      ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin`
-      : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${pageNumber}`;
+      ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin`
+      : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${pageNumber}`;
 
   return {
     title: finalTitle,
@@ -70,8 +70,8 @@ useSeoMeta({
   robots: shopSeo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
 });
 
-// Canonical URL (използваме Yoast canonical ако е зададен за първата страница)
-const canonicalUrl = seoMeta.pageNumber === 1 && shopSeo?.canonical ? shopSeo.canonical : seoMeta.canonicalUrl;
+// Canonical URL (използваме само frontend URL-а)
+const canonicalUrl = seoMeta.canonicalUrl;
 
 useHead({
   link: [{ rel: 'canonical', href: canonicalUrl }],
@@ -95,14 +95,14 @@ const initialPrevNextLinks: any[] = [];
 if (seoMeta.pageNumber > 1) {
   const prevUrl =
     seoMeta.pageNumber === 2
-      ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin`
-      : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber - 1}`;
+      ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin`
+      : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber - 1}`;
 
   initialPrevNextLinks.push({ rel: 'prev', href: prevUrl });
 }
 
 // Добавяме next link изначално като placeholder - ще се обновява динамично
-const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber + 1}`;
+const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber + 1}`;
 initialPrevNextLinks.push({ rel: 'next', href: nextUrl });
 
 useHead({
@@ -116,14 +116,14 @@ const updateNextPrevLinks = () => {
   if (seoMeta.pageNumber > 1) {
     const prevUrl =
       seoMeta.pageNumber === 2
-        ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin`
-        : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber - 1}`;
+        ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin`
+        : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber - 1}`;
 
     updatedLinks.push({ rel: 'prev', href: prevUrl });
   }
 
   if (pageInfo?.hasNextPage) {
-    const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber + 1}`;
+    const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber + 1}`;
     updatedLinks.push({ rel: 'next', href: nextUrl });
   }
 

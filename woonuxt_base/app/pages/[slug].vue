@@ -5,40 +5,115 @@ const post = ref<any>(null);
 const loading = ref(true);
 const error = ref<any>(null);
 
-// Директна заявка за публикация
+// Списък с резервирани страници, които не са блог постове
+const reservedRoutes = [
+  'categories',
+  'magazin',
+  'contact',
+  'thank-you',
+  'order-summary',
+  'wishlist',
+  'privacy-policy',
+  'checkout',
+  'products',
+  'produkt',
+  'produkt-kategoriya',
+  'blog',
+  'my-account',
+  'oauth',
+  'order-pay',
+  'porachka-2',
+];
+
+// Ако slug-ът е резервиран route, пренасочи към 404
+if (reservedRoutes.includes(slug as string)) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: 'Page Not Found',
+  });
+}
+
+// Заявка за публикация
 try {
+  // Първо зареждаме всички публикации, за да намерим ID на публикацията
   // @ts-ignore
-  const { data } = await useAsyncGql('getPost', {
-    id: slug,
+  const { data: allPostsData } = await useAsyncGql('GetBlogPosts', {
+    first: 100,
   });
 
-  // Debug логове премахнати за производство
+  // Намираме ID на публикацията със съответния slug
+  const targetPost = allPostsData.value?.posts?.nodes?.find((p: any) => p.slug === slug);
 
-  if (data.value?.post) {
-    post.value = data.value.post;
-    // Задаване на SEO метаданни
-    useHead({
-      title: data.value.post.title || 'Блог публикация',
-      meta: [{ name: 'description', content: data.value.post.excerpt || 'Прочетете нашата блог публикация' }],
+  if (targetPost) {
+    // Заявка за конкретната публикация по ID
+    // @ts-ignore
+    const { data } = await useAsyncGql('GetBlogPostWithSeo', {
+      id: targetPost.id,
     });
+
+    if (data.value?.post) {
+      post.value = data.value.post;
+
+      // Използване на Yoast SEO данни ако са налични
+      const postSeo = (data.value.post as any).seo;
+      const title = postSeo?.title || data.value.post.title || 'Блог публикация';
+      const description = postSeo?.metaDesc || data.value.post.excerpt || 'Прочетете нашата блог публикация';
+
+      // Задаване на SEO метаданни
+      useHead({
+        title: title,
+        meta: [
+          { name: 'description', content: description },
+          { name: 'robots', content: 'index, follow' },
+          { property: 'og:title', content: postSeo?.opengraphTitle || title },
+          {
+            property: 'og:description',
+            content: postSeo?.opengraphDescription || description,
+          },
+        ],
+        link: [{ rel: 'canonical', href: postSeo?.canonical || `/${slug}` }],
+      });
+
+      // Добавяне на структурирани данни (schema.org) ако са налични в Yoast
+      if (postSeo?.schema?.raw) {
+        useHead({
+          script: [
+            {
+              type: 'application/ld+json',
+              innerHTML: postSeo.schema.raw,
+            },
+          ],
+        });
+      }
+    } else {
+      // Ако публикацията не е намерена, хвърли 404
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Публикацията не е намерена',
+      });
+    }
   } else {
-    // Ако публикацията не е намерена
-    useHead({
-      title: 'Публикацията не е намерена',
-      meta: [
-        { name: 'description', content: 'Търсената от вас публикация не съществува или е премахната' },
-        { name: 'robots', content: 'noindex' },
-      ],
+    // Ако няма публикация с този slug, хвърли 404
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Публикацията не е намерена',
     });
   }
-} catch (err) {
-  error.value = err;
+} catch (err: any) {
+  // Ако грешката е 404, пренасочи я
+  if (err.statusCode === 404) {
+    throw err;
+  }
 
+  error.value = err;
   // Базови SEO метаданни при грешка
   useHead({
     title: 'Грешка при зареждане на публикация',
     meta: [
-      { name: 'description', content: 'Възникна грешка при зареждане на публикацията' },
+      {
+        name: 'description',
+        content: 'Възникна грешка при зареждане на публикацията',
+      },
       { name: 'robots', content: 'noindex' },
     ],
   });
@@ -49,7 +124,11 @@ try {
 const formatDate = (dateString: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('bg-BG', { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
+  return new Intl.DateTimeFormat('bg-BG', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
 };
 </script>
 
@@ -92,7 +171,7 @@ const formatDate = (dateString: string) => {
       <h1 class="text-3xl sm:text-4xl font-bold mb-4">{{ post.title }}</h1>
 
       <!-- Мета информация -->
-      <div class="flex items-center text-gray-600 mb-8">
+      <div v-if="post.date" class="flex items-center text-gray-600 mb-8">
         <div v-if="post.author?.node?.avatar?.url" class="flex-shrink-0 mr-2">
           <img class="h-10 w-10 rounded-full" :src="post.author.node.avatar.url" :alt="post.author.node.name" />
         </div>
@@ -104,7 +183,7 @@ const formatDate = (dateString: string) => {
             <time :datetime="post.date">{{ formatDate(post.date) }}</time>
             <span v-if="post.categories?.nodes?.length" class="inline-flex">
               &bull;
-              <span v-for="(category, index) in post.categories.nodes" :key="category.slug" class="ml-1">
+              <span v-for="(category, index) in post.categories?.nodes" :key="category.slug" class="ml-1">
                 {{ category.name }}{{ index < post.categories.nodes.length - 1 ? ', ' : '' }}
               </span>
             </span>
@@ -119,12 +198,6 @@ const formatDate = (dateString: string) => {
 
       <!-- Съдържание -->
       <div class="prose prose-lg max-w-none" v-html="post.content"></div>
-    </div>
-
-    <div v-else class="py-12 text-center">
-      <h1 class="text-2xl font-bold mb-4">Публикацията не е намерена</h1>
-      <p class="mb-8">Търсената от вас публикация не съществува или е премахната.</p>
-      <NuxtLink to="/blog" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"> Обратно към блога </NuxtLink>
     </div>
   </div>
 </template>

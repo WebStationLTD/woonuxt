@@ -7,7 +7,7 @@ const { info } = defineProps({ info: { type: Object as PropType<Product>, requir
 const title = info.seo?.title || info.name;
 const metaDescription =
   info.seo?.metaDesc || (info.shortDescription || info.description ? stripHtml(info.shortDescription || '') : stripHtml(info.description || ''));
-const canonical = info.seo?.canonical || `${frontEndUrl}${path}`;
+const canonical = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}${path}`;
 const siteName = process.env.SITE_TITLE ?? 'WooNuxt';
 
 // Prioritize Yoast SEO OpenGraph image
@@ -25,7 +25,7 @@ const twitterImageSrc = info.seo?.twitterImage?.sourceUrl ? info.seo.twitterImag
 const getFullImageURL = (url?: string) => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  return `${frontEndUrl}${url}`;
+  return `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}${url}`;
 };
 
 const defaultImage = getFullImageURL(defaultImageSrc);
@@ -37,6 +37,26 @@ const twitterDescription = info.seo?.twitterDescription || metaDescription;
 
 const facebook = wooNuxtSEO?.find((item) => item?.provider === 'facebook') ?? null;
 const twitter = wooNuxtSEO?.find((item) => item?.provider === 'twitter') ?? null;
+
+// Създаваме правилния robots meta tag
+const robotsContent = () => {
+  let robots = [];
+
+  // Yoast връща string стойности, не boolean
+  if (info.seo?.metaRobotsNoindex === 'noindex') {
+    robots.push('noindex');
+  } else {
+    robots.push('index'); // default или ако е 'index'
+  }
+
+  if (info.seo?.metaRobotsNofollow === 'nofollow') {
+    robots.push('nofollow');
+  } else {
+    robots.push('follow'); // default или ако е 'follow'
+  }
+
+  return robots.join(', ');
+};
 
 // Добавяме schema.org структурирани данни чрез useHead
 if (info.seo?.schema?.raw) {
@@ -69,9 +89,8 @@ if (info.seo?.schema?.raw) {
     <Meta name="twitter:image" hid="twitter:image" :content="twitterImage" />
     <Meta name="twitter:url" hid="twitter:url" :content="canonical" />
     <Link rel="canonical" hid="canonical" :href="canonical" />
-    <!-- Add meta robots if specified in Yoast SEO -->
-    <Meta v-if="info.seo?.metaRobotsNoindex" name="robots" content="index" />
-    <Meta v-if="info.seo?.metaRobotsNofollow" name="robots" content="follow" />
+    <!-- Add meta robots tag -->
+    <Meta name="robots" hid="robots" :content="robotsContent()" />
     <!-- Schema.org data is now added using useHead in the script section -->
   </Head>
 </template>

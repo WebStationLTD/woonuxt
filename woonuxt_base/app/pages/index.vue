@@ -5,6 +5,7 @@ import { ProductsOrderByEnum } from '#woo';
 import { SpeedInsights } from '@vercel/speed-insights/vue';
 
 const { siteName, description, shortDescription, siteImage } = useAppConfig();
+const { frontEndUrl } = useHelpers();
 
 // Получаване на SEO данни от Yoast SEO за началната страница
 const { data: seoData } = await useAsyncGql('getHomeSeo');
@@ -24,7 +25,7 @@ const seoDescription =
   homeSeo?.metaDesc ||
   description ||
   'Открийте висококачествено спортно оборудване, фитнес уреди и аксесоари в нашия онлайн магазин. Бързи доставки, конкурентни цени и професионално обслужване.';
-const canonicalUrl = process.env.APP_HOST || 'https://woonuxt-ten.vercel.app';
+const canonicalUrl = frontEndUrl || 'https://woonuxt-ten.vercel.app';
 
 useSeoMeta({
   title: seoTitle,

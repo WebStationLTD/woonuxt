@@ -37,6 +37,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       GQL_HOST: "https://leaderfitness.admin-panels.com/graphql",
+      FRONT_END_URL: "https://woonuxt-ten.vercel.app",
       PRODUCT_CATEGORY_PERMALINK: "/produkt-kategoriya/",
       PRODUCTS_PER_PAGE: 12,
     },
@@ -52,7 +53,7 @@ export default defineNuxtConfig({
   },
 
   sitemap: {
-    siteUrl: "https://leaderfitness.admin-panels.com",
+    siteUrl: "https://woonuxt-ten.vercel.app",
     excludes: [
       "/checkout/order-received/**",
       "/order-summary/**",
@@ -85,7 +86,7 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
-      routes: ["/", "/magazin", "/categories", "/contact"],
+      routes: ["/", "/magazin", "/categories", "/contact", "/blog"],
       concurrency: 10,
       interval: 1000,
       failOnError: false,
@@ -105,6 +106,7 @@ export default defineNuxtConfig({
       },
       "/categories": { static: true },
       "/contact": { static: true },
+      "/blog": { static: true },
 
       // Частично кеширани с ISR (Incremental Static Regeneration)
       "/produkt/**": {
@@ -121,6 +123,16 @@ export default defineNuxtConfig({
         },
         headers: {
           "Cache-Control": "s-maxage=300",
+        },
+      },
+
+      // Блог постове с ISR
+      "/blog/**": {
+        isr: {
+          expiration: 1800, // 30 минути за блог постове
+        },
+        headers: {
+          "Cache-Control": "s-maxage=1800",
         },
       },
 

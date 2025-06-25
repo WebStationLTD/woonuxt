@@ -38,7 +38,7 @@ const formatExcerpt = (excerpt: string) => {
   <article
     class="flex flex-col overflow-hidden rounded-lg shadow transition-all hover:shadow-lg"
   >
-    <NuxtLink :to="`/blog/${post.slug}`" class="block overflow-hidden">
+    <NuxtLink :to="`/${post.slug}`" class="block overflow-hidden">
       <div class="aspect-w-16 aspect-h-9 w-full relative">
         <img
           v-if="post.featuredImage?.node?.sourceUrl"

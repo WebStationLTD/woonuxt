@@ -71,7 +71,7 @@ try {
             {{ post.date ? new Date(post.date).toLocaleDateString('bg-BG') : 'Неизвестна дата' }}
           </p>
           <div class="text-gray-700 mb-4" v-html="post.excerpt"></div>
-          <NuxtLink :to="`/blog/${post.slug}`" class="text-blue-600 hover:underline"> Прочети повече </NuxtLink>
+          <NuxtLink :to="`/${post.slug}`" class="text-blue-600 hover:underline"> Прочети повече </NuxtLink>
         </div>
       </div>
     </div>

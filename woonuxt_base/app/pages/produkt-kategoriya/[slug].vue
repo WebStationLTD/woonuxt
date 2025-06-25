@@ -4,6 +4,7 @@ import { ref, onMounted, watch, computed, nextTick } from 'vue';
 const { loadProductsPage, loadProductsWithFilters, products, isLoading, resetProductsState, pageInfo, currentPage } = useProducts();
 const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
+const { frontEndUrl } = useHelpers();
 const route = useRoute();
 
 // Проследяваме дали някога сме зареждали данни
@@ -113,8 +114,8 @@ const generateCategorySeoMeta = () => {
 
   const canonicalUrl =
     pageNumber === 1
-      ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
-      : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${pageNumber}`;
+      ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
+      : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${pageNumber}`;
 
   return {
     title: finalTitle,
@@ -142,8 +143,8 @@ useSeoMeta({
   robots: matchingCategory?.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
 });
 
-// Canonical URL (използваме категорийния canonical ако е зададен за първата страница)
-const canonicalUrl = categorySeoMeta.pageNumber === 1 && matchingCategory?.seo?.canonical ? matchingCategory.seo.canonical : categorySeoMeta.canonicalUrl;
+// Canonical URL (използваме само frontend URL-а)
+const canonicalUrl = categorySeoMeta.canonicalUrl;
 
 useHead({
   link: [{ rel: 'canonical', href: canonicalUrl }],
@@ -167,14 +168,14 @@ const initialCategoryPrevNextLinks: any[] = [];
 if (categorySeoMeta.pageNumber > 1) {
   const prevUrl =
     categorySeoMeta.pageNumber === 2
-      ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
-      : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber - 1}`;
+      ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
+      : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber - 1}`;
 
   initialCategoryPrevNextLinks.push({ rel: 'prev', href: prevUrl });
 }
 
 // Добавяме next link изначално като placeholder - ще се обновява динамично (точно като в /magazin)
-const categoryNextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber + 1}`;
+const categoryNextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber + 1}`;
 initialCategoryPrevNextLinks.push({ rel: 'next', href: categoryNextUrl });
 
 useHead({
@@ -190,15 +191,15 @@ const updateCategoryNextPrevLinks = () => {
   if (categorySeoMeta.pageNumber > 1) {
     const prevUrl =
       categorySeoMeta.pageNumber === 2
-        ? `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
-        : `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber - 1}`;
+        ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
+        : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber - 1}`;
 
     updatedCategoryLinks.push({ rel: 'prev', href: prevUrl });
   }
 
   // Добавяме next link САМО ако има следваща страница (точно като в /magazin)
   if (pageInfo?.hasNextPage) {
-    const nextUrl = `${process.env.APP_HOST || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber + 1}`;
+    const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber + 1}`;
     updatedCategoryLinks.push({ rel: 'next', href: nextUrl });
     console.log('✅ Adding rel="next":', nextUrl);
   } else {

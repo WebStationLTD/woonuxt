@@ -9,7 +9,14 @@ export function useHelpers() {
   const wooNuxtVersionInfo: string = pkg.version || '0.0.0';
   const productsPerPage: number = runtimeConfig.public?.PRODUCTS_PER_PAGE || 24;
   const wooNuxtSEO = Array.isArray(runtimeConfig.public?.WOO_NUXT_SEO) ? runtimeConfig.public?.WOO_NUXT_SEO : [];
-  const frontEndUrl = typeof runtimeConfig.public?.FRONT_END_URL === 'string' ? runtimeConfig.public.FRONT_END_URL.replace(/\/$/, '') : null;
+  const frontEndUrl = (() => {
+    const configUrl = runtimeConfig.public?.FRONT_END_URL;
+    if (typeof configUrl === 'string' && configUrl.length > 0) {
+      return configUrl.replace(/\/$/, '');
+    }
+    // Fallback за development и production
+    return 'https://woonuxt-ten.vercel.app';
+  })();
   const isDev: boolean = process.env.NODE_ENV === 'development';
   const FALLBACK_IMG = '/images/placeholder.jpg';
 

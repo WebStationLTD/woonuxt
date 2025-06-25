@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+const { frontEndUrl } = useHelpers();
+
 // Получаване на SEO данни от Yoast SEO за страницата с всички категории
 const { data: seoData } = await useAsyncGql('getCategoriesPage');
 const categoriesSeo = seoData.value?.page?.seo || null;
@@ -19,7 +21,7 @@ useHead({
     { property: 'og:title', content: categoriesSeo?.opengraphTitle || categoriesTitle },
     { property: 'og:description', content: categoriesSeo?.opengraphDescription || categoriesDescription },
   ],
-  link: [{ rel: 'canonical', href: categoriesSeo?.canonical || '/categories' }],
+  link: [{ rel: 'canonical', href: categoriesSeo?.canonical || `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/categories` }],
 });
 
 // Добавяне на структурирани данни (schema.org) ако са налични в Yoast
