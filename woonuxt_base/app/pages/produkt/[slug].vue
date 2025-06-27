@@ -119,10 +119,11 @@ const disabledAddToCart = computed(() => {
           </div>
 
           <div class="grid gap-2 my-8 text-sm empty:hidden">
-            <div v-if="!isExternalProduct" class="flex items-center gap-2">
+            <!-- Скрит блок за наличност - може да се активира при нужда -->
+            <!-- <div v-if="!isExternalProduct" class="flex items-center gap-2">
               <span class="text-gray-400">{{ $t('messages.shop.availability') }}: </span>
               <StockStatus :stockStatus @updated="mergeLiveStockStatus" />
-            </div>
+            </div> -->
             <div class="flex items-center gap-2" v-if="storeSettings.showSKU && product.sku">
               <span class="text-gray-400">{{ $t('messages.shop.sku') }}: </span>
               <span>{{ product.sku || 'N/A' }}</span>
