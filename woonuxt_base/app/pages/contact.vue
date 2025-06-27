@@ -11,7 +11,7 @@
 
     <div class="container py-16">
       <!-- Контактна информация секция -->
-      <div class="grid lg:grid-cols-3 gap-8 mb-16">
+      <div class="grid lg:grid-cols-4 gap-8 mb-16">
         <!-- Имейл -->
         <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300">
           <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -19,7 +19,7 @@
           </div>
           <h3 class="text-xl font-semibold mb-2">Имейл</h3>
           <p class="text-gray-600 mb-4">Изпратете ни имейл по всяко време</p>
-          <a href="mailto:info@example.bg" class="text-primary hover:text-primary-dark font-medium"> info@example.bg </a>
+          <a href="mailto:office@leaderfitness.net" class="text-primary hover:text-primary-dark font-medium"> office@leaderfitness.net </a>
         </div>
 
         <!-- Телефон -->
@@ -29,7 +29,17 @@
           </div>
           <h3 class="text-xl font-semibold mb-2">Телефон</h3>
           <p class="text-gray-600 mb-4">Обадете ни се в работно време</p>
-          <a href="tel:+359888123456" class="text-primary hover:text-primary-dark font-medium"> +359 888 123 456 </a>
+          <a href="tel:+359877277595" class="text-primary hover:text-primary-dark font-medium"> 0877 277 595 </a>
+        </div>
+
+        <!-- Viber -->
+        <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300">
+          <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Icon name="ion:chatbubble-ellipses-outline" size="32" class="text-purple-600" />
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Viber</h3>
+          <p class="text-gray-600 mb-4">Пишете ни директно</p>
+          <a href="viber://chat?number=%2B359877277595" class="text-purple-600 hover:text-purple-700 font-medium"> 0877 277 595 </a>
         </div>
 
         <!-- Адрес -->
@@ -40,8 +50,8 @@
           <h3 class="text-xl font-semibold mb-2">Адрес</h3>
           <p class="text-gray-600 mb-4">Посетете ни в офиса</p>
           <p class="text-primary font-medium">
-            гр. София<br />
-            ул. Примерна 123
+            гр. София 1303<br />
+            бул. Христо Ботев № 67
           </p>
         </div>
       </div>
@@ -132,53 +142,134 @@
           </div>
         </div>
 
-        <!-- Социални мрежи и допълнителна информация -->
-        <div class="space-y-8">
-          <!-- Социални мрежи -->
-          <div class="bg-white rounded-xl shadow-lg p-8">
-            <h3 class="text-2xl font-semibold mb-6 flex items-center gap-3">
-              <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <Icon name="ion:logo-instagram" size="24" class="text-white" />
+        <!-- Допълнителна информация -->
+        <div class="bg-white rounded-xl shadow-lg p-8">
+          <h3 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+            <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+              <Icon name="ion:information-circle-outline" size="24" class="text-primary" />
+            </div>
+            Защо да изберете нас?
+          </h3>
+          <div class="space-y-4">
+            <div class="flex items-center gap-3">
+              <Icon name="ion:star" size="20" class="text-yellow-500" />
+              <span class="text-gray-700">Над 1000+ доволни клиенти</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <Icon name="ion:shield-checkmark" size="20" class="text-green-500" />
+              <span class="text-gray-700">Сигурни плащания</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <Icon name="ion:rocket" size="20" class="text-blue-500" />
+              <span class="text-gray-700">Бърза доставка</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <Icon name="ion:heart" size="20" class="text-red-500" />
+              <span class="text-gray-700">Персонализирано обслужване</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Фирмена информация -->
+      <div class="mb-16 mt-16">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+          <div class="flex items-center justify-center gap-8 flex-wrap">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                <Icon name="ion:business-outline" size="24" class="text-primary" />
               </div>
-              Следете ни
-            </h3>
-            <p class="text-gray-600 mb-6">Останете свързани с нас в социалните мрежи за последните новини, промоции и продукти.</p>
+              <h3 class="text-xl font-semibold text-gray-900">Фирмена информация</h3>
+            </div>
+            <div class="flex items-center gap-6">
+              <div class="bg-gray-50 rounded-lg px-4 py-2">
+                <p class="font-semibold text-lg text-primary">"Лидерфитнес" ЕООД</p>
+              </div>
+              <div class="bg-gray-50 rounded-lg px-4 py-2">
+                <span class="text-sm text-gray-600 mr-2">ЕИК:</span>
+                <span class="font-medium text-gray-900">203659417</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Социални мрежи секция -->
+      <div class="mb-16">
+        <div class="text-center mb-12 mt-8">
+          <h2 class="text-3xl font-bold text-gray-900 mb-4">Последвайте ни в социалните мрежи</h2>
+          <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            Останете свързани с нас за последните новини, промоции и продукти. Вижте нашите последни постове и участвайте в нашата общност!
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <!-- Facebook -->
+          <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300">
+            <div class="w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Icon name="ion:logo-facebook" size="40" class="text-white" />
+            </div>
+            <h3 class="text-xl font-semibold mb-3">Facebook</h3>
+            <p class="text-gray-600 mb-6">Харесайте нашата страница</p>
             <a
-              href="https://www.instagram.com/"
+              href="https://www.facebook.com/www.leaderfitness.net/"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 font-medium">
-              <Icon name="ion:logo-instagram" size="20" />
-              <span>Последвайте ни в Instagram</span>
+              class="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 font-medium w-full">
+              <Icon name="ion:logo-facebook" size="20" />
+              <span>Харесайте ни</span>
             </a>
           </div>
 
-          <!-- Допълнителна информация -->
-          <div class="bg-white rounded-xl shadow-lg p-8">
-            <h3 class="text-2xl font-semibold mb-6 flex items-center gap-3">
-              <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                <Icon name="ion:information-circle-outline" size="24" class="text-primary" />
-              </div>
-              Защо да изберете нас?
-            </h3>
-            <div class="space-y-4">
-              <div class="flex items-center gap-3">
-                <Icon name="ion:star" size="20" class="text-yellow-500" />
-                <span class="text-gray-700">Над 1000+ доволни клиенти</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <Icon name="ion:shield-checkmark" size="20" class="text-green-500" />
-                <span class="text-gray-700">Сигурни плащания</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <Icon name="ion:rocket" size="20" class="text-blue-500" />
-                <span class="text-gray-700">Бърза доставка</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <Icon name="ion:heart" size="20" class="text-red-500" />
-                <span class="text-gray-700">Персонализирано обслужване</span>
-              </div>
+          <!-- Instagram -->
+          <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300">
+            <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Icon name="ion:logo-instagram" size="40" class="text-white" />
             </div>
+            <h3 class="text-xl font-semibold mb-3">Instagram</h3>
+            <p class="text-gray-600 mb-6">Вижте нашите снимки и истории</p>
+            <a
+              href="https://www.instagram.com/liderfitness/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 font-medium w-full">
+              <Icon name="ion:logo-instagram" size="20" />
+              <span>Последвайте ни</span>
+            </a>
+          </div>
+
+          <!-- TikTok -->
+          <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300">
+            <div class="w-20 h-20 bg-gradient-to-br from-black to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Icon name="ion:musical-notes" size="40" class="text-white" />
+            </div>
+            <h3 class="text-xl font-semibold mb-3">TikTok</h3>
+            <p class="text-gray-600 mb-6">Гледайте нашите забавни видеа</p>
+            <a
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-black to-gray-800 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 font-medium w-full">
+              <Icon name="ion:musical-notes" size="20" />
+              <span>Последвайте ни</span>
+            </a>
+          </div>
+
+          <!-- YouTube -->
+          <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300">
+            <div class="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Icon name="ion:logo-youtube" size="40" class="text-white" />
+            </div>
+            <h3 class="text-xl font-semibold mb-3">YouTube</h3>
+            <p class="text-gray-600 mb-6">Абонирайте се за видео съдържание</p>
+            <a
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 font-medium w-full">
+              <Icon name="ion:logo-youtube" size="20" />
+              <span>Абонирайте се</span>
+            </a>
           </div>
         </div>
       </div>
@@ -191,8 +282,9 @@ const { t } = useI18n();
 
 // SEO meta
 useSeoMeta({
-  title: 'Контакти - Свържете се с нас',
-  description: 'Свържете се с нас за всички ваши въпроси. Телефон: +359 888 123 456, Имейл: info@example.bg, Адрес: гр. София, ул. Примерна 123',
+  title: 'Контакти - Лидерфитнес ЕООД',
+  description:
+    'Свържете се с нас за всички ваши въпроси. Телефон: 0877 277 595, Имейл: office@leaderfitness.net, Адрес: гр. София 1303, бул. Христо Ботев № 67',
 });
 </script>
 
