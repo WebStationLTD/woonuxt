@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ProductTypesEnum } from '#woo';
+import { ProductTypesEnum, StockStatusEnum } from '#woo';
 
 const route = useRoute();
 const { storeSettings } = useAppConfig();
@@ -50,8 +50,22 @@ const isVariableProduct = computed(() => props.node?.type === ProductTypesEnum.V
 const isSimpleProduct = computed(() => props.node?.type === ProductTypesEnum.SIMPLE);
 const hasVariations = computed(() => isVariableProduct.value && props.node?.variations?.nodes && props.node.variations.nodes.length > 0);
 
+// Проверка дали продуктът е изчерпан
+const isOutOfStock = computed(() => {
+  if (isVariableProduct.value) {
+    // За вариационни продукти проверяваме дали всички вариации са изчерпани
+    const allVariations = props.node?.variations?.nodes || [];
+    return allVariations.length > 0 && allVariations.every((variation: any) => variation.stockStatus === StockStatusEnum.OUT_OF_STOCK);
+  }
+
+  return props.node?.stockStatus === StockStatusEnum.OUT_OF_STOCK;
+});
+
 // Изчисляване дали да показваме вариации и бутон
-const shouldShowCart = computed(() => isVariableProduct.value || isSimpleProduct.value);
+const shouldShowCart = computed(() => {
+  // Не показваме секцията за покупка ако продуктът е изчерпан
+  return (isVariableProduct.value || isSimpleProduct.value) && !isOutOfStock.value;
+});
 
 // Логика за бутона
 const isButtonDisabled = computed(() => isLoading.value || (hasVariations.value && !selectedVariationId.value));
@@ -132,6 +146,7 @@ const availableVariationsText = computed(() => {
   <div class="relative group">
     <NuxtLink v-if="node.slug" :to="`/produkt/${decodeURIComponent(node.slug)}`" :title="node.name">
       <SaleBadge :node class="absolute top-2 right-2" />
+      <OutOfStockBadge :node class="absolute top-2 right-2" />
       <ProductWishlistButton :product="node" />
       <NuxtImg
         v-if="imagetoDisplay"

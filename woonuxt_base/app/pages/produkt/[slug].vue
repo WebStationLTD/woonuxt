@@ -97,14 +97,19 @@ const disabledAddToCart = computed(() => {
       <Breadcrumb :product class="mb-6" v-if="storeSettings.showBreadcrumbOnSingleProduct" />
 
       <div class="flex flex-col gap-10 md:flex-row md:justify-between lg:gap-24">
-        <ProductImageGallery
-          v-if="product.image"
-          class="relative flex-1"
-          :main-image="product.image"
-          :gallery="product.galleryImages!"
-          :node="type"
-          :activeVariation="activeVariation || {}" />
-        <NuxtImg v-else class="relative flex-1 skeleton" src="/images/placeholder.jpg" :alt="product?.name || 'Product'" />
+        <div v-if="product.image" class="relative flex-1">
+          <OutOfStockBadge :node="type" class="absolute top-4 left-4 z-20" />
+          <ProductImageGallery
+            class="relative"
+            :main-image="product.image"
+            :gallery="product.galleryImages!"
+            :node="type"
+            :activeVariation="activeVariation || {}" />
+        </div>
+        <div v-else class="relative flex-1">
+          <OutOfStockBadge :node="type" class="absolute top-4 left-4 z-20" />
+          <NuxtImg class="relative skeleton" src="/images/placeholder.jpg" :alt="product?.name || 'Product'" />
+        </div>
 
         <div class="lg:max-w-md xl:max-w-lg md:py-2 w-full">
           <div class="flex justify-between mb-4">

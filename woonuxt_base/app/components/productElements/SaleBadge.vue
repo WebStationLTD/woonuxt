@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { StockStatusEnum } from '#woo';
+
 const { t } = useI18n();
 const { node } = defineProps({
   node: { type: Object, required: true },
@@ -13,7 +15,20 @@ const salePercentage = computed((): string => {
   return Math.round(((salePrice - regularPrice) / regularPrice) * 100) + ` %`;
 });
 
-const showSaleBadge = computed(() => node.rawSalePrice && storeSettings.saleBadge !== 'hidden');
+const isOutOfStock = computed(() => {
+  if (node?.type === 'VARIABLE') {
+    // За вариационни продукти проверяваме дали всички вариации са изчерпани
+    const allVariations = node?.variations?.nodes || [];
+    return allVariations.length > 0 && allVariations.every((variation: any) => variation.stockStatus === StockStatusEnum.OUT_OF_STOCK);
+  }
+
+  return node?.stockStatus === StockStatusEnum.OUT_OF_STOCK;
+});
+
+const showSaleBadge = computed(() => {
+  // Не показваме Sale badge ако продуктът е изчерпан
+  return node.rawSalePrice && storeSettings.saleBadge !== 'hidden' && !isOutOfStock.value;
+});
 
 const textToDisplay = computed(() => {
   if (storeSettings?.saleBadge === 'percent') return salePercentage.value;
