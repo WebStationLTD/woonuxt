@@ -1,14 +1,31 @@
 <script setup>
-const benefits = [
-  'Монтаж на бягащите пътеки срещу заплащане',
-  'Гаранционен и извън гаранционен сервиз',
-  'Безплатна Консултация при избор на подходящ модел',
-  'Поддръжка и профилактика',
-  'Безплатна доставка до Адрес или Офис на куриерска фирма – Еконт!',
+const boxingBenefits = [
+  'Lorem ipsum dolor sit amet consectetur',
+  'Adipiscing elit sed do eiusmod tempor',
+  'Incididunt ut labore et dolore magna',
+  'Aliqua enim ad minim veniam quis',
+  'Nostrud exercitation ullamco laboris',
+];
+
+const fitnessBenefits = [
+  'Lorem ipsum dolor sit amet consectetur',
+  'Adipiscing elit sed do eiusmod tempor',
+  'Incididunt ut labore et dolore magna',
+  'Aliqua enim ad minim veniam quis',
+  'Nostrud exercitation ullamco laboris',
+];
+
+const clothingBenefits = [
+  'Lorem ipsum dolor sit amet consectetur',
+  'Adipiscing elit sed do eiusmod tempor',
+  'Incididunt ut labore et dolore magna',
+  'Aliqua enim ad minim veniam quis',
+  'Nostrud exercitation ullamco laboris',
 ];
 </script>
 
 <template>
+  <!-- СЕКЦИЯ 1: БОКС (ТЪМНА) -->
   <div class="bg-gray-800 py-12 sm:py-12 overflow-hidden">
     <div class="relative isolate">
       <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -16,21 +33,21 @@ const benefits = [
           class="mx-auto flex max-w-2xl flex-col gap-16 bg-white/5 px-6 py-12 ring-1 ring-white/10 sm:rounded-3xl sm:p-8 lg:mx-0 lg:max-w-none lg:flex-row lg:items-center lg:py-12 xl:gap-x-20 xl:px-20">
           <div class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm">
             <NuxtImg
-              alt="Asian SPA продукти"
-              src="https://leaderfitness.admin-panels.com/wp-content/uploads/2025/03/bqgashta-pyteka-bowflex-bxt8ji-3.jpg"
+              alt="Боксови продукти"
+              src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
               class="absolute inset-0 w-full h-full object-cover rounded-2xl"
               sizes="sm:100vw lg:400px"
               width="400"
               height="400" />
           </div>
           <div class="w-full flex-auto">
-            <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">Бягащи пътеки</h2>
+            <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">Бокс</h2>
             <p class="mt-6 text-lg/8 text-pretty text-gray-300">
-              Предлагаме Бягащи Пътеки за Домашна и Професионална Употреба. Тук можете да откриете марките – Orion Fitness, Amila Fitness, Horizon Fitness, Sole
-              Fitness, Xterra Fitness, Kettler, Spirit Fitness,Matrix Fitness.
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+              veniam, quis nostrud exercitation ullamco.
             </p>
             <ul role="list" class="mt-10 grid grid-cols-1 gap-x-8 gap-y-3 text-base/7 text-white sm:grid-cols-2">
-              <li v-for="benefit in benefits" :key="benefit" class="flex gap-x-3">
+              <li v-for="benefit in boxingBenefits" :key="benefit" class="flex gap-x-3">
                 <span class="h-7 w-5 flex-none text-white">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="h-7 w-5">
                     <path
@@ -43,8 +60,152 @@ const benefits = [
               </li>
             </ul>
             <div class="mt-10 flex">
-              <NuxtLink to="/produkt-kategoriya/бягаща-пътека/" class="text-sm/6 font-normal text-[#ffffff] hover:text-black">
-                Вижте всички бягащи пътеки от Leaderfitness <span aria-hidden="true">&rarr;</span>
+              <NuxtLink to="/produkt-kategoriya/бокс/" class="text-sm/6 font-normal text-[#ffffff] hover:text-gray-300">
+                Разгледайте всички боксови продукти <span aria-hidden="true">&rarr;</span>
+              </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        aria-hidden="true"
+        class="absolute inset-x-0 -top-16 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl"
+        style="transform: translateX(-950px)">
+        <div
+          style="
+            clip-path: polygon(
+              73.6% 51.7%,
+              91.7% 11.8%,
+              100% 46.4%,
+              97.4% 82.2%,
+              92.5% 84.9%,
+              75.7% 64%,
+              55.3% 47.5%,
+              46.5% 49.4%,
+              45% 62.9%,
+              50.3% 87.2%,
+              21.3% 64.1%,
+              0.1% 100%,
+              5.4% 51.1%,
+              21.4% 63.9%,
+              58.9% 0.2%,
+              73.6% 51.7%
+            );
+          "
+          class="aspect-[1318/752] w-[82.375rem] flex-none bg-gradient-to-r from-[#9c0100] to-[#9c0100] opacity-60" />
+      </div>
+    </div>
+  </div>
+
+  <!-- СЕКЦИЯ 2: ФИТНЕС ОБОРУДВАНЕ И АКСЕСОАРИ (СВЕТЛА) -->
+  <div class="bg-gray-50 py-12 sm:py-12 overflow-hidden">
+    <div class="relative isolate">
+      <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div
+          class="mx-auto flex max-w-2xl flex-col gap-16 bg-white px-6 py-12 ring-1 ring-gray-200 sm:rounded-3xl sm:p-8 lg:mx-0 lg:max-w-none lg:flex-row lg:items-center lg:py-12 xl:gap-x-20 xl:px-20 shadow-xl">
+          <div class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm">
+            <NuxtImg
+              alt="Фитнес оборудване и аксесоари"
+              src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+              class="absolute inset-0 w-full h-full object-cover rounded-2xl"
+              sizes="sm:100vw lg:400px"
+              width="400"
+              height="400" />
+          </div>
+          <div class="w-full flex-auto">
+            <h2 class="text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">Фитнес Оборудване и Аксесоари</h2>
+            <p class="mt-6 text-lg/8 text-pretty text-gray-600">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+              veniam, quis nostrud exercitation ullamco.
+            </p>
+            <ul role="list" class="mt-10 grid grid-cols-1 gap-x-8 gap-y-3 text-base/7 text-gray-700 sm:grid-cols-2">
+              <li v-for="benefit in fitnessBenefits" :key="benefit" class="flex gap-x-3">
+                <span class="h-7 w-5 flex-none text-[#9c0100]">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="h-7 w-5">
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                      clip-rule="evenodd" />
+                  </svg>
+                </span>
+                {{ benefit }}
+              </li>
+            </ul>
+            <div class="mt-10 flex">
+              <NuxtLink to="/produkt-kategoriya/фитнес-оборудване-и-аксесоари/" class="text-sm/6 font-normal text-[#9c0100] hover:text-gray-900">
+                Разгледайте всички фитнес продукти <span aria-hidden="true">&rarr;</span>
+              </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        aria-hidden="true"
+        class="absolute inset-x-0 -top-16 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl"
+        style="transform: translateX(950px)">
+        <div
+          style="
+            clip-path: polygon(
+              73.6% 51.7%,
+              91.7% 11.8%,
+              100% 46.4%,
+              97.4% 82.2%,
+              92.5% 84.9%,
+              75.7% 64%,
+              55.3% 47.5%,
+              46.5% 49.4%,
+              45% 62.9%,
+              50.3% 87.2%,
+              21.3% 64.1%,
+              0.1% 100%,
+              5.4% 51.1%,
+              21.4% 63.9%,
+              58.9% 0.2%,
+              73.6% 51.7%
+            );
+          "
+          class="aspect-[1318/752] w-[82.375rem] flex-none bg-gradient-to-r from-[#9c0100] to-[#9c0100] opacity-25" />
+      </div>
+    </div>
+  </div>
+
+  <!-- СЕКЦИЯ 3: ДРЕХИ (ТЪМНА) -->
+  <div class="bg-gray-800 py-12 sm:py-12 overflow-hidden">
+    <div class="relative isolate">
+      <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div
+          class="mx-auto flex max-w-2xl flex-col gap-16 bg-white/5 px-6 py-12 ring-1 ring-white/10 sm:rounded-3xl sm:p-8 lg:mx-0 lg:max-w-none lg:flex-row lg:items-center lg:py-12 xl:gap-x-20 xl:px-20">
+          <div class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm">
+            <NuxtImg
+              alt="Спортни дрехи"
+              src="https://images.unsplash.com/photo-1506629905826-b2c6e1a56be9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+              class="absolute inset-0 w-full h-full object-cover rounded-2xl"
+              sizes="sm:100vw lg:400px"
+              width="400"
+              height="400" />
+          </div>
+          <div class="w-full flex-auto">
+            <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">Дрехи</h2>
+            <p class="mt-6 text-lg/8 text-pretty text-gray-300">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+              veniam, quis nostrud exercitation ullamco.
+            </p>
+            <ul role="list" class="mt-10 grid grid-cols-1 gap-x-8 gap-y-3 text-base/7 text-white sm:grid-cols-2">
+              <li v-for="benefit in clothingBenefits" :key="benefit" class="flex gap-x-3">
+                <span class="h-7 w-5 flex-none text-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="h-7 w-5">
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                      clip-rule="evenodd" />
+                  </svg>
+                </span>
+                {{ benefit }}
+              </li>
+            </ul>
+            <div class="mt-10 flex">
+              <NuxtLink to="/produkt-kategoriya/дрехи/" class="text-sm/6 font-normal text-[#ffffff] hover:text-gray-300">
+                Разгледайте всички спортни дрехи <span aria-hidden="true">&rarr;</span>
               </NuxtLink>
             </div>
           </div>
