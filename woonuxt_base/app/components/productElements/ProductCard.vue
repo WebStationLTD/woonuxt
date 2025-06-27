@@ -88,7 +88,7 @@ const addProductToCart = async () => {
 
   // Проверка за продукти с вариации
   if (hasVariations.value && !selectedVariationId.value) {
-    variationError.value = 'Моля, изберете вариация';
+    variationError.value = `Моля, изберете ${primaryAttributeName.value.toLowerCase()}`;
     return;
   }
 
@@ -118,6 +118,60 @@ watch(cart, () => {
     isLoading.value = false;
     variationError.value = '';
   }, 300);
+});
+
+// Извличане на имената на атрибутите от вариациите (не от основния продукт)
+const attributeNames = computed(() => {
+  if (!hasVariations.value) return [];
+
+  const firstVariation = props.node?.variations?.nodes?.[0];
+  if (!firstVariation?.attributes?.nodes) return [];
+
+  // Получаваме уникалните имена на атрибутите от първата вариация
+  const uniqueNames = new Set<string>();
+
+  firstVariation.attributes.nodes.forEach((attr: any) => {
+    if (attr.name) {
+      let cleanName = attr.name;
+
+      // Почистваме техническото име
+      if (cleanName.startsWith('pa_')) {
+        cleanName = cleanName.replace('pa_', '');
+      }
+
+      // Декодиране на URL encoded кирилица
+      try {
+        cleanName = decodeURIComponent(cleanName);
+      } catch (e) {
+        // Ако декодирането се провали, оставяме оригинала
+      }
+
+      // Hardcoded mapping за често използваните атрибути
+      const nameMap: { [key: string]: string } = {
+        размер: 'Размер',
+        size: 'Размер',
+        цвят: 'Цвят',
+        color: 'Цвят',
+        материал: 'Материал',
+        material: 'Материал',
+      };
+
+      const mappedName = nameMap[cleanName.toLowerCase()];
+      if (mappedName) {
+        uniqueNames.add(mappedName);
+      } else {
+        // Правим първата буква главна за неразпознати атрибути
+        uniqueNames.add(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
+      }
+    }
+  });
+
+  return Array.from(uniqueNames);
+});
+
+// Получаване на главното име на атрибута (първото)
+const primaryAttributeName = computed((): string => {
+  return (attributeNames.value[0] as string) || 'Вариации';
 });
 
 // Изчисляване на вариациите за текстово показване (използваме същата логика като в селекта)
@@ -177,7 +231,7 @@ const availableVariationsText = computed(() => {
             :id="`variations-${node.databaseId}`"
             class="text-xs py-1 px-2 border border-gray-300 rounded focus:outline-none focus:border-gray-400 bg-white w-full sm:max-w-[160px]"
             @change="(e) => selectVariation(Number((e.target as HTMLSelectElement).value))">
-            <option value="" disabled selected>Вариации</option>
+            <option value="" disabled selected>{{ primaryAttributeName }}</option>
             <option
               v-for="variation in node?.variations?.nodes"
               :key="variation.databaseId"
@@ -242,7 +296,7 @@ const availableVariationsText = computed(() => {
       <!-- Показване на наличните вариации като текст (най-долу вдясно) -->
       <div v-if="hasVariations && availableVariationsText" class="mt-2 text-left">
         <div class="text-xs text-gray-500 leading-relaxed">
-          <span class="font-medium">Вариации:</span>
+          <span class="font-medium">{{ primaryAttributeName }}:</span>
           <span class="ml-1">{{ availableVariationsText }}</span>
         </div>
       </div>
