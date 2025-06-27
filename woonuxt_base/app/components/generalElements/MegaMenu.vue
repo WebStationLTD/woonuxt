@@ -53,7 +53,8 @@
                   </h4>
 
                   <!-- Брой продукти - уголемен шрифт за десктоп -->
-                  <p class="text-xs md:text-sm lg:text-base text-gray-500 mt-1 font-medium">{{ category.count || 0 }}</p>
+                  <!-- ВРЕМЕННО СКРИТ: Брой продукти в категорията (за възстановяване премахни коментарите) -->
+                  <!-- <p class="text-xs md:text-sm lg:text-base text-gray-500 mt-1 font-medium">{{ category.count || 0 }}</p> -->
                 </NuxtLink>
               </div>
             </div>
@@ -87,7 +88,8 @@
                     </h4>
 
                     <!-- Уголемен брой продукти -->
-                    <p class="text-xs text-gray-500 mt-2 font-medium">{{ category.count || 0 }} продукта</p>
+                    <!-- ВРЕМЕННО СКРИТ: Брой продукти в категорията (за възстановяване премахни коментарите) -->
+                    <!-- <p class="text-xs text-gray-500 mt-2 font-medium">{{ category.count || 0 }} продукта</p> -->
                   </NuxtLink>
                 </div>
               </div>
@@ -124,7 +126,7 @@
                   to="/categories"
                   class="inline-flex items-center gap-2 bg-primary/10 text-primary px-6 py-3 rounded-xl font-semibold text-base hover:bg-primary/20 transition-all duration-200 shadow-sm"
                   @click="close">
-                  Виж всички {{ productCategories.length }} категории
+                  Виж всички категории
                   <Icon name="ion:arrow-forward-outline" size="18" />
                 </NuxtLink>
               </div>
