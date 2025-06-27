@@ -157,7 +157,7 @@ const availableVariationsText = computed(() => {
         :title="node.image?.title || node.name"
         :loading="index <= 3 ? 'eager' : 'lazy'"
         :sizes="`sm:${imgWidth / 2}px md:${imgWidth}px`"
-        class="rounded-lg object-top object-cover w-full aspect-9/8"
+        class="rounded-lg object-center object-contain w-full aspect-9/8 bg-white"
         placeholder
         placeholder-class="blur-xl" />
     </NuxtLink>
