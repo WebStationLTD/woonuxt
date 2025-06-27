@@ -88,6 +88,55 @@ const disabledAddToCart = computed(() => {
   const isValidActiveVariation = isVariableProduct.value ? !!activeVariation.value : true;
   return isInvalidType || isOutOfStock || isCartUpdating || !isValidActiveVariation;
 });
+
+// Извличане на warranty и delivery текст от meta fields
+const warrantyText = computed(() => {
+  // Търсим по различни възможни ключове за ACF и обикновени meta fields
+  const possibleKeys = ['warranty_text', '_warranty_text', 'field_warranty', 'garanciya'];
+
+  for (const key of possibleKeys) {
+    const meta = product.value?.metaData?.find((meta: any) => meta.key === key);
+    if (meta?.value && !meta.value.startsWith('field_')) {
+      return meta.value;
+    }
+  }
+
+  // Ако не намерим директна стойност, търсим field reference и после стойността
+  const fieldRef = product.value?.metaData?.find((meta: any) => meta.key === 'warranty_text' || meta.key === '_warranty_text');
+
+  if (fieldRef?.value?.startsWith('field_')) {
+    const actualValue = product.value?.metaData?.find((meta: any) => meta.key === fieldRef.value);
+    return actualValue?.value || '';
+  }
+
+  return '';
+});
+
+const deliveryText = computed(() => {
+  // Търсим по различни възможни ключове за ACF и обикновени meta fields
+  const possibleKeys = ['free_delivery_text', '_free_delivery_text', 'field_delivery', 'bezplatna_dostavka'];
+
+  for (const key of possibleKeys) {
+    const meta = product.value?.metaData?.find((meta: any) => meta.key === key);
+    if (meta?.value && !meta.value.startsWith('field_')) {
+      return meta.value;
+    }
+  }
+
+  // Ако не намерим директна стойност, търсим field reference и после стойността
+  const fieldRef = product.value?.metaData?.find((meta: any) => meta.key === 'free_delivery_text' || meta.key === '_free_delivery_text');
+
+  if (fieldRef?.value?.startsWith('field_')) {
+    const actualValue = product.value?.metaData?.find((meta: any) => meta.key === fieldRef.value);
+    return actualValue?.value || '';
+  }
+
+  return '';
+});
+
+const showProductFeatures = computed(() => {
+  return warrantyText.value || deliveryText.value;
+});
 </script>
 
 <template>
@@ -166,6 +215,24 @@ const disabledAddToCart = computed(() => {
               {{ product?.buttonText || 'View product' }}
             </a>
           </form>
+
+          <!-- Product Features Section -->
+          <div v-if="showProductFeatures" class="my-8">
+            <div class="flex flex-col gap-3">
+              <div v-if="warrantyText" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center justify-center w-8 h-8 bg-[#9c0100] rounded-full">
+                  <Icon name="ion:shield-checkmark" class="text-white" size="18" />
+                </div>
+                <span class="text-sm font-medium text-gray-700">{{ warrantyText }}</span>
+              </div>
+              <div v-if="deliveryText" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center justify-center w-8 h-8 bg-[#9c0100] rounded-full">
+                  <Icon name="ion:car" class="text-white" size="18" />
+                </div>
+                <span class="text-sm font-medium text-gray-700">{{ deliveryText }}</span>
+              </div>
+            </div>
+          </div>
 
           <div v-if="storeSettings.showProductCategoriesOnSingleProduct && product.productCategories">
             <div class="grid gap-2 my-8 text-sm">
