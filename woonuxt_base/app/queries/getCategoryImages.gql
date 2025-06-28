@@ -1,0 +1,13 @@
+# import "./fragments/ImageFragment.gql"
+
+query getCategoryImages($slugs: [String]) {
+  productCategories(where: { slug: $slugs, hideEmpty: false }) {
+    nodes {
+      slug
+      name
+      image {
+        ...Image
+      }
+    }
+  }
+}

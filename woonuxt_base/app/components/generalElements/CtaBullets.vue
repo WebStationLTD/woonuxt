@@ -22,6 +22,23 @@ const clothingBenefits = [
   'Aliqua enim ad minim veniam quis',
   'Nostrud exercitation ullamco laboris',
 ];
+
+// Зареждаме данните за категориите
+const { data: categoriesData } = await useAsyncGql('getCategoryImages', {
+  slugs: ['бокс', 'фитнес-оборудване-и-аксесоари', 'дрехи'],
+});
+
+// Функция за получаване на снимка по slug на категория
+const getCategoryImage = (slug) => {
+  const category = categoriesData.value?.productCategories?.nodes?.find((cat) => cat.slug === slug);
+  return category?.image?.sourceUrl || '/images/placeholder.jpg';
+};
+
+// Функция за получаване на alt текст по slug на категория
+const getCategoryAltText = (slug) => {
+  const category = categoriesData.value?.productCategories?.nodes?.find((cat) => cat.slug === slug);
+  return category?.image?.altText || category?.name || 'Категория снимка';
+};
 </script>
 
 <template>
@@ -33,8 +50,8 @@ const clothingBenefits = [
           class="mx-auto flex max-w-2xl flex-col gap-16 bg-white/5 px-6 py-12 ring-1 ring-white/10 sm:rounded-3xl sm:p-8 lg:mx-0 lg:max-w-none lg:flex-row lg:items-center lg:py-12 xl:gap-x-20 xl:px-20">
           <div class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm">
             <NuxtImg
-              alt="Боксови продукти"
-              src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+              :alt="getCategoryAltText('бокс')"
+              :src="getCategoryImage('бокс')"
               class="absolute inset-0 w-full h-full object-cover rounded-2xl"
               sizes="sm:100vw lg:400px"
               width="400"
@@ -105,8 +122,8 @@ const clothingBenefits = [
           class="mx-auto flex max-w-2xl flex-col gap-16 bg-white px-6 py-12 ring-1 ring-gray-200 sm:rounded-3xl sm:p-8 lg:mx-0 lg:max-w-none lg:flex-row lg:items-center lg:py-12 xl:gap-x-20 xl:px-20 shadow-xl">
           <div class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm">
             <NuxtImg
-              alt="Фитнес оборудване и аксесоари"
-              src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+              :alt="getCategoryAltText('фитнес-оборудване-и-аксесоари')"
+              :src="getCategoryImage('фитнес-оборудване-и-аксесоари')"
               class="absolute inset-0 w-full h-full object-cover rounded-2xl"
               sizes="sm:100vw lg:400px"
               width="400"
@@ -177,8 +194,8 @@ const clothingBenefits = [
           class="mx-auto flex max-w-2xl flex-col gap-16 bg-white/5 px-6 py-12 ring-1 ring-white/10 sm:rounded-3xl sm:p-8 lg:mx-0 lg:max-w-none lg:flex-row lg:items-center lg:py-12 xl:gap-x-20 xl:px-20">
           <div class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm">
             <NuxtImg
-              alt="Спортни дрехи"
-              src="https://images.unsplash.com/photo-1506629905826-b2c6e1a56be9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+              :alt="getCategoryAltText('дрехи')"
+              :src="getCategoryImage('дрехи')"
               class="absolute inset-0 w-full h-full object-cover rounded-2xl"
               sizes="sm:100vw lg:400px"
               width="400"
