@@ -14,6 +14,8 @@ interface Category {
   slug?: string | null;
   name?: string | null;
   description?: string | null;
+  count?: number | null;
+  databaseId?: number | null;
   seo?: {
     title?: string | null;
     metaDesc?: string | null;
@@ -48,27 +50,24 @@ const decodedSlug = routeSlug ? decodeURIComponent(String(routeSlug)) : '';
 
 const slug = decodedSlug;
 
-// Заявяваме всички категории ВКЛЮЧИТЕЛНО празни (hideEmpty: false)
-const { data: categoryData } = await useAsyncGql('getProductCategories', { first: 100, hideEmpty: false });
+// Заявяваме ДИРЕКТНО конкретната категория (същия подход като в подкатегориите)
+const { data: categoryData } = await useAsyncGql('getProductCategories', { slug: [slug], hideEmpty: false });
+
+// Получаваме точния брой продукти с ЛЕКА заявка (само cursor-и, без тежки данни)
+const { data: productsCountData } = await useAsyncGql('getProductsCount', {
+  slug: [slug],
+});
 
 let matchingCategory: Category | null = null;
+let realProductCount: number | null = null;
 
-if (categoryData.value?.productCategories?.nodes) {
-  // Търсим в основните категории
-  matchingCategory = (categoryData.value.productCategories.nodes.find((cat: any) => cat.slug === slug) as Category) || null;
+if (categoryData.value?.productCategories?.nodes?.[0]) {
+  matchingCategory = categoryData.value.productCategories.nodes[0] as Category;
+}
 
-  // Ако не е намерена в основните, търсим в дъщерните
-  if (!matchingCategory) {
-    for (const parentCat of categoryData.value.productCategories.nodes) {
-      if (parentCat.children?.nodes) {
-        const foundChild = parentCat.children.nodes.find((child: any) => child.slug === slug) as Category;
-        if (foundChild) {
-          matchingCategory = foundChild;
-          break;
-        }
-      }
-    }
-  }
+// Получаваме точния брой от ЛЕКА заявка (само cursor-и, без снимки/вариации/и т.н.)
+if (productsCountData.value?.products?.edges) {
+  realProductCount = productsCountData.value.products.edges.length;
 }
 
 // Fallback ако няма категория
@@ -81,19 +80,19 @@ const matchingCategoryRef = ref<Category | null>(matchingCategory);
 
 // Функция за генериране на SEO данни според страницата (взета от /magazin)
 const generateCategorySeoMeta = () => {
-  // Получаваме номера на страницата точно като в /magazin
+  // Получаваме номера на страницата - използваме същата логика като extractRouteParams
   let pageNumber = 1;
 
-  // Първо проверяваме route.params.pageNumber (от URL структурата)
-  if (route.params.pageNumber) {
-    const parsedPage = parseInt(route.params.pageNumber as string);
+  // ВАЖНО: Приоритизираме query.page параметъра (от pagination redirect-ите)
+  if (route.query.page) {
+    const parsedPage = parseInt(route.query.page as string);
     if (!isNaN(parsedPage) && parsedPage > 0) {
       pageNumber = parsedPage;
     }
   }
-  // След това проверяваме route.query.page (от redirect-ите)
-  else if (route.query.page) {
-    const parsedPage = parseInt(route.query.page as string);
+  // След това проверяваме route.params.pageNumber (резервен)
+  else if (route.params.pageNumber) {
+    const parsedPage = parseInt(route.params.pageNumber as string);
     if (!isNaN(parsedPage) && parsedPage > 0) {
       pageNumber = parsedPage;
     }
@@ -125,29 +124,29 @@ const generateCategorySeoMeta = () => {
   };
 };
 
-// Генерираме и задаваме SEO метаданните
-const categorySeoMeta = generateCategorySeoMeta();
+// Генерираме и задаваме първоначалните SEO метаданни
+const initialCategorySeoMeta = generateCategorySeoMeta();
 
 useSeoMeta({
-  title: categorySeoMeta.title,
-  description: categorySeoMeta.description,
-  ogTitle: matchingCategory?.seo?.opengraphTitle || categorySeoMeta.title,
-  ogDescription: matchingCategory?.seo?.opengraphDescription || categorySeoMeta.description,
+  title: initialCategorySeoMeta.title,
+  description: initialCategorySeoMeta.description,
+  ogTitle: matchingCategory?.seo?.opengraphTitle || initialCategorySeoMeta.title,
+  ogDescription: matchingCategory?.seo?.opengraphDescription || initialCategorySeoMeta.description,
   ogType: 'website',
-  ogUrl: categorySeoMeta.canonicalUrl,
+  ogUrl: initialCategorySeoMeta.canonicalUrl,
   ogImage: matchingCategory?.seo?.opengraphImage?.sourceUrl,
   twitterCard: 'summary_large_image',
-  twitterTitle: matchingCategory?.seo?.twitterTitle || categorySeoMeta.title,
-  twitterDescription: matchingCategory?.seo?.twitterDescription || categorySeoMeta.description,
+  twitterTitle: matchingCategory?.seo?.twitterTitle || initialCategorySeoMeta.title,
+  twitterDescription: matchingCategory?.seo?.twitterDescription || initialCategorySeoMeta.description,
   twitterImage: matchingCategory?.seo?.twitterImage?.sourceUrl,
   robots: matchingCategory?.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
 });
 
-// Canonical URL (използваме само frontend URL-а)
-const canonicalUrl = categorySeoMeta.canonicalUrl;
+// Reactive refs за SEO links
+const headLinks = ref([{ rel: 'canonical', href: initialCategorySeoMeta.canonicalUrl }]);
 
 useHead({
-  link: [{ rel: 'canonical', href: canonicalUrl }],
+  link: headLinks,
 });
 
 // Schema markup от категорията ако е наличен
@@ -162,55 +161,76 @@ if (matchingCategory?.seo?.schema?.raw) {
   });
 }
 
-// Prev/Next links за pagination SEO (точно като в /magazin)
-const initialCategoryPrevNextLinks: any[] = [];
+// Cache за да не извикваме функцията твърде често
+let lastLinksUpdate = '';
 
-if (categorySeoMeta.pageNumber > 1) {
-  const prevUrl =
-    categorySeoMeta.pageNumber === 2
-      ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
-      : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber - 1}`;
-
-  initialCategoryPrevNextLinks.push({ rel: 'prev', href: prevUrl });
-}
-
-// Добавяме next link изначално като placeholder - ще се обновява динамично (точно като в /magazin)
-const categoryNextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber + 1}`;
-initialCategoryPrevNextLinks.push({ rel: 'next', href: categoryNextUrl });
-
-useHead({
-  link: initialCategoryPrevNextLinks,
-});
-
-// Функция за динамично обновяване на next/prev links (точно като в /magazin)
+// Функция за динамично обновяване на next/prev links с точен брой продукти
 const updateCategoryNextPrevLinks = () => {
-  console.log('🔍 Category Debug - pageInfo:', pageInfo, 'hasNextPage:', pageInfo?.hasNextPage);
+  console.log('🔗 updateCategoryNextPrevLinks called!');
 
+  const currentSeoMeta = generateCategorySeoMeta(); // Генерираме динамичните SEO данни
   const updatedCategoryLinks: any[] = [];
 
-  if (categorySeoMeta.pageNumber > 1) {
+  // Изчисляваме общия брой страници на база на реалния брой продукти
+  const totalProductCount = realProductCount || matchingCategory?.count || 0;
+  const productsPerPageValue = 12; // Стандартната стойност
+  const totalPages = Math.ceil(totalProductCount / productsPerPageValue);
+
+  console.log('🔗 Debug data:', {
+    currentPage: currentSeoMeta.pageNumber,
+    totalProductCount,
+    totalPages,
+    realProductCount,
+    hasRealCount: !!realProductCount,
+  });
+
+  // Prev link
+  if (currentSeoMeta.pageNumber > 1) {
     const prevUrl =
-      categorySeoMeta.pageNumber === 2
+      currentSeoMeta.pageNumber === 2
         ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
-        : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber - 1}`;
+        : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${currentSeoMeta.pageNumber - 1}`;
 
     updatedCategoryLinks.push({ rel: 'prev', href: prevUrl });
   }
 
-  // Добавяме next link САМО ако има следваща страница (точно като в /magazin)
-  if (pageInfo?.hasNextPage) {
-    const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${categorySeoMeta.pageNumber + 1}`;
+  // Next link - използваме точното изчисление на база реалния брой продукти
+  const hasNextPage = realProductCount
+    ? currentSeoMeta.pageNumber < totalPages // Точно изчисление ако имаме реален count
+    : pageInfo?.hasNextPage; // Fallback към pageInfo за cursor-based
+
+  console.log('🔗 Next page logic:', {
+    realProductCount: !!realProductCount,
+    currentPage: currentSeoMeta.pageNumber,
+    totalPages,
+    calculation: `${currentSeoMeta.pageNumber} < ${totalPages} = ${currentSeoMeta.pageNumber < totalPages}`,
+    pageInfoHasNext: pageInfo?.hasNextPage,
+    finalHasNextPage: hasNextPage,
+  });
+
+  if (hasNextPage) {
+    const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${currentSeoMeta.pageNumber + 1}`;
     updatedCategoryLinks.push({ rel: 'next', href: nextUrl });
-    console.log('✅ Adding rel="next":', nextUrl);
+    console.log('✅ Adding rel=next:', nextUrl);
   } else {
-    console.log('❌ NOT adding rel="next" - hasNextPage is false');
+    console.log('❌ NO rel=next - on last page!');
   }
 
-  console.log('🔗 Final category links:', updatedCategoryLinks);
+  // Добавяме canonical URL за текущата страница
+  updatedCategoryLinks.push({ rel: 'canonical', href: currentSeoMeta.canonicalUrl });
 
-  useHead({
-    link: updatedCategoryLinks,
-  });
+  console.log(
+    '🔗 Final links array:',
+    updatedCategoryLinks.map((link) => `${link.rel}: ${link.href}`),
+  );
+
+  // Обновяваме reactive ref вместо извикване на useHead()
+  headLinks.value = updatedCategoryLinks;
+
+  console.log(
+    '🔗 headLinks.value updated:',
+    headLinks.value.map((link) => `${link.rel}: ${link.href}`),
+  );
 };
 
 // Извличаме slug и страница от route
@@ -218,30 +238,23 @@ const extractRouteParams = () => {
   let slug = '';
   let pageNumber = 1;
 
-  if (route.name === 'produkt-kategoriya-page-pager') {
-    // За пагинационния route
-    if (route.params.categorySlug) {
-      slug = String(route.params.categorySlug);
-    }
-    if (route.params.pageNumber) {
-      const parsed = parseInt(String(route.params.pageNumber));
-      if (!isNaN(parsed) && parsed > 0) {
-        pageNumber = parsed;
-      }
-    }
-  } else if (route.name === 'produkt-kategoriya-slug') {
-    // За обикновения категориен route
-    if (route.params.categorySlug) {
-      slug = String(route.params.categorySlug);
-    }
-  } else if (route.params?.slug) {
-    // Резервна проверка за стари route-ове
+  // Първо извличаме slug от правилния параметър
+  if (route.params.slug) {
     slug = String(route.params.slug);
+  } else if (route.params.categorySlug) {
+    slug = String(route.params.categorySlug);
   }
 
-  // Проверяваме и query.page параметъра (от redirect-ите)
+  // ВАЖНО: Приоритизираме query.page параметъра (от pagination redirect-ите)
   if (route.query.page) {
     const parsed = parseInt(String(route.query.page));
+    if (!isNaN(parsed) && parsed > 0) {
+      pageNumber = parsed;
+    }
+  }
+  // След това проверяваме за страница в URL пътя (резервен)
+  else if (route.params.pageNumber) {
+    const parsed = parseInt(String(route.params.pageNumber));
     if (!isNaN(parsed) && parsed > 0) {
       pageNumber = parsed;
     }
@@ -250,15 +263,31 @@ const extractRouteParams = () => {
   return { slug, pageNumber };
 };
 
+// Функция за обновяване на SEO метаданните при промяна на route
+const updateCategorySeoMeta = () => {
+  const newSeoMeta = generateCategorySeoMeta();
+
+  useSeoMeta({
+    title: newSeoMeta.title,
+    description: newSeoMeta.description,
+    keywords: matchingCategory?.seo?.metaKeywords,
+    ogTitle: matchingCategory?.seo?.opengraphTitle || newSeoMeta.title,
+    ogDescription: matchingCategory?.seo?.opengraphDescription || newSeoMeta.description,
+    ogUrl: newSeoMeta.canonicalUrl,
+    twitterTitle: matchingCategory?.seo?.twitterTitle || newSeoMeta.title,
+    twitterDescription: matchingCategory?.seo?.twitterDescription || newSeoMeta.description,
+  });
+
+  // Обновяваме и rel=prev/next links при навигация
+  updateCategoryNextPrevLinks();
+};
+
 // Race condition protection (точно като в /magazin)
 let isNavigating = false;
 
 // Основна функция за зареждане на продукти
 const loadCategoryProducts = async () => {
-  console.log('🚀 Category: loadCategoryProducts called');
-
   if (isNavigating) {
-    console.log('⏳ Category: Already navigating, skipping...');
     return;
   }
 
@@ -266,19 +295,20 @@ const loadCategoryProducts = async () => {
 
   try {
     const { slug, pageNumber } = extractRouteParams();
-    console.log('📍 Category: Extracted params - slug:', slug, 'pageNumber:', pageNumber);
 
     if (!slug) {
       resetProductsState();
       currentSlug.value = '';
       hasEverLoaded.value = true;
-      console.log('❌ Category: No slug found, exiting');
       return;
     }
 
+    // ВАЖНО: Запазваме pageNumber преди reset за да не го загубим
+    const targetPageNumber = pageNumber;
+
     resetProductsState();
     currentSlug.value = slug;
-    currentPageNumber.value = pageNumber;
+    currentPageNumber.value = targetPageNumber;
 
     // Проверяваме дали има филтри или сортиране в URL
     const hasFilters = route.query.filter;
@@ -336,30 +366,26 @@ const loadCategoryProducts = async () => {
         else if (orderBy === 'discount') graphqlOrderBy = 'DATE';
       }
 
-      console.log('🔍 Category: Loading with filters/orderBy - slug:', [slug], 'orderBy:', graphqlOrderBy, 'filters:', filters);
       await loadProductsPage(pageNumber, [slug], graphqlOrderBy, filters);
     } else {
       // Ако няма филтри, зареждаме конкретната страница
-      console.log('🔍 Category: Loading simple page - pageNumber:', pageNumber, 'slug:', [slug]);
       await loadProductsPage(pageNumber, [slug]);
     }
 
     // Маркираме че сме зареждали данни поне веднъж
     hasEverLoaded.value = true;
 
-    // Принудително обновяване на currentPage за правилна синхронизация с pagination (като в /magazin)
-    currentPage.value = pageNumber;
+    // КРИТИЧНО: Принудително задаваме currentPage СЛЕД loadProductsPage
+    await nextTick();
+    currentPage.value = targetPageNumber;
 
     // Обновяваме next/prev links след като данните са заредени
-    console.log('🔄 Category: About to call updateCategoryNextPrevLinks');
     await nextTick();
     updateCategoryNextPrevLinks();
 
     // Принудително завършване на loading състоянието
     await nextTick();
-    console.log('✅ Category: loadCategoryProducts completed successfully');
   } catch (error) {
-    console.error('❌ Category: Error in loadCategoryProducts:', error);
     hasEverLoaded.value = true; // Маркираме като опитано дори при грешка
   } finally {
     isNavigating = false;
@@ -371,6 +397,9 @@ onMounted(async () => {
   // Изчакваме един tick за да се установи правилно route състоянието (точно като в /magazin)
   await nextTick();
   await loadCategoryProducts();
+  // Задаваме началните rel=prev/next links
+  await nextTick();
+  updateCategoryNextPrevLinks();
 });
 
 // За SSR зареждане при извикване на страницата (точно като в /magazin)
@@ -384,11 +413,13 @@ watch(
   (newPath, oldPath) => {
     if (newPath !== oldPath && process.client) {
       loadCategoryProducts();
+      // Обновяваме и SEO данните при навигация
+      updateCategorySeoMeta();
     }
   },
 );
 
-// Допълнителен watcher за промени в path за да се улавя навигацията между страници (точно като в /magazin)
+// Допълнителен watcher за промени в path за да се улавя навигацията між страници (точно като в /magazin)
 watch(
   () => route.path,
   (newPath, oldPath) => {
@@ -396,6 +427,8 @@ watch(
       // Reset loading състоянието при навигация за да се покаже skeleton
       hasEverLoaded.value = false;
       loadCategoryProducts();
+      // Обновяваме и SEO данните при навигация
+      updateCategorySeoMeta();
     }
   },
 );
@@ -416,9 +449,7 @@ watch(
 watch(
   () => pageInfo,
   () => {
-    console.log('🔔 Category: pageInfo watcher triggered - process.client:', process.client, 'pageInfo:', pageInfo);
     if (process.client) {
-      console.log('🔄 Category: Calling updateCategoryNextPrevLinks from watcher');
       updateCategoryNextPrevLinks();
     }
   },
@@ -498,7 +529,7 @@ const shouldShowNoProducts = computed(() => {
           <ProductGrid />
 
           <!-- Пагинация -->
-          <PaginationServer />
+          <PaginationServer :category-count="realProductCount || matchingCategory?.count" />
         </div>
 
         <!-- No products found - показва се само когато сме сигурни че няма продукти -->
