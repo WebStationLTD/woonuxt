@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, nextTick } from 'vue';
 
-const { loadProductsPage, loadProductsWithFilters, products, isLoading, resetProductsState, pageInfo, currentPage } = useProducts();
+const {
+  loadProductsPage,
+  loadProductsWithFilters,
+  products,
+  isLoading,
+  resetProductsState,
+  pageInfo,
+  currentPage,
+  loadProductsPageOptimized,
+  jumpToPageOptimized,
+} = useProducts();
 const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
 const { frontEndUrl } = useHelpers();
@@ -166,7 +176,9 @@ let lastLinksUpdate = '';
 
 // Функция за динамично обновяване на next/prev links с точен брой продукти
 const updateCategoryNextPrevLinks = () => {
-  console.log('🔗 updateCategoryNextPrevLinks called!');
+  if (process.client && (window as any).debugPagination) {
+    console.log('🔗 updateCategoryNextPrevLinks called!');
+  }
 
   const currentSeoMeta = generateCategorySeoMeta(); // Генерираме динамичните SEO данни
   const updatedCategoryLinks: any[] = [];
@@ -176,13 +188,15 @@ const updateCategoryNextPrevLinks = () => {
   const productsPerPageValue = 12; // Стандартната стойност
   const totalPages = Math.ceil(totalProductCount / productsPerPageValue);
 
-  console.log('🔗 Debug data:', {
-    currentPage: currentSeoMeta.pageNumber,
-    totalProductCount,
-    totalPages,
-    realProductCount,
-    hasRealCount: !!realProductCount,
-  });
+  if (process.client && (window as any).debugPagination) {
+    console.log('🔗 Debug data:', {
+      currentPage: currentSeoMeta.pageNumber,
+      totalProductCount,
+      totalPages,
+      realProductCount,
+      hasRealCount: !!realProductCount,
+    });
+  }
 
   // Prev link
   if (currentSeoMeta.pageNumber > 1) {
@@ -199,38 +213,48 @@ const updateCategoryNextPrevLinks = () => {
     ? currentSeoMeta.pageNumber < totalPages // Точно изчисление ако имаме реален count
     : pageInfo?.hasNextPage; // Fallback към pageInfo за cursor-based
 
-  console.log('🔗 Next page logic:', {
-    realProductCount: !!realProductCount,
-    currentPage: currentSeoMeta.pageNumber,
-    totalPages,
-    calculation: `${currentSeoMeta.pageNumber} < ${totalPages} = ${currentSeoMeta.pageNumber < totalPages}`,
-    pageInfoHasNext: pageInfo?.hasNextPage,
-    finalHasNextPage: hasNextPage,
-  });
+  if (process.client && (window as any).debugPagination) {
+    console.log('🔗 Next page logic:', {
+      realProductCount: !!realProductCount,
+      currentPage: currentSeoMeta.pageNumber,
+      totalPages,
+      calculation: `${currentSeoMeta.pageNumber} < ${totalPages} = ${currentSeoMeta.pageNumber < totalPages}`,
+      pageInfoHasNext: pageInfo?.hasNextPage,
+      finalHasNextPage: hasNextPage,
+    });
+  }
 
   if (hasNextPage) {
     const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${currentSeoMeta.pageNumber + 1}`;
     updatedCategoryLinks.push({ rel: 'next', href: nextUrl });
-    console.log('✅ Adding rel=next:', nextUrl);
+    if (process.client && (window as any).debugPagination) {
+      console.log('✅ Adding rel=next:', nextUrl);
+    }
   } else {
-    console.log('❌ NO rel=next - on last page!');
+    if (process.client && (window as any).debugPagination) {
+      console.log('❌ NO rel=next - on last page!');
+    }
   }
 
   // Добавяме canonical URL за текущата страница
   updatedCategoryLinks.push({ rel: 'canonical', href: currentSeoMeta.canonicalUrl });
 
-  console.log(
-    '🔗 Final links array:',
-    updatedCategoryLinks.map((link) => `${link.rel}: ${link.href}`),
-  );
+  if (process.client && (window as any).debugPagination) {
+    console.log(
+      '🔗 Final links array:',
+      updatedCategoryLinks.map((link) => `${link.rel}: ${link.href}`),
+    );
+  }
 
   // Обновяваме reactive ref вместо извикване на useHead()
   headLinks.value = updatedCategoryLinks;
 
-  console.log(
-    '🔗 headLinks.value updated:',
-    headLinks.value.map((link) => `${link.rel}: ${link.href}`),
-  );
+  if (process.client && (window as any).debugPagination) {
+    console.log(
+      '🔗 headLinks.value updated:',
+      headLinks.value.map((link) => `${link.rel}: ${link.href}`),
+    );
+  }
 };
 
 // Извличаме slug и страница от route
@@ -284,6 +308,13 @@ const updateCategorySeoMeta = () => {
 
 // Race condition protection (точно като в /magazin)
 let isNavigating = false;
+
+// Проследяване на предишни query параметри за умно redirect управление
+let previousQuery = ref({
+  orderby: null as string | null,
+  order: null as string | null,
+  filter: null as string | null,
+});
 
 // Основна функция за зареждане на продукти
 const loadCategoryProducts = async () => {
@@ -366,10 +397,21 @@ const loadCategoryProducts = async () => {
         else if (orderBy === 'discount') graphqlOrderBy = 'DATE';
       }
 
-      await loadProductsPage(pageNumber, [slug], graphqlOrderBy, filters);
+      // КРИТИЧНО: Правилна логика за cursor-based пагинация
+      if (pageNumber > 1) {
+        // За страница > 1 ВИНАГИ използваме jumpToPageOptimized - дори при сортиране/филтри
+        await jumpToPageOptimized(pageNumber, [slug], graphqlOrderBy, filters);
+      } else {
+        // За страница 1 използваме loadProductsPageOptimized (работи без cursor)
+        await loadProductsPageOptimized(pageNumber, [slug], graphqlOrderBy, filters);
+      }
     } else {
-      // Ако няма филтри, зареждаме конкретната страница
-      await loadProductsPage(pageNumber, [slug]);
+      // Ако няма филтри, използваме супер бързата функция за конкретна страница
+      if (pageNumber > 1) {
+        await jumpToPageOptimized(pageNumber, [slug]);
+      } else {
+        await loadProductsPageOptimized(pageNumber, [slug]);
+      }
     }
 
     // Маркираме че сме зареждали данни поне веднъж
@@ -394,6 +436,13 @@ const loadCategoryProducts = async () => {
 
 // Зареждаме при mount
 onMounted(async () => {
+  // Инициализираме предишните query стойности
+  previousQuery.value = {
+    orderby: (route.query.orderby as string | null) || null,
+    order: (route.query.order as string | null) || null,
+    filter: (route.query.filter as string | null) || null,
+  };
+
   // Изчакваме един tick за да се установи правилно route състоянието (точно като в /magazin)
   await nextTick();
   await loadCategoryProducts();
@@ -433,11 +482,70 @@ watch(
   },
 );
 
-// Watcher за промени в query параметрите (филтри и сортиране) (точно като в /magazin)
+// Watcher за промени в query параметрите (филтри и сортиране) - с умно redirect управление
 watch(
   () => route.query,
-  (newQuery, oldQuery) => {
+  async (newQuery, oldQuery) => {
     if (process.client && JSON.stringify(newQuery) !== JSON.stringify(oldQuery)) {
+      // Проверяваме дали са се променили sorting/filtering параметрите (не page)
+      const newOrderBy = newQuery.orderby as string | null;
+      const newOrder = newQuery.order as string | null;
+      const newFilter = newQuery.filter as string | null;
+
+      const sortingOrFilteringChanged =
+        newOrderBy !== previousQuery.value.orderby || newOrder !== previousQuery.value.order || newFilter !== previousQuery.value.filter;
+
+      // DEBUG MODE - activate with: window.debugPagination = true
+      if (process.client && (window as any).debugPagination) {
+        console.log('🔍 Query change detected:', {
+          sortingOrFilteringChanged,
+          previousOrderBy: previousQuery.value.orderby,
+          newOrderBy,
+          previousOrder: previousQuery.value.order,
+          newOrder,
+          previousFilter: previousQuery.value.filter,
+          newFilter,
+        });
+      }
+
+      // Ако са се променили sorting/filtering параметрите И сме на страница > 1
+      if (sortingOrFilteringChanged && (newQuery.page || route.params.pageNumber)) {
+        const currentPageNumber = newQuery.page ? parseInt(String(newQuery.page)) : parseInt(String(route.params.pageNumber) || '1');
+
+        if (currentPageNumber > 1) {
+          if (process.client && (window as any).debugPagination) {
+            console.log('🔄 Sorting/filtering changed on page > 1, redirecting to page 1');
+          }
+
+          // Изграждаме URL за страница 1 с новите sorting/filtering параметри
+          const queryParams = new URLSearchParams();
+          if (newOrderBy) queryParams.set('orderby', newOrderBy);
+          if (newOrder) queryParams.set('order', newOrder);
+          if (newFilter) queryParams.set('filter', newFilter);
+
+          const queryString = queryParams.toString();
+          const { slug } = extractRouteParams();
+          const newUrl = `/produkt-kategoriya/${slug}${queryString ? `?${queryString}` : ''}`;
+
+          // Обновяваме предишните стойности преди redirect
+          previousQuery.value = {
+            orderby: newOrderBy,
+            order: newOrder,
+            filter: newFilter,
+          };
+
+          await navigateTo(newUrl, { replace: true });
+          return; // Излизаме рано - navigateTo ще предизвика нов loadCategoryProducts
+        }
+      }
+
+      // Обновяваме предишните стойности
+      previousQuery.value = {
+        orderby: newOrderBy,
+        order: newOrder,
+        filter: newFilter,
+      };
+
       // Reset loading състоянието при промяна на филтри
       hasEverLoaded.value = false;
       loadCategoryProducts();

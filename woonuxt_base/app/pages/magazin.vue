@@ -135,6 +135,13 @@ const updateNextPrevLinks = () => {
 // Race condition protection
 let isNavigating = false;
 
+// Проследяване на предишни query параметри за умно redirect управление
+let previousQuery = ref({
+  orderby: null as string | null,
+  order: null as string | null,
+  filter: null as string | null,
+});
+
 // Функция за локално парсане на филтри от query string
 const parseFiltersFromQuery = (filterQuery: string) => {
   const filters: any = {};
@@ -251,6 +258,13 @@ const loadProductsFromRoute = async () => {
 
 // Зареждаме продуктите веднага при SSR и след hydration
 onMounted(async () => {
+  // Инициализираме предишните query стойности
+  previousQuery.value = {
+    orderby: (route.query.orderby as string | null) || null,
+    order: (route.query.order as string | null) || null,
+    filter: (route.query.filter as string | null) || null,
+  };
+
   // Изчакваме един tick за да се установи правилно route състоянието
   await nextTick();
   await loadProductsFromRoute();
@@ -283,11 +297,52 @@ watch(
   },
 );
 
-// Watcher за промени в query параметрите (филтри и сортиране)
+// Watcher за промени в query параметрите (филтри и сортиране) - с умно redirect управление
 watch(
   () => route.query,
-  (newQuery, oldQuery) => {
+  async (newQuery, oldQuery) => {
     if (process.client && JSON.stringify(newQuery) !== JSON.stringify(oldQuery)) {
+      // Проверяваме дали са се променили sorting/filtering параметрите (не page)
+      const newOrderBy = newQuery.orderby as string | null;
+      const newOrder = newQuery.order as string | null;
+      const newFilter = newQuery.filter as string | null;
+
+      const sortingOrFilteringChanged =
+        newOrderBy !== previousQuery.value.orderby || newOrder !== previousQuery.value.order || newFilter !== previousQuery.value.filter;
+
+      // Ако са се променили sorting/filtering параметрите И сме на страница > 1
+      if (sortingOrFilteringChanged && route.params.pageNumber) {
+        const currentPageNumber = parseInt(String(route.params.pageNumber) || '1');
+
+        if (currentPageNumber > 1) {
+          // Изграждаме URL за страница 1 с новите sorting/filtering параметри
+          const queryParams = new URLSearchParams();
+          if (newOrderBy) queryParams.set('orderby', newOrderBy);
+          if (newOrder) queryParams.set('order', newOrder);
+          if (newFilter) queryParams.set('filter', newFilter);
+
+          const queryString = queryParams.toString();
+          const newUrl = `/magazin${queryString ? `?${queryString}` : ''}`;
+
+          // Обновяваме предишните стойности преди redirect
+          previousQuery.value = {
+            orderby: newOrderBy,
+            order: newOrder,
+            filter: newFilter,
+          };
+
+          await navigateTo(newUrl, { replace: true });
+          return; // Излизаме рано - navigateTo ще предизвика нов loadProductsFromRoute
+        }
+      }
+
+      // Обновяваме предишните стойности
+      previousQuery.value = {
+        orderby: newOrderBy,
+        order: newOrder,
+        filter: newFilter,
+      };
+
       // Reset loading състоянието при промяна на филтри
       hasEverLoaded.value = false;
       loadProductsFromRoute();

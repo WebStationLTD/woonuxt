@@ -1,5 +1,5 @@
 query getProductsCount($slug: [String]) {
-  products(first: 5000, where: { categoryIn: $slug, visibility: VISIBLE, minPrice: 0, status: "publish" }) {
+  products(first: 1000, where: { categoryIn: $slug, visibility: VISIBLE, status: "publish" }) {
     pageInfo {
       hasNextPage
       hasPreviousPage

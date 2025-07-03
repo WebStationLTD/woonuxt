@@ -188,8 +188,6 @@ let lastLinksUpdate = '';
 
 // Функция за динамично обновяване на next/prev links с точен брой продукти (точно като в категориите)
 const updateChildCategoryNextPrevLinks = () => {
-  console.log('🔗 updateChildCategoryNextPrevLinks called!');
-
   const currentSeoMeta = generateChildCategorySeoMeta(); // Генерираме динамичните SEO данни
   const updatedChildLinks: any[] = [];
 
@@ -197,14 +195,6 @@ const updateChildCategoryNextPrevLinks = () => {
   const totalProductCount = realProductCount || matchingCategory?.count || 0;
   const productsPerPageValue = 12; // Стандартната стойност
   const totalPages = Math.ceil(totalProductCount / productsPerPageValue);
-
-  console.log('🔗 Debug data:', {
-    currentPage: currentSeoMeta.pageNumber,
-    totalProductCount,
-    totalPages,
-    realProductCount,
-    hasRealCount: !!realProductCount,
-  });
 
   // Prev link
   if (currentSeoMeta.pageNumber > 1) {
@@ -221,38 +211,16 @@ const updateChildCategoryNextPrevLinks = () => {
     ? currentSeoMeta.pageNumber < totalPages // Точно изчисление ако имаме реален count
     : pageInfo?.hasNextPage; // Fallback към pageInfo за cursor-based
 
-  console.log('🔗 Next page logic:', {
-    realProductCount: !!realProductCount,
-    currentPage: currentSeoMeta.pageNumber,
-    totalPages,
-    calculation: `${currentSeoMeta.pageNumber} < ${totalPages} = ${currentSeoMeta.pageNumber < totalPages}`,
-    pageInfoHasNext: pageInfo?.hasNextPage,
-    finalHasNextPage: hasNextPage,
-  });
-
   if (hasNextPage) {
     const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${currentSeoMeta.pageNumber + 1}`;
     updatedChildLinks.push({ rel: 'next', href: nextUrl });
-    console.log('✅ Adding rel=next:', nextUrl);
-  } else {
-    console.log('❌ NO rel=next - on last page!');
   }
 
   // Добавяме canonical URL за текущата страница
   updatedChildLinks.push({ rel: 'canonical', href: currentSeoMeta.canonicalUrl });
 
-  console.log(
-    '🔗 Final links array:',
-    updatedChildLinks.map((link) => `${link.rel}: ${link.href}`),
-  );
-
   // Обновяваме reactive ref вместо извикване на useHead() (точно като в категориите)
   headLinks.value = updatedChildLinks;
-
-  console.log(
-    '🔗 headLinks.value updated:',
-    headLinks.value.map((link) => `${link.rel}: ${link.href}`),
-  );
 };
 
 // Функция за извличане на параметри от route
@@ -298,6 +266,13 @@ const extractRouteParams = () => {
 
 // Race condition protection (точно като в родителските категории)
 let isNavigating = false;
+
+// Проследяване на предишни query параметри за умно redirect управление
+let previousQuery = ref({
+  orderby: null as string | null,
+  order: null as string | null,
+  filter: null as string | null,
+});
 
 // Основна функция за зареждане на продукти
 const loadCategoryProducts = async () => {
@@ -431,6 +406,13 @@ const updateChildCategorySeoMeta = () => {
 
 // Зареждаме при mount
 onMounted(async () => {
+  // Инициализираме предишните query стойности
+  previousQuery.value = {
+    orderby: (route.query.orderby as string | null) || null,
+    order: (route.query.order as string | null) || null,
+    filter: (route.query.filter as string | null) || null,
+  };
+
   await nextTick();
   await loadCategoryProducts();
   // Задаваме началните rel=prev/next links (точно като в родителските категории)
@@ -470,11 +452,53 @@ watch(
   },
 );
 
-// Watcher за промени в query параметрите (филтри и сортиране) (точно като в родителските категории)
+// Watcher за промени в query параметрите (филтри и сортиране) - с умно redirect управление
 watch(
   () => route.query,
-  (newQuery, oldQuery) => {
+  async (newQuery, oldQuery) => {
     if (process.client && JSON.stringify(newQuery) !== JSON.stringify(oldQuery)) {
+      // Проверяваме дали са се променили sorting/filtering параметрите (не page)
+      const newOrderBy = newQuery.orderby as string | null;
+      const newOrder = newQuery.order as string | null;
+      const newFilter = newQuery.filter as string | null;
+
+      const sortingOrFilteringChanged =
+        newOrderBy !== previousQuery.value.orderby || newOrder !== previousQuery.value.order || newFilter !== previousQuery.value.filter;
+
+      // Ако са се променили sorting/filtering параметрите И сме на страница > 1
+      if (sortingOrFilteringChanged && (newQuery.page || route.params.pageNumber)) {
+        const currentPageNumber = newQuery.page ? parseInt(String(newQuery.page)) : parseInt(String(route.params.pageNumber) || '1');
+
+        if (currentPageNumber > 1) {
+          // Изграждаме URL за страница 1 с новите sorting/filtering параметри
+          const queryParams = new URLSearchParams();
+          if (newOrderBy) queryParams.set('orderby', newOrderBy);
+          if (newOrder) queryParams.set('order', newOrder);
+          if (newFilter) queryParams.set('filter', newFilter);
+
+          const queryString = queryParams.toString();
+          const { parentSlug, childSlug } = extractRouteParams();
+          const newUrl = `/produkt-kategoriya/${parentSlug}/${childSlug}${queryString ? `?${queryString}` : ''}`;
+
+          // Обновяваме предишните стойности преди redirect
+          previousQuery.value = {
+            orderby: newOrderBy,
+            order: newOrder,
+            filter: newFilter,
+          };
+
+          await navigateTo(newUrl, { replace: true });
+          return; // Излизаме рано - navigateTo ще предизвика нов loadCategoryProducts
+        }
+      }
+
+      // Обновяваме предишните стойности
+      previousQuery.value = {
+        orderby: newOrderBy,
+        order: newOrder,
+        filter: newFilter,
+      };
+
       // Reset loading състоянието при промяна на филтри
       hasEverLoaded.value = false;
       loadCategoryProducts();
@@ -486,9 +510,7 @@ watch(
 watch(
   () => pageInfo,
   () => {
-    console.log('🔔 Child Category: pageInfo watcher triggered - process.client:', process.client, 'pageInfo:', pageInfo);
     if (process.client) {
-      console.log('🔄 Child Category: Calling updateChildCategoryNextPrevLinks from watcher');
       updateChildCategoryNextPrevLinks();
     }
   },

@@ -43,3 +43,90 @@ query getProducts(
     }
   }
 }
+
+# НОВА ОПТИМИЗИРАНА ЗАЯВКА за пагинация
+query getProductsOptimized(
+  $after: String
+  $slug: [String]
+  $first: Int = 12
+  $orderby: ProductsOrderByEnum = DATE
+  $order: OrderEnum = DESC
+  $minPrice: Float
+  $maxPrice: Float
+  $onSale: Boolean
+  $search: String
+) {
+  products(
+    first: $first
+    after: $after
+    where: {
+      categoryIn: $slug
+      visibility: VISIBLE
+      minPrice: $minPrice
+      maxPrice: $maxPrice
+      onSale: $onSale
+      search: $search
+      orderby: { field: $orderby, order: $order }
+      status: "publish"
+    }
+  ) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    # КРИТИЧНО: Зареждаме САМО продуктите за текущата страница
+    nodes {
+      name
+      slug
+      type
+      databaseId
+      id
+      averageRating
+      reviewCount
+      # Минимални данни за бърз grid
+      ...Terms
+      ...ProductCategories
+      ...SimpleProductGrid
+      ...VariableProductGrid
+      ...ExternalProduct
+    }
+  }
+}
+
+# ULTRA БЪРЗА заявка за курсори (без продуктни данни)
+query getProductCursors(
+  $slug: [String]
+  $first: Int = 100 # Зареждаме повече cursor-и за navigation
+  $orderby: ProductsOrderByEnum = DATE
+  $order: OrderEnum = DESC
+  $minPrice: Float
+  $maxPrice: Float
+  $onSale: Boolean
+  $search: String
+) {
+  products(
+    first: $first
+    where: {
+      categoryIn: $slug
+      visibility: VISIBLE
+      minPrice: $minPrice
+      maxPrice: $maxPrice
+      onSale: $onSale
+      search: $search
+      orderby: { field: $orderby, order: $order }
+      status: "publish"
+    }
+  ) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    # Зареждаме САМО cursor-и за пагинация - БЕЗ данни!
+    edges {
+      cursor
+      # НЕ зареждаме node данни!
+    }
+  }
+}
