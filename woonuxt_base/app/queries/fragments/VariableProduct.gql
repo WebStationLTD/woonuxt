@@ -89,11 +89,24 @@ fragment VariableProductGrid on VariableProduct {
     ...Image
     producCardSourceUrl: sourceUrl(size: WOOCOMMERCE_THUMBNAIL)
   }
-  variations(first: 3) {
+  variations(first: 10) {
     nodes {
+      name
       databaseId
       price
+      regularPrice
+      salePrice
+      slug
       stockStatus
+      image {
+        ...Image
+        producCardSourceUrl: sourceUrl(size: WOOCOMMERCE_THUMBNAIL)
+      }
+      attributes {
+        nodes {
+          ...VariationAttribute
+        }
+      }
     }
   }
 }
