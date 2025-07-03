@@ -11,7 +11,7 @@ const props = defineProps({
 });
 
 const imgWidth = 280;
-const imgHeight = Math.round(imgWidth * 1.125);
+const imgHeight = imgWidth; // Квадратни снимки
 
 // example: ?filter=pa_color[green,blue],pa_size[large]
 const filterQuery = ref(route.query?.filter as string);
@@ -249,7 +249,7 @@ const availableVariationsText = computed(() => {
         :title="node.image?.title || node.name"
         :loading="index <= 3 ? 'eager' : 'lazy'"
         :sizes="`sm:${imgWidth / 2}px md:${imgWidth}px`"
-        class="rounded-lg object-center object-contain w-full aspect-9/8 bg-white"
+        class="rounded-lg object-center object-contain w-full aspect-square bg-white"
         placeholder
         placeholder-class="blur-xl" />
     </NuxtLink>
