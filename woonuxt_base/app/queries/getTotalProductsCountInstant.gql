@@ -1,0 +1,14 @@
+# МГНОВЕН COUNT - използва WordPress built-in wp_count_posts()
+# ТОВА Е ИНФОРМАЦИЯТА КОЯТО WORDPRESS ВЕЧЕ ЗНАЕ БЕЗ ИЗЧИСЛЕНИЯ!
+# БЕЗ никакви заявки - директно от админ панела данни
+
+query getTotalProductsCountInstant {
+  # WordPress built-in count - МГНОВЕНО!
+  totalProductsCount
+}
+
+# FALLBACK: За filtered counts (само поддържаните аргументи от plugin-а)
+query getFilteredProductsCountInstant($onSale: Boolean, $categoryIn: [String], $search: String) {
+  # Custom field с аргументи за филтрирани counts
+  filteredProductsCount(onSale: $onSale, categoryIn: $categoryIn, search: $search)
+}

@@ -459,7 +459,9 @@ export function useProducts() {
       isLoading.value = true;
 
       // Стъпка 1: Получаваме cursor-и БЕЗ продуктни данни (много бързо!)
-      const cursorsNeeded = Math.min(targetPage * 12, 1000); // Ограничаваме до 1000
+      // ПОПРАВКА: За страница 152 трябват cursor за позиция 1812, не 1824 cursor-а!
+      const cursorPosition = (targetPage - 1) * productsPerPage.value;
+      const cursorsNeeded = Math.min(cursorPosition, 2000); // Ограничаваме до 2000
 
       const variables: any = {
         first: cursorsNeeded,
@@ -500,17 +502,35 @@ export function useProducts() {
       if (cursorsData.value?.products?.edges) {
         const edges = cursorsData.value.products.edges;
 
-        // Изчисляваме кой cursor ни трябва за желаната страница
-        const targetIndex = (targetPage - 1) * productsPerPage.value;
+        console.log(`🔍 CURSOR DEBUG: Искаме страница ${targetPage}, получихме ${edges.length} cursor-а`);
+
+        // ПОПРАВКА: Правилно изчисление на cursor позицията
+        // За страница N, трябва cursor СЛЕД продукт (N-1) * 12
+        const lastProductOfPreviousPage = (targetPage - 1) * productsPerPage.value;
 
         let targetCursor = null;
-        if (targetIndex > 0 && targetIndex < edges.length) {
-          targetCursor = edges[targetIndex - 1]?.cursor; // -1 защото after = преди този
+        if (lastProductOfPreviousPage > 0 && lastProductOfPreviousPage <= edges.length) {
+          // Взимаме cursor-а на последния продукт от предишната страница
+          targetCursor = edges[lastProductOfPreviousPage - 1]?.cursor;
+          console.log(`🎯 CURSOR: За страница ${targetPage} използваме cursor от позиция ${lastProductOfPreviousPage - 1}`);
+        } else {
+          console.log(`⚠️ CURSOR: Няма достатъчно cursor-и за страница ${targetPage} (искаме ${lastProductOfPreviousPage}, имаме ${edges.length})`);
+
+          // КРИТИЧНО: Ако няма достатъчно cursor-и, страницата не съществува!
+          if (lastProductOfPreviousPage >= edges.length) {
+            console.log(`❌ CURSOR: Страница ${targetPage} не съществува - връщаме празен резултат`);
+            setProducts([]);
+            pageInfo.hasNextPage = false;
+            pageInfo.endCursor = '';
+            currentPage.value = targetPage;
+            return;
+          }
         }
 
         // Стъпка 2: Зареждаме САМО продуктите за тази страница
-        await loadProductsPageOptimized(targetPage, categorySlug, orderBy, filters, targetCursor);
+        await loadProductsPageOptimized(targetPage, categorySlug, orderBy, filters, targetCursor || undefined);
       } else {
+        console.log('❌ CURSOR: Не успяхме да получим cursor данни, използваме fallback');
         // Fallback към обикновено зареждане
         await loadProductsPageOptimized(targetPage, categorySlug, orderBy, filters);
       }

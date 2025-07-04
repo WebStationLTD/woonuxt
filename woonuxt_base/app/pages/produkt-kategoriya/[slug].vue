@@ -11,6 +11,7 @@ const {
   currentPage,
   loadProductsPageOptimized,
   jumpToPageOptimized,
+  productsPerPage,
 } = useProducts();
 const { buildGraphQLFilters } = useFiltering();
 const { storeSettings } = useAppConfig();
@@ -87,6 +88,9 @@ if (!matchingCategory) {
 
 // Reactive ref за runtime промени
 const matchingCategoryRef = ref<Category | null>(matchingCategory);
+
+// Ref за филтриран count при филтриране (взето от magazin.vue)
+const filteredCategoryCount = ref<number | null>(null);
 
 // Функция за генериране на SEO данни според страницата (взета от /magazin)
 const generateCategorySeoMeta = () => {
@@ -185,8 +189,7 @@ const updateCategoryNextPrevLinks = () => {
 
   // Изчисляваме общия брой страници на база на реалния брой продукти
   const totalProductCount = realProductCount || matchingCategory?.count || 0;
-  const productsPerPageValue = 12; // Стандартната стойност
-  const totalPages = Math.ceil(totalProductCount / productsPerPageValue);
+  const totalPages = Math.ceil(totalProductCount / productsPerPage.value);
 
   if (process.client && (window as any).debugPagination) {
     console.log('🔗 Debug data:', {
@@ -209,9 +212,18 @@ const updateCategoryNextPrevLinks = () => {
   }
 
   // Next link - използваме точното изчисление на база реалния брой продукти
-  const hasNextPage = realProductCount
-    ? currentSeoMeta.pageNumber < totalPages // Точно изчисление ако имаме реален count
-    : pageInfo?.hasNextPage; // Fallback към pageInfo за cursor-based
+  let hasNextPage = false;
+
+  // При филтри разчитаме на pageInfo
+  const hasFilters = route.query.filter;
+  if (hasFilters) {
+    hasNextPage = pageInfo?.hasNextPage || false;
+  } else {
+    // БЕЗ филтри - използваме точния брой продукти
+    hasNextPage = realProductCount
+      ? currentSeoMeta.pageNumber < totalPages // Точно изчисление ако имаме реален count
+      : pageInfo?.hasNextPage; // Fallback към pageInfo за cursor-based
+  }
 
   if (process.client && (window as any).debugPagination) {
     console.log('🔗 Next page logic:', {
@@ -341,6 +353,18 @@ const loadCategoryProducts = async () => {
     currentSlug.value = slug;
     currentPageNumber.value = targetPageNumber;
 
+    // КРИТИЧНО: Проверяваме за невалидни страници ПРЕДИ зареждане (като в magazin.vue)
+    if (pageNumber > 1 && process.client && !route.query.filter) {
+      // БЕЗ филтри - проверяваме спрямо броя продукти в категорията
+      const totalProducts = realProductCount || matchingCategory?.count || 0;
+      if (totalProducts > 0) {
+        const maxPages = Math.ceil(totalProducts / productsPerPage.value);
+        if (pageNumber > maxPages) {
+          throw showError({ statusCode: 404, statusMessage: `Страница ${pageNumber} не съществува в тази категория. Максимална страница: ${maxPages}` });
+        }
+      }
+    }
+
     // Проверяваме дали има филтри или сортиране в URL
     const hasFilters = route.query.filter;
     const hasOrderBy = route.query.orderby;
@@ -401,14 +425,31 @@ const loadCategoryProducts = async () => {
       if (pageNumber > 1) {
         // За страница > 1 ВИНАГИ използваме jumpToPageOptimized - дори при сортиране/филтри
         await jumpToPageOptimized(pageNumber, [slug], graphqlOrderBy, filters);
+
+        // КРИТИЧНО: Проверяваме дали получихме резултати при филтриране
+        if (process.client && Object.keys(filters).length > 0 && (!products.value || products.value.length === 0)) {
+          throw showError({ statusCode: 404, statusMessage: `Страница ${pageNumber} не съществува с тези филтри в категорията` });
+        }
       } else {
         // За страница 1 използваме loadProductsPageOptimized (работи без cursor)
         await loadProductsPageOptimized(pageNumber, [slug], graphqlOrderBy, filters);
+      }
+
+      // КРИТИЧНО: Зареждаме filtered count при филтриране
+      if (process.client && Object.keys(filters).length > 0) {
+        await loadCategoryCount(filters);
       }
     } else {
       // Ако няма филтри, използваме супер бързата функция за конкретна страница
       if (pageNumber > 1) {
         await jumpToPageOptimized(pageNumber, [slug]);
+
+        // КРИТИЧНО: Проверяваме дали получихме резултати БЕЗ филтри
+        if (process.client && (!products.value || products.value.length === 0)) {
+          const totalProducts = realProductCount || matchingCategory?.count || 0;
+          const maxPages = totalProducts > 0 ? Math.ceil(totalProducts / productsPerPage.value) : 1;
+          throw showError({ statusCode: 404, statusMessage: `Страница ${pageNumber} не съществува в тази категория. Максимална страница: ${maxPages}` });
+        }
       } else {
         await loadProductsPageOptimized(pageNumber, [slug]);
       }
@@ -564,6 +605,53 @@ watch(
   { deep: true },
 );
 
+// Watcher за филтри - актуализира правилния count при промяна на филтрите (взет от magazin.vue)
+watch(
+  () => route.query.filter,
+  async (newFilter) => {
+    if (process.client && newFilter) {
+      // Парсваме филтрите със същата логика като в loadCategoryProducts
+      const filterQuery = newFilter as string;
+
+      const getFilterValues = (filterName: string): string[] => {
+        const match = filterQuery.match(new RegExp(`${filterName}\\[([^\\]]*)\\]`));
+        if (!match || !match[1]) return [];
+        return match[1].split(',').filter((val) => val && val.trim());
+      };
+
+      const filters: any = {};
+
+      // OnSale филтър
+      const onSale = getFilterValues('sale');
+      if (onSale.length > 0 && onSale.includes('true')) {
+        filters.onSale = true;
+      }
+
+      // Ценови филтър
+      const priceRange = getFilterValues('price');
+      if (priceRange.length === 2 && priceRange[0] && priceRange[1]) {
+        const minPrice = parseFloat(priceRange[0]);
+        const maxPrice = parseFloat(priceRange[1]);
+        if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+          filters.minPrice = minPrice;
+          filters.maxPrice = maxPrice;
+        }
+      }
+
+      // Search филтър
+      const searchTerm = getFilterValues('search');
+      if (searchTerm.length > 0 && searchTerm[0]) {
+        filters.search = searchTerm[0];
+      }
+
+      await loadCategoryCount(filters);
+    } else if (process.client && !newFilter) {
+      // Когато няма филтри, нулираме filtered count
+      filteredCategoryCount.value = null;
+    }
+  },
+);
+
 // Computed за показване на loading състояние
 const shouldShowLoading = computed(() => {
   return isLoading.value || !hasEverLoaded.value;
@@ -573,6 +661,84 @@ const shouldShowLoading = computed(() => {
 const shouldShowNoProducts = computed(() => {
   return hasEverLoaded.value && !isLoading.value && (!products.value || products.value.length === 0);
 });
+
+// Computed за правилен count за pagination - същата логика като в magazin.vue
+const categoryCount = computed(() => {
+  // Парсваме филтрите директно от URL за актуална проверка
+  const hasFilters = route.query.filter;
+
+  if (hasFilters) {
+    // Парсваме филтрите със същата логика като в loadCategoryProducts
+    const filterQuery = route.query.filter as string;
+
+    const getFilterValues = (filterName: string): string[] => {
+      const match = filterQuery.match(new RegExp(`${filterName}\\[([^\\]]*)\\]`));
+      if (!match || !match[1]) return [];
+      return match[1].split(',').filter((val) => val && val.trim());
+    };
+
+    const onSale = getFilterValues('sale');
+    const priceRange = getFilterValues('price');
+    const searchTerm = getFilterValues('search');
+
+    // Проверяваме дали има ВСЯКАКВИ филтри
+    const hasAnyFilters =
+      (onSale.length > 0 && onSale.includes('true')) || (priceRange.length === 2 && priceRange[0] && priceRange[1]) || (searchTerm.length > 0 && searchTerm[0]);
+
+    if (hasAnyFilters) {
+      // При всякакви филтри използваме филтрирания count
+      return filteredCategoryCount.value;
+    }
+  }
+
+  // Без филтри използваме оригиналния count от категорията
+  return realProductCount || matchingCategory?.count;
+});
+
+// Функция за зареждане на filtered count при всякакви филтри (взета от magazin.vue)
+const loadCategoryCount = async (filters: any) => {
+  // КРИТИЧНО: Само на клиента
+  if (!process.client) {
+    console.log('⚠️ loadCategoryCount на сървъра, спираме изпълнението');
+    return;
+  }
+
+  // Проверяваме за всички типове филтри
+  const hasAnyFilters = filters.onSale || (filters.minPrice !== undefined && filters.maxPrice !== undefined) || filters.search;
+
+  if (hasAnyFilters) {
+    try {
+      // Създаваме variables с ВСИЧКИ филтри за точен count
+      const variables: any = {
+        first: 1000, // Зареждаме достатъчно за да получим точния count
+        slug: [slug], // Добавяме категорията
+      };
+
+      // Добавяме всички филтри ако са налични
+      if (filters.minPrice !== undefined) variables.minPrice = filters.minPrice;
+      if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
+      if (filters.onSale !== undefined) variables.onSale = filters.onSale;
+      if (filters.search) variables.search = filters.search;
+
+      console.log('🔍 CATEGORY: Loading filtered count with filters:', filters);
+      console.log('📡 CATEGORY: GraphQL variables:', variables);
+
+      // Използваме основната getProducts заявка която поддържа всички филтри
+      const { data } = await useAsyncGql('getProducts', variables);
+
+      const result = data.value?.products;
+      const allProducts = result?.nodes || [];
+      filteredCategoryCount.value = allProducts.length > 0 ? allProducts.length : null;
+
+      console.log('✅ CATEGORY: Filtered count loaded:', filteredCategoryCount.value);
+    } catch (error) {
+      console.error('Error loading filtered count:', error);
+      filteredCategoryCount.value = null;
+    }
+  } else {
+    filteredCategoryCount.value = null;
+  }
+};
 </script>
 
 <template>
@@ -637,7 +803,7 @@ const shouldShowNoProducts = computed(() => {
           <ProductGrid />
 
           <!-- Пагинация -->
-          <PaginationServer :category-count="realProductCount || matchingCategory?.count" />
+          <PaginationServer :category-count="categoryCount" />
         </div>
 
         <!-- No products found - показва се само когато сме сигурни че няма продукти -->

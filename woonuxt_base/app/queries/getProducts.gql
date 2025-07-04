@@ -98,7 +98,7 @@ query getProductsOptimized(
 # ULTRA БЪРЗА заявка за курсори (без продуктни данни)
 query getProductCursors(
   $slug: [String]
-  $first: Int = 100 # Зареждаме повече cursor-и за navigation
+  $first: Int = 2000 # Достатъчно cursor-и за 150+ страници (2000 / 12 = 166 страници)
   $orderby: ProductsOrderByEnum = DATE
   $order: OrderEnum = DESC
   $minPrice: Float

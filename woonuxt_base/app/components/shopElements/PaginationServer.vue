@@ -57,22 +57,17 @@ const buildPageUrl = (pageNumber: number) => {
 const estimatedTotalPages = computed(() => {
   const currentPageValue = currentPage.value;
 
-  // Проверяваме дали categoryCount е реалистичен
+  // Ако имаме надежден categoryCount, използваме точния брой страници
   if (props.categoryCount && props.categoryCount > 0) {
-    const calculatedPages = Math.ceil(props.categoryCount / productsPerPage.value);
+    const totalPages = Math.ceil(props.categoryCount / productsPerPage.value);
 
-    // Ако сме на страница 2+ И има следваща страница, но categoryCount предполага че няма толкова страници
-    // това означава че categoryCount не включва продуктите от подкатегориите
-    if (currentPageValue >= 2 && pageInfo.hasNextPage && calculatedPages < currentPageValue) {
-      // Fallback към estimation
-    }
-    // НОВО: Проверяваме дали categoryCount е твърде малък дори на първа страница
-    // Ако на първа страница има hasNextPage, но categoryCount предполага само 1 страница
-    else if (currentPageValue === 1 && pageInfo.hasNextPage && calculatedPages <= 1) {
-      // Fallback към estimation
-    } else {
-      return calculatedPages;
-    }
+    // DEBUG: Показваме точните изчисления
+    console.log(`🔢 PAGINATION DEBUG: categoryCount=${props.categoryCount}, productsPerPage=${productsPerPage.value}, totalPages=${totalPages}`);
+    console.log(
+      `📊 МАТЕМАТИКА: ${props.categoryCount} ÷ ${productsPerPage.value} = ${props.categoryCount / productsPerPage.value} → Math.ceil = ${totalPages}`,
+    );
+
+    return totalPages;
   }
 
   // Ако няма следваща страница, текущата е последната
@@ -144,27 +139,20 @@ const firstPageUrl = computed(() => {
   return null;
 });
 
-// Последна страница (показваме както в подкатегориите)
+// Последна страница
 const lastPageUrl = computed(() => {
   const currentPageValue = currentPage.value;
   const maxEstimatedPage = estimatedTotalPages.value;
   const endPage = Math.min(maxEstimatedPage, currentPageValue + 3);
 
-  // Проверяваме дали categoryCount е надежден
-  const isCountReliable =
-    props.categoryCount &&
-    props.categoryCount > 0 &&
-    !(currentPageValue >= 2 && pageInfo.hasNextPage && Math.ceil(props.categoryCount / productsPerPage.value) < currentPageValue) &&
-    !(currentPageValue === 1 && pageInfo.hasNextPage && Math.ceil(props.categoryCount / productsPerPage.value) <= 1);
-
-  // Показваме "последна страница" когато имаме точен count или надежден estimation
-  if (isCountReliable && endPage < maxEstimatedPage) {
+  // Ако имаме надежден categoryCount, винаги показваме последната страница
+  if (props.categoryCount && props.categoryCount > 0 && endPage < maxEstimatedPage) {
     return buildPageUrl(maxEstimatedPage);
   }
 
   // За cursor-based pagination показваме "последна страница" ако има hasNextPage
   // И не показваме вече последната в текущия диапазон
-  if (pageInfo.hasNextPage && endPage < maxEstimatedPage) {
+  if (!props.categoryCount && pageInfo.hasNextPage && endPage < maxEstimatedPage) {
     return buildPageUrl(maxEstimatedPage);
   }
 
@@ -177,22 +165,8 @@ const shouldShowDotsBeforeLast = computed(() => {
   const maxEstimatedPage = estimatedTotalPages.value;
   const endPage = Math.min(maxEstimatedPage, currentPageValue + 3);
 
-  // Проверяваме дали categoryCount е надежден (същата логика като lastPageUrl)
-  const isCountReliable =
-    props.categoryCount &&
-    props.categoryCount > 0 &&
-    !(currentPageValue >= 2 && pageInfo.hasNextPage && Math.ceil(props.categoryCount / productsPerPage.value) < currentPageValue) &&
-    !(currentPageValue === 1 && pageInfo.hasNextPage && Math.ceil(props.categoryCount / productsPerPage.value) <= 1);
-
-  // Показваме "..." преди последната ако:
-  // 1. Имаме надежден count И има "последна страница" ИЛИ
-  // 2. Cursor-based pagination с hasNextPage И има gap до приблизителната последна страница
-  if (isCountReliable) {
-    return pageInfo.hasNextPage && endPage < maxEstimatedPage - 1;
-  } else {
-    // За cursor-based pagination показваме "..." ако има gap
-    return pageInfo.hasNextPage && endPage < maxEstimatedPage - 1;
-  }
+  // Показваме "..." преди последната ако има gap до последната страница
+  return endPage < maxEstimatedPage - 1;
 });
 
 // Проверяваме дали трябва да показваме "..." след първата страница
