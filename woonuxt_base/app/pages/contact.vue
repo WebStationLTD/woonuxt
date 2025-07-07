@@ -246,7 +246,7 @@
             <h3 class="text-xl font-semibold mb-3">TikTok</h3>
             <p class="text-gray-600 mb-6">Гледайте нашите забавни видеа</p>
             <a
-              href="#"
+              href="https://www.tiktok.com/@leaderfitness"
               target="_blank"
               rel="noopener noreferrer"
               class="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-black to-gray-800 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 font-medium w-full">
@@ -263,7 +263,7 @@
             <h3 class="text-xl font-semibold mb-3">YouTube</h3>
             <p class="text-gray-600 mb-6">Абонирайте се за видео съдържание</p>
             <a
-              href="#"
+              href="https://www.youtube.com/@Leaderfitnes"
               target="_blank"
               rel="noopener noreferrer"
               class="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 font-medium w-full">
