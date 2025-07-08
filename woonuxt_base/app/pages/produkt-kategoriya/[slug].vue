@@ -27,6 +27,21 @@ interface Category {
   description?: string | null;
   count?: number | null;
   databaseId?: number | null;
+  image?: {
+    sourceUrl?: string | null;
+    altText?: string | null;
+    title?: string | null;
+  } | null;
+  children?: {
+    nodes?: Category[] | null;
+  } | null;
+  parent?: {
+    node?: {
+      slug?: string | null;
+      name?: string | null;
+      databaseId?: number | null;
+    } | null;
+  } | null;
   seo?: {
     title?: string | null;
     metaDesc?: string | null;
@@ -62,7 +77,11 @@ const decodedSlug = routeSlug ? decodeURIComponent(String(routeSlug)) : '';
 const slug = decodedSlug;
 
 // Заявяваме ДИРЕКТНО конкретната категория (същия подход като в подкатегориите)
-const { data: categoryData } = await useAsyncGql('getProductCategories', { slug: [slug], hideEmpty: false });
+const { data: categoryData } = await useAsyncGql('getProductCategories', {
+  slug: [slug],
+  hideEmpty: false,
+  first: 20, // Зареждаме всички подкатегории, не само първите 10
+});
 
 // Получаваме точния брой продукти с ЛЕКА заявка (само cursor-и, без тежки данни)
 const { data: productsCountData } = await useAsyncGql('getProductsCount', {
@@ -799,6 +818,11 @@ const loadCategoryCount = async (filters: any) => {
             </div>
           </div>
 
+          <!-- Секция с подкатегории - показва се само ако има children и сме на първа страница без филтри -->
+          <SubcategoriesSection
+            v-if="matchingCategoryRef?.children?.nodes?.length && currentPageNumber === 1 && !route.query.filter"
+            :category="matchingCategoryRef" />
+
           <!-- Grid с продукти -->
           <ProductGrid />
 
@@ -807,14 +831,25 @@ const loadCategoryCount = async (filters: any) => {
         </div>
 
         <!-- No products found - показва се само когато сме сигурни че няма продукти -->
-        <NoProductsFound v-else-if="shouldShowNoProducts">
-          <div class="text-center">
-            <h2 class="text-xl font-bold mb-4">Не са намерени продукти в тази категория</h2>
-            <div class="mt-4 text-sm text-gray-600">
-              <p>Опитайте да промените филтрите или изберете друга категория.</p>
+        <div v-else-if="shouldShowNoProducts">
+          <!-- Секция с подкатегории - показва се дори когато няма продукти ако сме на първа страница без филтри -->
+          <SubcategoriesSection
+            v-if="matchingCategoryRef?.children?.nodes?.length && currentPageNumber === 1 && !route.query.filter"
+            :category="matchingCategoryRef" />
+
+          <!-- Съобщение за липса на продукти -->
+          <NoProductsFound>
+            <div class="text-center">
+              <h2 class="text-xl font-bold mb-4">Не са намерени продукти в тази категория</h2>
+              <div class="mt-4 text-sm text-gray-600">
+                <p>Опитайте да промените филтрите или изберете друга категория.</p>
+                <div v-if="matchingCategoryRef?.children?.nodes?.length && !route.query.filter" class="mt-2">
+                  <p>Или разгледайте подкатегориите по-горе за по-специализирани продукти.</p>
+                </div>
+              </div>
             </div>
-          </div>
-        </NoProductsFound>
+          </NoProductsFound>
+        </div>
       </main>
     </div>
   </div>

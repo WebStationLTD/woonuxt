@@ -15,7 +15,7 @@ query getProductCategories($first: Int, $after: String, $slug: [String], $hideEm
       image {
         ...Image
       }
-      children {
+      children(first: 25) {
         nodes {
           slug
           name
