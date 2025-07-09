@@ -1,0 +1,8 @@
+query getTagImages($slugs: [String]) {
+  productTags(where: { slug: $slugs, hideEmpty: false }) {
+    nodes {
+      slug
+      name
+    }
+  }
+}

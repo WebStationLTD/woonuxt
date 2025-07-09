@@ -1,0 +1,17 @@
+query getProductTags($first: Int, $after: String, $slug: [String], $hideEmpty: Boolean = true) {
+  productTags(first: $first, after: $after, where: { hideEmpty: $hideEmpty, slug: $slug }) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      slug
+      name
+      databaseId
+      id
+      description
+      count
+      uri
+    }
+  }
+}

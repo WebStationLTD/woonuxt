@@ -292,6 +292,7 @@ export function useProducts() {
       categorySlug?: string[];
     },
     cursor?: string, // За cursor-based navigation
+    productTag?: string[], // За етикети
   ): Promise<void> {
     let timeoutId: NodeJS.Timeout | null = null;
 
@@ -336,6 +337,11 @@ export function useProducts() {
 
       if (finalCategorySlug.length > 0) {
         variables.slug = finalCategorySlug;
+      }
+
+      // Добавяме етикет параметъра ако е предоставен
+      if (productTag && productTag.length > 0) {
+        variables.productTag = productTag;
       }
 
       // Добавяме филтърните параметри
@@ -449,10 +455,11 @@ export function useProducts() {
       search?: string;
       categorySlug?: string[];
     },
+    productTag?: string[], // За етикети
   ): Promise<void> {
     if (targetPage <= 1) {
       // За първа страница не е нужен cursor
-      return await loadProductsPageOptimized(1, categorySlug, orderBy, filters);
+      return await loadProductsPageOptimized(1, categorySlug, orderBy, filters, undefined, productTag);
     }
 
     try {
@@ -487,6 +494,11 @@ export function useProducts() {
 
       if (finalCategorySlug.length > 0) {
         variables.slug = finalCategorySlug;
+      }
+
+      // Добавяме етикет параметъра ако е предоставен
+      if (productTag && productTag.length > 0) {
+        variables.productTag = productTag;
       }
 
       if (filters) {
@@ -528,16 +540,16 @@ export function useProducts() {
         }
 
         // Стъпка 2: Зареждаме САМО продуктите за тази страница
-        await loadProductsPageOptimized(targetPage, categorySlug, orderBy, filters, targetCursor || undefined);
+        await loadProductsPageOptimized(targetPage, categorySlug, orderBy, filters, targetCursor || undefined, productTag);
       } else {
         console.log('❌ CURSOR: Не успяхме да получим cursor данни, използваме fallback');
         // Fallback към обикновено зареждане
-        await loadProductsPageOptimized(targetPage, categorySlug, orderBy, filters);
+        await loadProductsPageOptimized(targetPage, categorySlug, orderBy, filters, undefined, productTag);
       }
     } catch (error) {
       console.error('jumpToPageOptimized error:', error);
       // Fallback към обикновено зареждане
-      await loadProductsPageOptimized(targetPage, categorySlug, orderBy, filters);
+      await loadProductsPageOptimized(targetPage, categorySlug, orderBy, filters, undefined, productTag);
     }
   }
 

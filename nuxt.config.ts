@@ -39,6 +39,7 @@ export default defineNuxtConfig({
       GQL_HOST: "https://leaderfitness.admin-panels.com/graphql",
       FRONT_END_URL: "https://woonuxt-ten.vercel.app",
       PRODUCT_CATEGORY_PERMALINK: "/produkt-kategoriya/",
+      PRODUCT_TAG_PERMALINK: "/produkt-etiket/",
       PRODUCTS_PER_PAGE: 12,
     },
   },
@@ -61,7 +62,14 @@ export default defineNuxtConfig({
       "/oauth/**",
     ],
     cacheTime: 1000 * 60 * 15,
-    routes: ["/", "/magazin", "/categories", "/contact", "/wishlist"],
+    routes: [
+      "/",
+      "/magazin",
+      "/categories",
+      "/etiketi",
+      "/contact",
+      "/wishlist",
+    ],
   },
 
   "graphql-client": {
@@ -86,7 +94,7 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
-      routes: ["/", "/magazin", "/categories", "/contact", "/blog"],
+      routes: ["/", "/magazin", "/categories", "/etiketi", "/contact", "/blog"],
       concurrency: 10,
       interval: 1000,
       failOnError: false,
@@ -105,6 +113,7 @@ export default defineNuxtConfig({
         },
       },
       "/categories": { static: true },
+      "/etiketi": { static: true },
       "/contact": { static: true },
       "/blog": { static: true },
 
@@ -120,6 +129,14 @@ export default defineNuxtConfig({
       "/produkt-kategoriya/**": {
         isr: {
           expiration: 300, // 5 минути за категории
+        },
+        headers: {
+          "Cache-Control": "s-maxage=300",
+        },
+      },
+      "/produkt-etiket/**": {
+        isr: {
+          expiration: 300, // 5 минути за етикети
         },
         headers: {
           "Cache-Control": "s-maxage=300",

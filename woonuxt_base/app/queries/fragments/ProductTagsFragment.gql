@@ -1,0 +1,10 @@
+fragment ProductTags on Product {
+  productTags {
+    nodes {
+      databaseId
+      slug
+      name
+      count
+    }
+  }
+}

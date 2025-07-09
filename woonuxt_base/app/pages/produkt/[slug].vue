@@ -9,6 +9,7 @@ const { t } = useI18n();
 const slug = route.params.slug as string;
 const runtimeConfig = useRuntimeConfig();
 const productCategoryPermalink = runtimeConfig?.public?.PRODUCT_CATEGORY_PERMALINK || '/produkt-kategoriya/';
+const { generateTagUrl } = useTagUrls();
 
 const { data } = await useAsyncGql('getProduct', { slug });
 if (!data.value?.product) {
@@ -257,6 +258,26 @@ const showProductFeatures = computed(() => {
             <hr />
           </div>
 
+          <!-- Етикети на продукта -->
+          <div v-if="product.productTags && product.productTags.nodes && product.productTags.nodes.length > 0">
+            <div class="grid gap-2 my-8 text-sm">
+              <div class="flex items-center gap-2">
+                <span class="text-gray-400">Етикети:</span>
+                <div class="product-tags">
+                  <NuxtLink
+                    v-for="tag in product.productTags.nodes"
+                    :key="tag.databaseId"
+                    :to="generateTagUrl(tag)"
+                    class="hover:text-primary"
+                    :title="tag.name"
+                    >{{ tag.name }}<span class="comma">, </span>
+                  </NuxtLink>
+                </div>
+              </div>
+            </div>
+            <hr />
+          </div>
+
           <div class="flex flex-wrap gap-4">
             <WishlistButton :product />
             <ShareButton :product />
@@ -283,6 +304,10 @@ const showProductFeatures = computed(() => {
 
 <style scoped>
 .product-categories > a:last-child .comma {
+  display: none;
+}
+
+.product-tags > a:last-child .comma {
   display: none;
 }
 

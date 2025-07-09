@@ -1,6 +1,9 @@
+# import "./fragments/ProductTagsFragment.gql"
+
 query getProducts(
   $after: String
   $slug: [String]
+  $productTag: [String]
   $first: Int = 12
   $orderby: ProductsOrderByEnum = DATE
   $order: OrderEnum = DESC
@@ -14,6 +17,7 @@ query getProducts(
     after: $after
     where: {
       categoryIn: $slug
+      tagIn: $productTag
       visibility: VISIBLE
       minPrice: $minPrice
       maxPrice: $maxPrice
@@ -48,6 +52,7 @@ query getProducts(
 query getProductsOptimized(
   $after: String
   $slug: [String]
+  $productTag: [String]
   $first: Int = 12
   $orderby: ProductsOrderByEnum = DATE
   $order: OrderEnum = DESC
@@ -61,6 +66,7 @@ query getProductsOptimized(
     after: $after
     where: {
       categoryIn: $slug
+      tagIn: $productTag
       visibility: VISIBLE
       minPrice: $minPrice
       maxPrice: $maxPrice
@@ -88,6 +94,7 @@ query getProductsOptimized(
       # Минимални данни за бърз grid
       ...Terms
       ...ProductCategories
+      ...ProductTags
       ...SimpleProductGrid
       ...VariableProductGrid
       ...ExternalProduct
@@ -98,6 +105,7 @@ query getProductsOptimized(
 # ULTRA БЪРЗА заявка за курсори (без продуктни данни)
 query getProductCursors(
   $slug: [String]
+  $productTag: [String]
   $first: Int = 2000 # Достатъчно cursor-и за 150+ страници (2000 / 12 = 166 страници)
   $orderby: ProductsOrderByEnum = DATE
   $order: OrderEnum = DESC
@@ -110,6 +118,7 @@ query getProductCursors(
     first: $first
     where: {
       categoryIn: $slug
+      tagIn: $productTag
       visibility: VISIBLE
       minPrice: $minPrice
       maxPrice: $maxPrice

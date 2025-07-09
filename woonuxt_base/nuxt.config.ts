@@ -75,6 +75,10 @@ export default defineNuxtConfig({
       addPage('produkt-kategoriya-slug', '/produkt-kategoriya/:categorySlug', 'produkt-kategoriya/[slug].vue');
       addPage('produkt-kategoriya-page-pager', '/produkt-kategoriya/:categorySlug/page/:pageNumber', 'produkt-kategoriya/[slug].vue');
 
+      // Маршрути за етикети
+      addPage('produkt-etiket-slug', '/produkt-etiket/:tagSlug', 'produkt-etiket/[slug].vue');
+      addPage('produkt-etiket-page-pager', '/produkt-etiket/:tagSlug/page/:pageNumber', 'produkt-etiket/[slug].vue');
+
       addPage('order-received', '/checkout/order-received/:orderId', 'order-summary.vue');
       addPage('order-summary', '/order-summary/:orderId', 'order-summary.vue');
 

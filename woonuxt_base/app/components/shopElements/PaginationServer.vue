@@ -12,8 +12,21 @@ const route = useRoute();
 
 // Cached computed properties за оптимизация
 const basePath = computed(() => {
+  // Проверяваме за етикети първо
+  if ((route.name === 'produkt-etiket-slug' || route.name === 'produkt-etiket-page-pager') && (route.params.tagSlug || route.params.slug)) {
+    const tagSlug = route.params.tagSlug || route.params.slug;
+    return `/produkt-etiket/${tagSlug}`;
+  }
+  // Проверяваме за етикети с path prefix
+  else if (route.path.startsWith('/produkt-etiket/')) {
+    const pathSegments = route.path.split('/');
+    const tagSlug = pathSegments[2]; // /produkt-etiket/[slug]
+    if (tagSlug && tagSlug !== 'page') {
+      return `/produkt-etiket/${tagSlug}`;
+    }
+  }
   // Проверяваме за йерархични категории (parent/child)
-  if (
+  else if (
     (route.name === 'produkt-kategoriya-parent-child' || route.name === 'produkt-kategoriya-parent-child-pager') &&
     route.params.parent &&
     route.params.child
@@ -22,7 +35,7 @@ const basePath = computed(() => {
     return path;
   }
   // Проверяваме за родителски категории (slug)
-  else if (route.params.slug) {
+  else if (route.params.slug && route.path.startsWith('/produkt-kategoriya/')) {
     return `/produkt-kategoriya/${route.params.slug}`;
   }
   // Проверяваме за новите български пътища (плоски категории)
