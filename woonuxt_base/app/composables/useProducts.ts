@@ -29,7 +29,7 @@ export function useProducts() {
   const products = useState<Product[]>('products', () => []);
   const isLoading = useState<boolean>('products-loading', () => false);
   const currentPage = useState<number>('products-current-page', () => 1);
-  const productsPerPage = useState<number>('products-per-page', () => 12);
+  const productsPerPage = useState<number>('products-per-page', () => 24);
 
   /**
    * Sets the products state variable and the allProducts variable.
