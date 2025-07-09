@@ -1,50 +1,97 @@
-// Example: ?search=shirt
+// Example: ?filter=search[shirt]
 export function useSearching() {
   const route = useRoute();
   const router = useRouter();
+  const { setFilter, getFilter } = useFiltering();
 
   const isShowingSearch = useState<boolean>('isShowingSearch', () => false);
   const searchQuery = useState<string>('searchQuery', () => '');
   const isSearchActive = computed<boolean>(() => !!searchQuery.value);
 
-  searchQuery.value = route.query.search as string;
+  // Инициализираме searchQuery от filter параметъра
+  if (process.client) {
+    const searchFromFilter = getFilter('search');
+    searchQuery.value = searchFromFilter.length > 0 ? searchFromFilter[0] || '' : '';
 
-  function getSearchQuery(): string {
-    return route.query.search as string;
+    // Синхронизираме searchQuery при промяна на филтрите
+    watch(
+      () => getFilter('search'),
+      (newSearchFilter) => {
+        searchQuery.value = newSearchFilter.length > 0 ? newSearchFilter[0] || '' : '';
+      },
+      { immediate: true },
+    );
   }
 
-  function setSearchQuery(search: string): void {
-    const { updateProductList } = useProducts();
+  function getSearchQuery(): string {
+    const searchFromFilter = getFilter('search');
+    return searchFromFilter.length > 0 ? searchFromFilter[0] || '' : '';
+  }
+
+  async function setSearchQuery(search: string): Promise<void> {
+    if (!process.client) return;
+
     searchQuery.value = search;
-    router.push({ query: { ...route.query, search: search || undefined } });
-    setTimeout(() => {
-      updateProductList();
-    }, 50);
+
+    // ПОПРАВКА: Прави едно навигационно извикване вместо две за да избегнем race condition
+    const currentQuery = { ...route.query };
+
+    if (search && search.trim()) {
+      // Построяваме filter string мануално
+      const trimmedSearch = search.trim();
+      let filterQuery = (route.query.filter as string) || '';
+
+      // Премахваме старо search от filter ако има
+      filterQuery = filterQuery
+        .replace(/search\[[^\]]*\],?/g, '')
+        .replace(/^,|,$/g, '')
+        .replace(/,,+/g, ',');
+
+      // Добавяме новото search
+      const newSearchFilter = `search[${trimmedSearch}]`;
+      filterQuery = filterQuery ? `${filterQuery},${newSearchFilter}` : newSearchFilter;
+
+      currentQuery.filter = filterQuery;
+    } else {
+      // Премахваме search от filter
+      let filterQuery = (route.query.filter as string) || '';
+      filterQuery = filterQuery
+        .replace(/search\[[^\]]*\],?/g, '')
+        .replace(/^,|,$/g, '')
+        .replace(/,,+/g, ',');
+
+      if (filterQuery) {
+        currentQuery.filter = filterQuery;
+      } else {
+        delete currentQuery.filter;
+      }
+    }
+
+    // Правим единичен redirect към magazin с правилните филтри
+    const targetPath = '/magazin';
+
+    // КРИТИЧНО: Премахваме page параметри ако са от pagination за да избегнем конфликт
+    delete currentQuery.page;
+
+    await router.push({
+      path: targetPath,
+      query: currentQuery,
+    });
   }
 
   function clearSearchQuery(): void {
-    setSearchQuery('');
+    if (process.client) {
+      setFilter('search', []);
+    }
   }
 
   const toggleSearch = (): void => {
     isShowingSearch.value = !isShowingSearch.value;
   };
 
+  // Legacy функция - вече не се използва, но я оставяме за съвместимост
   function searchProducts(products: Product[]): Product[] {
-    const name = route.name ?? 'products';
     const search = getSearchQuery();
-
-    /**
-     * If we are on a category page, we need to add the category slug to the
-     * route, otherwise every search will redirect to the products page.
-     */
-    if (route.name === 'produkt-kategoriya-slug') {
-      const categorySlug = route.params.categorySlug as string;
-      router.push({ name, params: { categorySlug }, query: { ...route.query, search } });
-    } else {
-      router.push({ name: 'products', query: { ...route.query, search } });
-    }
-
     return search
       ? products.filter((product: Product) => {
           const name = product.name?.toLowerCase();

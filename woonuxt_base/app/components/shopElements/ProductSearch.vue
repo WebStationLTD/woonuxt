@@ -1,5 +1,8 @@
 <script setup>
 const { getSearchQuery, setSearchQuery, clearSearchQuery } = useSearching();
+const { getFilter } = useFiltering();
+
+// Използваме реактивен computed за search query
 const searchQuery = ref(getSearchQuery());
 
 const reset = () => {
@@ -7,8 +10,23 @@ const reset = () => {
   searchQuery.value = '';
 };
 
-watch(getSearchQuery, (value) => {
-  if (!value) reset();
+// Следим промените в search филтъра и синхронизираме с local state
+watch(
+  () => getFilter('search'),
+  (newSearchFilter) => {
+    const newValue = newSearchFilter.length > 0 ? newSearchFilter[0] : '';
+    if (searchQuery.value !== newValue) {
+      searchQuery.value = newValue;
+    }
+  },
+  { immediate: true },
+);
+
+// Следим и когато searchQuery е изчистен директно
+watch(searchQuery, (newValue) => {
+  if (!newValue && getFilter('search').length > 0) {
+    clearSearchQuery();
+  }
 });
 </script>
 
