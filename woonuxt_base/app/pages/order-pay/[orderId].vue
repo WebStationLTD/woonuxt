@@ -19,18 +19,10 @@ onMounted(async () => {
   }
 
   try {
-    console.log('Order-pay параметри:', {
-      orderId: orderId.value,
-      orderKey: orderKey.value,
-      paymentMethod: paymentMethod.value,
-    });
-
     // Директно пренасочваме към WordPress order-pay
     // WordPress ще обработи плащането автоматично
     await processBoricaPayment();
   } catch (error: any) {
-    console.error('Грешка при обработка на order-pay:', error);
-
     errorMessage.value = error?.message || 'Възникна грешка при обработка на поръчката';
     isLoading.value = false;
   }
@@ -48,19 +40,9 @@ async function processBoricaPayment() {
     wpOrderPayUrl.searchParams.set('pay_for_order', 'true');
     wpOrderPayUrl.searchParams.set('key', orderKey.value || '');
 
-    console.log('Пренасочване към WordPress order-pay:', wpOrderPayUrl.toString());
-
     // Пренасочваме към WordPress order-pay страницата
     window.location.href = wpOrderPayUrl.toString();
   } catch (error: any) {
-    console.error('Грешка при генериране на Borica URL:', error);
-    console.error('Borica error details:', {
-      message: error?.message,
-      statusCode: error?.statusCode,
-      orderId: orderId.value,
-      orderKey: orderKey.value,
-    });
-
     // Fallback - пренасочваме към checkout
     await router.push(`/checkout?payment_error=borica_generation&order=${orderId.value}`);
   }

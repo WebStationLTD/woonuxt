@@ -10,7 +10,16 @@ const { storeSettings } = useAppConfig();
 const { hideCategories } = defineProps({ hideCategories: { type: Boolean, default: false } });
 
 const globalProductAttributes = (runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES as WooNuxtFilter[]) || [];
-const taxonomies = globalProductAttributes.map((attr) => attr?.slug?.toUpperCase().replace('_', '')) as TaxonomyEnum[];
+const taxonomies = globalProductAttributes.map((attr) => {
+  // ПОПРАВКА: Не премахваме pa_ префикса, само конвертираме в UPPERCASE и заменяме _
+  if (attr?.slug?.startsWith('pa_')) {
+    // За pa_ атрибути: pa_размер -> PAРАЗМЕР
+    return attr.slug.toUpperCase().replace(/_/g, '') as TaxonomyEnum;
+  } else {
+    // За останалите: размер -> РАЗМЕР
+    return attr?.slug?.toUpperCase() as TaxonomyEnum;
+  }
+}) as TaxonomyEnum[];
 
 // Function to close mobile filters
 const closeMobileFilters = () => {
@@ -54,8 +63,40 @@ if (terms.filter((term) => term.taxonomyName === 'product_cat').length === 0) {
 // Filter out the product category terms and the global product attributes with their terms
 const productCategoryTerms = terms?.filter((term) => term.taxonomyName === 'product_cat') || [];
 
-// Filter out the color attribute and the rest of the global product attributes
-const attributesWithTerms = globalProductAttributes.map((attr) => ({ ...attr, terms: terms?.filter((term) => term.taxonomyName === attr.slug) || [] }));
+// ПОПРАВКА: Добавяме по-интелигентно мачване на термините
+const attributesWithTerms = globalProductAttributes.map((attr) => {
+  // Опитваме точно мачване първо
+  let attributeTerms = terms?.filter((term) => term.taxonomyName === attr.slug) || [];
+
+  // ПОПРАВКА: Ако няма точно мачване и имаме pa_ префикс, опитваме с конвертирания формат
+  if (attributeTerms.length === 0 && attr.slug?.startsWith('pa_')) {
+    // Конвертираме обратно от ENUM към реалното име
+    // pa_brands -> PABRANDS -> търсим в terms с taxonomyName = pa_brands
+    const enumFormat = attr.slug.toUpperCase().replace(/_/g, '');
+
+    // Намираме кои термини отговарят на този enum
+    attributeTerms =
+      terms?.filter((term) => {
+        if (!term.taxonomyName) return false;
+        const termEnumFormat = term.taxonomyName.toUpperCase().replace(/_/g, '');
+        return termEnumFormat === enumFormat;
+      }) || [];
+  }
+
+  // Ако и това не работи, опитваме без pa_ префикса
+  if (attributeTerms.length === 0 && attr.slug?.startsWith('pa_')) {
+    const slugWithoutPrefix = attr.slug.replace('pa_', '');
+    attributeTerms =
+      terms?.filter(
+        (term) =>
+          term.taxonomyName === slugWithoutPrefix ||
+          term.taxonomyName === `pa_${slugWithoutPrefix}` ||
+          term.taxonomyName?.toLowerCase() === attr.slug?.toLowerCase(),
+      ) || [];
+  }
+
+  return { ...attr, terms: attributeTerms };
+});
 </script>
 
 <template>

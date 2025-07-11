@@ -1,5 +1,32 @@
 # import "./fragments/ProductTagsFragment.gql"
 
+fragment ProductWithAttributes on ProductWithAttributes {
+  attributes {
+    nodes {
+      ...ProductAttribute
+    }
+  }
+}
+
+fragment ProductAttribute on ProductAttribute {
+  variation
+  name
+  id
+  options
+  label
+  scope
+  ... on GlobalProductAttribute {
+    terms {
+      nodes {
+        name
+        slug
+        taxonomyName
+        databaseId
+      }
+    }
+  }
+}
+
 query getProducts(
   $after: String
   $slug: [String]
@@ -11,6 +38,7 @@ query getProducts(
   $maxPrice: Float
   $onSale: Boolean
   $search: String
+  $attributeFilter: [WooNuxtTaxonomyFilterInput]
 ) {
   products(
     first: $first
@@ -23,6 +51,7 @@ query getProducts(
       maxPrice: $maxPrice
       onSale: $onSale
       search: $search
+      attributeFilter: $attributeFilter
       orderby: { field: $orderby, order: $order }
       status: "publish"
     }
@@ -41,6 +70,7 @@ query getProducts(
       reviewCount
       ...Terms
       ...ProductCategories
+      ...ProductWithAttributes
       ...SimpleProductGrid
       ...VariableProductGrid
       ...ExternalProduct
@@ -60,6 +90,7 @@ query getProductsOptimized(
   $maxPrice: Float
   $onSale: Boolean
   $search: String
+  $attributeFilter: [WooNuxtTaxonomyFilterInput]
 ) {
   products(
     first: $first
@@ -72,6 +103,7 @@ query getProductsOptimized(
       maxPrice: $maxPrice
       onSale: $onSale
       search: $search
+      attributeFilter: $attributeFilter
       orderby: { field: $orderby, order: $order }
       status: "publish"
     }
@@ -94,6 +126,7 @@ query getProductsOptimized(
       # Минимални данни за бърз grid
       ...Terms
       ...ProductCategories
+      ...ProductWithAttributes
       ...ProductTags
       ...SimpleProductGrid
       ...VariableProductGrid
@@ -113,6 +146,7 @@ query getProductCursors(
   $maxPrice: Float
   $onSale: Boolean
   $search: String
+  $attributeFilter: [WooNuxtTaxonomyFilterInput]
 ) {
   products(
     first: $first
@@ -124,6 +158,7 @@ query getProductCursors(
       maxPrice: $maxPrice
       onSale: $onSale
       search: $search
+      attributeFilter: $attributeFilter
       orderby: { field: $orderby, order: $order }
       status: "publish"
     }

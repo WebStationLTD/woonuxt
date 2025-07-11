@@ -141,25 +141,7 @@ export function useProducts() {
         //   });
         // }
 
-        // Прилагаме само клиентски филтри които не са вече приложени сървърно - само на клиента
-        if (process.client) {
-          const { filterProducts, getFilter } = useFiltering();
-          const runtimeConfig = useRuntimeConfig();
-
-          // Филтриране по attributes (pa_color, pa_size и т.н.)
-          const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES)
-            ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES.map((attribute: any) => attribute.slug)
-            : [];
-
-          globalProductAttributes.forEach((attribute: string) => {
-            const attributeValues = getFilter(attribute);
-            if (attributeValues.length > 0) {
-              productsToShow = productsToShow.filter((product: any) => {
-                return product.terms?.nodes?.find((node: any) => node.taxonomyName === attribute && attributeValues.includes(node.slug));
-              });
-            }
-          });
-        }
+        // ПРЕМАХНАТО КЛИЕНТСКО ФИЛТРИРАНЕ - сега използваме само server-side!
 
         // Прилагаме клиентско сортиране по discount ако е нужно (СЛЕД всички филтри) - само на клиента
         if (process.client && orderBy === 'discount') {
@@ -354,64 +336,100 @@ export function useProducts() {
         activeFilters = { ...filters };
       }
 
+      // ПРАВИЛНО SERVER-SIDE АТРИБУТНО ФИЛТРИРАНЕ с taxonomyFilter
+      if (process.client) {
+        const { getFilter } = useFiltering();
+        const runtimeConfig = useRuntimeConfig();
+
+        const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES)
+          ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES.map((attribute: any) => attribute.slug)
+          : [];
+
+        // Създаваме taxonomy филтри за всеки атрибут
+        const taxonomyFilters: any[] = [];
+
+        globalProductAttributes.forEach((attribute: string) => {
+          const attributeValues = getFilter(attribute);
+          if (attributeValues.length > 0) {
+            console.log(`🔥 SERVER-SIDE TAXONOMY FILTER ${attribute}:`, attributeValues);
+
+            // Добавяме taxonomy филтър за този атрибут
+            taxonomyFilters.push({
+              taxonomy: attribute,
+              terms: attributeValues,
+              operator: 'IN',
+            });
+          }
+        });
+
+        // Ако има атрибутни филтри, пращаме ги като attributeFilter
+        if (taxonomyFilters.length > 0) {
+          console.log('🔥 ПРАЩАМЕ КАТО attributeFilter:', taxonomyFilters);
+          variables.attributeFilter = taxonomyFilters;
+        }
+      }
+
       // Използваме оптимизираната заявка
       const { data } = await useAsyncGql('getProductsOptimized', variables);
       const result = data.value?.products;
 
       if (result && result.pageInfo) {
-        const productsToShow = result.nodes || [];
+        let productsToShow = result.nodes || [];
 
         // Обновяваме pageInfo с данните от сървъра
         pageInfo.hasNextPage = result.pageInfo.hasNextPage || false;
         pageInfo.endCursor = result.pageInfo.endCursor || '';
 
         // Клиентски филтри (ако са нужни)
-        if (process.client) {
-          const { getFilter } = useFiltering();
-          const runtimeConfig = useRuntimeConfig();
+        if (productsToShow.length > 0) {
+          // DEBUG: Колко продукта имат атрибути
+          const productsWithAttributes = productsToShow.filter((p) => (p as any).attributes?.nodes?.length > 0);
+          console.log(`🔍 АТРИБУТИ: ${productsWithAttributes.length}/${productsToShow.length} продукта имат атрибути`);
 
-          const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES)
-            ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES.map((attribute: any) => attribute.slug)
-            : [];
-
-          // Прилагаме клиентските филтри
-          let filteredProducts = productsToShow;
-          globalProductAttributes.forEach((attribute: string) => {
-            const attributeValues = getFilter(attribute);
-            if (attributeValues.length > 0) {
-              filteredProducts = filteredProducts.filter((product: any) => {
-                return product.terms?.nodes?.find((node: any) => node.taxonomyName === attribute && attributeValues.includes(node.slug));
-              });
-            }
-          });
-
-          // Клиентско сортиране по discount ако е нужно
-          if (orderBy === 'discount') {
-            const route = useRoute();
-            const sortOrder = route.query.order?.toString().toUpperCase() || 'DESC';
-
-            filteredProducts = filteredProducts.sort((a: any, b: any) => {
-              const aRegularPrice = a.rawRegularPrice
-                ? parseFloat(a.rawRegularPrice.split(',').reduce((x: string, y: string) => String(Math.max(Number(x), Number(y)))))
-                : 0;
-              const aSalePrice = a.rawSalePrice
-                ? parseFloat(a.rawSalePrice.split(',').reduce((x: string, y: string) => String(Math.max(Number(x), Number(y)))))
-                : aRegularPrice;
-              const bRegularPrice = b.rawRegularPrice
-                ? parseFloat(b.rawRegularPrice.split(',').reduce((x: string, y: string) => String(Math.max(Number(x), Number(y)))))
-                : 0;
-              const bSalePrice = b.rawSalePrice
-                ? parseFloat(b.rawSalePrice.split(',').reduce((x: string, y: string) => String(Math.max(Number(x), Number(y)))))
-                : bRegularPrice;
-
-              const aDiscount = a.onSale && aRegularPrice > 0 ? Math.round(((aRegularPrice - aSalePrice) / aRegularPrice) * 100) : 0;
-              const bDiscount = b.onSale && bRegularPrice > 0 ? Math.round(((bRegularPrice - bSalePrice) / bRegularPrice) * 100) : 0;
-
-              return sortOrder === 'ASC' ? aDiscount - bDiscount : bDiscount - aDiscount;
-            });
+          if (productsWithAttributes.length > 0) {
+            console.log(
+              '📝 Продукти с атрибути:',
+              productsWithAttributes.map((p) => p.name),
+            );
           }
 
-          setProducts(filteredProducts);
+          const productsWithoutAttributes = productsToShow.filter((p) => !(p as any).attributes?.nodes?.length);
+          if (productsWithoutAttributes.length > 0) {
+            console.log(
+              '❌ Продукти БЕЗ атрибути:',
+              productsWithoutAttributes.slice(0, 5).map((p) => p.name),
+            );
+          }
+        }
+
+        // WPGraphQL Filter Query plugin прави server-side филтриране - БЕЗ клиентски код!
+
+        // Клиентско сортиране по discount ако е нужно (САМО сортиране)
+        if (process.client && orderBy === 'discount') {
+          const route = useRoute();
+          const sortOrder = route.query.order?.toString().toUpperCase() || 'DESC';
+
+          const sortedProducts = productsToShow.sort((a: any, b: any) => {
+            const aRegularPrice = a.rawRegularPrice
+              ? parseFloat(a.rawRegularPrice.split(',').reduce((x: string, y: string) => String(Math.max(Number(x), Number(y)))))
+              : 0;
+            const aSalePrice = a.rawSalePrice
+              ? parseFloat(a.rawSalePrice.split(',').reduce((x: string, y: string) => String(Math.max(Number(x), Number(y)))))
+              : aRegularPrice;
+            const bRegularPrice = b.rawRegularPrice
+              ? parseFloat(b.rawRegularPrice.split(',').reduce((x: string, y: string) => String(Math.max(Number(x), Number(y)))))
+              : 0;
+            const bSalePrice = b.rawSalePrice
+              ? parseFloat(b.rawSalePrice.split(',').reduce((x: string, y: string) => String(Math.max(Number(x), Number(y)))))
+              : bRegularPrice;
+
+            const aDiscount = a.onSale && aRegularPrice > 0 ? Math.round(((aRegularPrice - aSalePrice) / aRegularPrice) * 100) : 0;
+            const bDiscount = b.onSale && bRegularPrice > 0 ? Math.round(((bRegularPrice - bSalePrice) / bRegularPrice) * 100) : 0;
+
+            return sortOrder === 'ASC' ? aDiscount - bDiscount : bDiscount - aDiscount;
+          });
+
+          setProducts(sortedProducts);
         } else {
           setProducts(productsToShow);
         }
@@ -506,6 +524,34 @@ export function useProducts() {
         if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
         if (filters.onSale !== undefined) variables.onSale = filters.onSale;
         if (filters.search) variables.search = filters.search;
+      }
+
+      // Добавяме атрибутни филтри и към cursor заявката за консистентност
+      if (process.client) {
+        const { getFilter } = useFiltering();
+        const runtimeConfig = useRuntimeConfig();
+
+        const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES)
+          ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES.map((attribute: any) => attribute.slug)
+          : [];
+
+        const taxonomyFilters: any[] = [];
+
+        globalProductAttributes.forEach((attribute: string) => {
+          const attributeValues = getFilter(attribute);
+          if (attributeValues.length > 0) {
+            taxonomyFilters.push({
+              taxonomy: attribute,
+              terms: attributeValues,
+              operator: 'IN',
+            });
+          }
+        });
+
+        // Ако има атрибутни филтри, пращаме ги като attributeFilter
+        if (taxonomyFilters.length > 0) {
+          variables.attributeFilter = taxonomyFilters;
+        }
       }
 
       // Получаваме cursor-ите (много бърза заявка!)

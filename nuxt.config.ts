@@ -41,6 +41,22 @@ export default defineNuxtConfig({
       PRODUCT_CATEGORY_PERMALINK: "/produkt-kategoriya/",
       PRODUCT_TAG_PERMALINK: "/produkt-etiket/",
       PRODUCTS_PER_PAGE: 12,
+      // ВРЕМЕННА конфигурация за тестване на атрибутите
+      // TODO: Премахнете това след като конфигурирате woonuxt-settings плъгина в WordPress
+      GLOBAL_PRODUCT_ATTRIBUTES: [
+        {
+          slug: "pa_brands", // Този работи!
+          label: "Марка",
+          showCount: true,
+          openByDefault: false,
+        },
+        {
+          slug: "pa_razmer", // Размер атрибут
+          label: "Размер",
+          showCount: true,
+          openByDefault: false,
+        },
+      ],
     },
   },
 

@@ -35,45 +35,34 @@ const CACHE_VERSION = 'v3'; // Увеличена версия за нов ке�
 
 // Функция за четене от кеша с версия проверка
 const getCachedTotalCount = (): number | null => {
-  console.log('💾 getCachedTotalCount извикана');
   if (!process.client) {
-    console.log('⚠️ Не сме на клиента, връщаме null');
     return null;
   }
 
   try {
     const cached = sessionStorage.getItem(CACHE_KEY);
-    console.log('📦 Кеш от sessionStorage:', cached);
     if (!cached) {
-      console.log('❌ Няма кеширани данни');
       return null;
     }
 
     const { count, timestamp, version } = JSON.parse(cached);
     const now = Date.now();
-    const age = now - timestamp;
-
-    console.log('⏰ Кеш възраст:', { age, maxAge: CACHE_DURATION, valid: age < CACHE_DURATION, version });
 
     // Проверяваме версията на кеша
     if (version !== CACHE_VERSION) {
-      console.log('🔄 Стара версия на кеша, изтриваме...');
       sessionStorage.removeItem(CACHE_KEY);
       return null;
     }
 
     // Проверяваме дали кешът е валиден
     if (now - timestamp < CACHE_DURATION) {
-      console.log('✅ Валиден кеш, връщаме:', count);
       return count;
     }
 
     // Изтриваме изтекъл кеш
-    console.log('🗑️ Изтичал кеш, изтриваме...');
     sessionStorage.removeItem(CACHE_KEY);
     return null;
   } catch (error) {
-    console.log('💥 Грешка при четене на кеша:', error);
     return null;
   }
 };
@@ -255,7 +244,7 @@ let previousQuery = ref({
   filter: null as string | null,
 });
 
-// Функция за локално парсане на филтри от query string
+// Функция за парсене на филтри от URL
 const parseFiltersFromQuery = (filterQuery: string) => {
   const filters: any = {};
 
@@ -266,8 +255,7 @@ const parseFiltersFromQuery = (filterQuery: string) => {
     const match = filterQuery.match(new RegExp(`${filterName}\\[([^\\]]*)\\]`));
     if (!match || !match[1]) return [];
 
-    const values = match[1].split(',').filter((val) => val && val.trim());
-    return values;
+    return match[1].split(',').filter((val) => val && val.trim());
   };
 
   // Ценови филтър
@@ -298,6 +286,19 @@ const parseFiltersFromQuery = (filterQuery: string) => {
   if (categoryFilter.length > 0) {
     filters.categorySlug = categoryFilter.filter((cat) => cat && cat.trim());
   }
+
+  // НОВО: Добавяме поддръжка за продуктови атрибути
+  const runtimeConfig = useRuntimeConfig();
+  const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES) ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES : [];
+
+  globalProductAttributes.forEach((attr: any) => {
+    if (attr.slug) {
+      const attributeValues = getFilterValues(attr.slug);
+      if (attributeValues.length > 0) {
+        filters[attr.slug] = attributeValues;
+      }
+    }
+  });
 
   return filters;
 };
@@ -378,19 +379,11 @@ const loadProductsFromRoute = async () => {
       }
 
       // ПОПРАВЕНО: Използваме оптимизираните функции с fix-натия jumpToPageOptimized
-      const startTime = performance.now();
       if (pageNumber === 1) {
-        console.log(`📄 ЗАРЕЖДАМЕ СТРАНИЦА 1 с филтри - използваме loadProductsPageOptimized`);
         await loadProductsPageOptimized(pageNumber, undefined, graphqlOrderBy, filters);
       } else {
-        console.log(`🚀 ПОПРАВЕНО ЗАРЕЖДАНЕ: Скачаме до страница ${pageNumber} с jumpToPageOptimized (с филтри)`);
-        console.log(`⚡ ПРЕДИ: Старата система би заредила ${pageNumber * 12 + 1} продукта за страница ${pageNumber}`);
-        console.log(`⚡ СЕГА: Зареждаме само cursor-и + 12 продукта - МНОГО по-бързо!`);
         await jumpToPageOptimized(pageNumber, undefined, graphqlOrderBy, filters);
       }
-      const endTime = performance.now();
-      console.log(`⏱️ ВРЕМЕ ЗА ЗАРЕЖДАНЕ: ${Math.round(endTime - startTime)}ms`);
-      console.log(`🎯 ${pageNumber === 152 ? 'ПОСЛЕДНА СТРАНИЦА ЗАРЕДЕНА!' : `Страница ${pageNumber} заредена`}`);
 
       // КРИТИЧНО: Проверяваме дали получихме резултати при филтриране
       if (process.client && hasFilters && pageNumber > 1 && (!products.value || products.value.length === 0)) {
@@ -401,20 +394,11 @@ const loadProductsFromRoute = async () => {
       await loadCategoryCount(filters);
     } else {
       // Ако няма филтри, зареждаме конкретната страница
-      // ПОПРАВЕНО: Използваме оптимизираните функции с fix-натия jumpToPageOptimized
-      const startTimeNoFilters = performance.now();
       if (pageNumber === 1) {
-        console.log(`📄 ЗАРЕЖДАМЕ СТРАНИЦА 1 БЕЗ филтри - използваме loadProductsPageOptimized`);
         await loadProductsPageOptimized(pageNumber);
       } else {
-        console.log(`🚀 ПОПРАВЕНО ЗАРЕЖДАНЕ: Скачаме до страница ${pageNumber} БЕЗ филтри с jumpToPageOptimized`);
-        console.log(`⚡ ПРЕДИ: Старата система би заредила ${pageNumber * 12 + 1} продукта за страница ${pageNumber}`);
-        console.log(`⚡ СЕГА: Зареждаме само cursor-и + 12 продукта - МНОГО по-бързо!`);
         await jumpToPageOptimized(pageNumber);
       }
-      const endTimeNoFilters = performance.now();
-      console.log(`⏱️ ВРЕМЕ ЗА ЗАРЕЖДАНЕ БЕЗ ФИЛТРИ: ${Math.round(endTimeNoFilters - startTimeNoFilters)}ms`);
-      console.log(`🎯 ${pageNumber === 152 ? 'ПОСЛЕДНА СТРАНИЦА ЗАРЕДЕНА БЕЗ ФИЛТРИ!' : `Страница ${pageNumber} заредена БЕЗ филтри`}`);
 
       // КРИТИЧНО: Проверяваме дали получихме резултати БЕЗ филтри
       if (process.client && pageNumber > 1 && (!products.value || products.value.length === 0)) {
@@ -460,8 +444,6 @@ const loadProductsFromRoute = async () => {
 
 // Зареждаме продуктите веднага при SSR и след hydration
 onMounted(async () => {
-  console.log('🚀 onMounted СТАРТИРА! Magazin страница се зарежда...');
-
   // Инициализираме предишните query стойности
   previousQuery.value = {
     orderby: (route.query.orderby as string | null) || null,
@@ -469,30 +451,22 @@ onMounted(async () => {
     filter: (route.query.filter as string | null) || null,
   };
 
-  console.log('📋 Текущи query параметри:', previousQuery.value);
-
   // ТЕХНИКА 5: Proactive cache warming за по-бърза последна страница - само на клиента
   if (process.client) {
     warmUpCache();
   }
 
   // КРИТИЧНО: Зареждаме count веднага за правилна последна страница - точно като в категориите
-  console.log('🔄 onMounted - проверяваме за count...', { hasFilter: !!route.query.filter });
   if (!route.query.filter) {
-    console.log('📍 Няма филтри, зареждаме count...');
     if (process.client) {
       const cachedCount = getCachedTotalCount();
       if (cachedCount !== null) {
-        console.log('💾 Намерен кеширан count:', cachedCount);
         totalProductsCount.value = cachedCount;
       } else {
-        console.log('📞 Няма кеш, извикваме ensureTotalProductsCount...');
         // Ако няма кеш, зареждаме count веднага за правилна последна страница
         await ensureTotalProductsCount();
       }
     }
-  } else {
-    console.log('🔍 Има филтри, прескачаме count зареждането');
   }
 
   // Изчакваме един tick за да се установи правилно route състоянието
@@ -540,21 +514,6 @@ watch(
       const sortingOrFilteringChanged =
         newOrderBy !== previousQuery.value.orderby || newOrder !== previousQuery.value.order || newFilter !== previousQuery.value.filter;
 
-      // DEBUG: Активирай с window.debugPagination = true
-      if ((window as any).debugPagination) {
-        console.log('🔍 MAGAZIN Query change detected:', {
-          sortingOrFilteringChanged,
-          previousOrderBy: previousQuery.value.orderby,
-          newOrderBy,
-          previousOrder: previousQuery.value.order,
-          newOrder,
-          previousFilter: previousQuery.value.filter,
-          newFilter,
-          routeParams: route.params,
-          currentPath: route.path,
-        });
-      }
-
       // ПОПРАВКА: Използваме същата логика като в категориите
       // Ако са се променили sorting/filtering параметрите И сме на страница > 1
       // ВАЖНО: За magazin използваме route.params.pageNumber, не newQuery.page!
@@ -562,12 +521,6 @@ watch(
         const currentPageNumber = parseInt(String(route.params.pageNumber) || '1');
 
         if (currentPageNumber > 1) {
-          if ((window as any).debugPagination) {
-            console.log('🔄 MAGAZIN: Sorting/filtering changed on page > 1, redirecting to page 1');
-            console.log('🔄 Current page:', currentPageNumber);
-            console.log('🔄 Route params:', route.params);
-          }
-
           // Изграждаме URL за страница 1 с новите sorting/filtering параметри
           const queryParams = new URLSearchParams();
           if (newOrderBy) queryParams.set('orderby', newOrderBy);
@@ -576,10 +529,6 @@ watch(
 
           const queryString = queryParams.toString();
           const newUrl = `/magazin${queryString ? `?${queryString}` : ''}`;
-
-          if ((window as any).debugPagination) {
-            console.log('🔄 MAGAZIN redirect URL:', newUrl);
-          }
 
           // Обновяваме предишните стойности преди redirect
           previousQuery.value = {
@@ -678,7 +627,7 @@ const categoryCount = computed(() => {
   if (hasFilters) {
     const filters = parseFiltersFromQuery(route.query.filter as string);
 
-    // ПОПРАВКА: Проверяваме за ВСИЧКИ типове филтри, не само категории
+    // ПОПРАВКА: Проверяваме за ВСИЧКИ типове филтри, включително атрибутни
     const hasAnyFilters =
       (filters.categorySlug && filters.categorySlug.length > 0) ||
       filters.onSale ||
@@ -686,35 +635,36 @@ const categoryCount = computed(() => {
       filters.minPrice !== undefined ||
       filters.maxPrice !== undefined;
 
-    if (hasAnyFilters) {
-      // При всякакви филтри използваме филтрирания count - точно като в категориите
-      console.log(`🔍 MAGAZIN: Филтри активни, използваме filteredCategoryCount = ${filteredCategoryCount.value}`);
+    // КРИТИЧНО: Проверяваме за атрибутни филтри като pa_brands, pa_color и т.н.
+    const runtimeConfig = useRuntimeConfig();
+    const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES) ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES : [];
+
+    const hasAttributeFilters = globalProductAttributes.some((attr: any) => {
+      return attr.slug && filters[attr.slug] && filters[attr.slug].length > 0;
+    });
+
+    if (hasAnyFilters || hasAttributeFilters) {
+      // При всякакви филтри (включително атрибутни) използваме филтрирания count
       return filteredCategoryCount.value;
     }
   }
 
   // КРИТИЧНО: Без филтри ВИНАГИ връщаме totalProductsCount - ТОЧНО като matchingCategory?.count в категориите
   // Това е ключът за правилната последна страница!
-  console.log(`📊 MAGAZIN: Без филтри, използваме totalProductsCount = ${totalProductsCount.value}`);
   return totalProductsCount.value;
 });
 
 // МГНОВЕН COUNT (като obuvki.bg подход) - БЕЗ БРОЙЕНЕ!
 const loadTotalProductsCount = async (forceLoad = false) => {
-  console.log('🚀 loadTotalProductsCount СТАРТИРА!', { forceLoad });
-
   // КРИТИЧНО: Само на клиента
   if (!process.client) {
-    console.log('⚠️ На сървъра, спираме изпълнението');
     return;
   }
 
   // Първо проверяваме кеша
   if (!forceLoad) {
     const cachedCount = getCachedTotalCount();
-    console.log('💾 Проверяваме кеша:', cachedCount);
     if (cachedCount !== null) {
-      console.log('✅ Използваме кеширан count:', cachedCount);
       totalProductsCount.value = cachedCount;
       return;
     }
@@ -722,59 +672,33 @@ const loadTotalProductsCount = async (forceLoad = false) => {
 
   try {
     // 🚀 ДИРЕКТЕН WORDPRESS COUNT - МГНОВЕНО!
-    console.log('🚀 ИЗПОЛЗВАМЕ ДИРЕКТЕН WORDPRESS COUNT: getTotalProductsCountInstant');
-    console.log('📡 ЗАЯВКА: totalProductsCount (WordPress built-in wp_count_posts)');
-
     const { data: instantData } = await useAsyncGql('getTotalProductsCountInstant');
     const directCount = instantData.value?.totalProductsCount;
-
-    console.log('📦 ДИРЕКТЕН WordPress отговор:', { totalProductsCount: directCount });
 
     if (directCount && directCount > 0) {
       totalProductsCount.value = directCount;
       setCachedTotalCount(directCount);
-
-      console.log(`✅ МГНОВЕН WORDPRESS COUNT: ${directCount} продукта → ${Math.ceil(directCount / productsPerPage.value)} страници`);
-      console.log(`🔢 COUNT DEBUG: WordPress връща ${directCount} продукта`);
-      console.log(`📄 СТРАНИЦИ DEBUG: ${directCount} ÷ 12 = ${directCount / 12} → Math.ceil = ${Math.ceil(directCount / 12)}`);
-      console.log(`🚀 ВРЕМЕ: ~5-50ms (WordPress админ данни) вместо 2-5 секунди!`);
-      console.log(`💾 КЕШИРАН за следващите 30 минути`);
       return;
-    } else {
-      console.log('❌ ДИРЕКТЕН COUNT неуспешен или нула, преминаваме към fallback');
     }
   } catch (error) {
-    console.error('💥 ДИРЕКТЕН WordPress COUNT грешка:', error);
-    console.log('🔄 Преминаваме към fallback заявка...');
+    // Преминаваме към fallback
   }
 
   // FALLBACK: Ако директният WordPress count не работи
   try {
-    console.log('🔄 FALLBACK: Използваме getProductsCountFast заявка');
-    console.log('📡 ЗАЯВКА: getProductsCountFast, first: 10000');
-
     const { data: fallbackData } = await useAsyncGql('getProductsCountFast', {
       first: 10000,
     });
 
     const result = fallbackData.value?.products;
-    console.log('📦 FALLBACK отговор:', {
-      edgesCount: result?.edges?.length || 0,
-      hasNextPage: result?.pageInfo?.hasNextPage,
-      totalFound: result?.edges?.length || 0,
-    });
 
     if (result) {
       const edges = result.edges || [];
       let totalCount = edges.length;
 
-      console.log(`📊 FALLBACK успешен: ${totalCount} продукта от getProductsCountFast`);
-
       // РЯДКО: Само ако има повече от 10000 продукта
       if (result.pageInfo?.hasNextPage && result.pageInfo?.endCursor) {
-        console.log('🔄 Има повече от 10000 продукта, зареждаме останалите...');
         totalCount = await loadRemainingCount(result.pageInfo.endCursor, totalCount);
-        console.log(`📊 ФИНАЛЕН COUNT след loadRemainingCount: ${totalCount}`);
       }
 
       totalProductsCount.value = totalCount > 0 ? totalCount : null;
@@ -782,18 +706,12 @@ const loadTotalProductsCount = async (forceLoad = false) => {
       // Записваме в кеша
       if (totalCount > 0) {
         setCachedTotalCount(totalCount);
-        console.log(`💾 КЕШИРАН COUNT: ${totalCount} продукта → ${Math.ceil(totalCount / productsPerPage.value)} страници`);
-        console.log(`🚀 PERFORMANCE: getProductsCountFast заявка вместо множество batch заявки!`);
       }
     } else {
-      console.log('❌ FALLBACK неуспешен: няма данни от getProductsCountFast');
       totalProductsCount.value = null;
     }
   } catch (error) {
-    console.error('Error loading total products count:', error);
-
     // ПОСЛЕДНА ВЪЗМОЖНОСТ: Връщаме се към batching
-    console.log('🔄 ПОСЛЕДНА ВЪЗМОЖНОСТ: Използваме loadTotalProductsCountFallback');
     await loadTotalProductsCountFallback(forceLoad);
   }
 };
@@ -802,7 +720,6 @@ const loadTotalProductsCount = async (forceLoad = false) => {
 const loadRemainingCount = async (startCursor: string, currentCount: number) => {
   // КРИТИЧНО: Само на клиента
   if (!process.client) {
-    console.log('⚠️ loadRemainingCount на сървъра, спираме изпълнението');
     return currentCount;
   }
 
@@ -852,11 +769,8 @@ const loadRemainingCount = async (startCursor: string, currentCount: number) => 
 
 // FALLBACK функция с оригинална логика
 const loadTotalProductsCountFallback = async (forceLoad = false) => {
-  console.log('🚨 loadTotalProductsCountFallback СТАРТИРА - използваме batching подход');
-
   // КРИТИЧНО: Само на клиента
   if (!process.client) {
-    console.log('⚠️ Fallback на сървъра, спираме изпълнението');
     return;
   }
 
@@ -907,30 +821,21 @@ const loadTotalProductsCountFallback = async (forceLoad = false) => {
     // Записваме в кеша
     if (totalCount > 0) {
       setCachedTotalCount(totalCount);
-      console.log(`💾 FALLBACK КЕШИРАН: ${totalCount} продукта от batching метод`);
-      console.log(`⚡ FALLBACK PERFORMANCE: ${batchCount} batch заявки вместо една голяма`);
     }
   } catch (error) {
-    console.error('Fallback count loading failed:', error);
     totalProductsCount.value = null;
   }
 };
 
 // Lazy loading функция - зарежда count само при нужда
 const ensureTotalProductsCount = async () => {
-  console.log('🔍 ensureTotalProductsCount ИЗВИКАНА!', { currentCount: totalProductsCount.value });
-
   // КРИТИЧНО: Само на клиента
   if (!process.client) {
-    console.log('⚠️ На сървъра, спираме изпълнението');
     return;
   }
 
   if (totalProductsCount.value === null) {
-    console.log('📞 Извикваме loadTotalProductsCount...');
     await loadTotalProductsCount();
-  } else {
-    console.log('✅ Вече имаме count:', totalProductsCount.value);
   }
 };
 
@@ -938,11 +843,10 @@ const ensureTotalProductsCount = async () => {
 const loadCategoryCount = async (filters: any) => {
   // КРИТИЧНО: Само на клиента
   if (!process.client) {
-    console.log('⚠️ loadCategoryCount на сървъра, спираме изпълнението');
     return;
   }
 
-  // ПОПРАВКА: Проверяваме за всички типове филтри, не само категории
+  // ПОПРАВКА: Проверяваме за всички типове филтри, включително атрибутни
   const hasAnyFilters =
     (filters.categorySlug && filters.categorySlug.length > 0) ||
     filters.onSale ||
@@ -950,30 +854,92 @@ const loadCategoryCount = async (filters: any) => {
     filters.minPrice !== undefined ||
     filters.maxPrice !== undefined;
 
-  if (hasAnyFilters) {
+  // КРИТИЧНО: Проверяваме за атрибутни филтри като pa_brands, pa_color и т.н.
+  const runtimeConfig = useRuntimeConfig();
+  const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES) ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES : [];
+
+  const hasAttributeFilters = globalProductAttributes.some((attr: any) => {
+    return attr.slug && filters[attr.slug] && filters[attr.slug].length > 0;
+  });
+
+  if (hasAnyFilters || hasAttributeFilters) {
     try {
-      // Създаваме variables с ВСИЧКИ филтри за точен count
-      const variables: any = {
-        first: 1000, // Зареждаме достатъчно за да получим точния count
-      };
+      // ПОПРАВКА: Използваме ULTRA ГОЛЯМА first стойност за да получим всички резултати
+      let totalFilteredCount = 0;
+      let hasNextPage = true;
+      let cursor = null;
+      const batchSize = 2000; // Голям batch за по-малко заявки
+      let batchCount = 0;
+      const maxBatches = 10; // Максимум 10 batches = 20,000 продукта
 
-      // Добавяме всички филтри ако са налични
-      if (filters.categorySlug && filters.categorySlug.length > 0) {
-        variables.slug = filters.categorySlug;
+      while (hasNextPage && batchCount < maxBatches) {
+        const variables: any = {
+          first: batchSize,
+        };
+
+        if (cursor) {
+          variables.after = cursor;
+        }
+
+        // Добавяме всички филтри ако са налични
+        if (filters.categorySlug && filters.categorySlug.length > 0) {
+          variables.slug = filters.categorySlug;
+        }
+        if (filters.minPrice !== undefined) variables.minPrice = filters.minPrice;
+        if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
+        if (filters.onSale !== undefined) variables.onSale = filters.onSale;
+        if (filters.search) variables.search = filters.search;
+
+        // КРИТИЧНО: Добавяме attributeFilter за атрибутни филтри
+        if (process.client) {
+          const { getFilter } = useFiltering();
+          const runtimeConfig = useRuntimeConfig();
+
+          const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES)
+            ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES.map((attribute: any) => attribute.slug)
+            : [];
+
+          const attributeFilters: any[] = [];
+          globalProductAttributes.forEach((attribute: string) => {
+            const attributeValues = getFilter(attribute);
+            if (attributeValues.length > 0) {
+              attributeFilters.push({
+                taxonomy: attribute,
+                terms: attributeValues,
+                operator: 'IN',
+              });
+            }
+          });
+
+          if (attributeFilters.length > 0) {
+            variables.attributeFilter = attributeFilters;
+          }
+        }
+
+        // Използваме основната getProducts заявка която поддържа всички филтри
+        const { data } = await useAsyncGql('getProducts', variables);
+
+        const result = data.value?.products;
+        if (result) {
+          const batchProducts = result.nodes || [];
+          totalFilteredCount += batchProducts.length;
+
+          hasNextPage = result.pageInfo?.hasNextPage || false;
+          cursor = result.pageInfo?.endCursor || null;
+
+          // Ако batch-ът не е пълен, значи сме достигнали края
+          if (batchProducts.length < batchSize) {
+            hasNextPage = false;
+          }
+        } else {
+          hasNextPage = false;
+        }
+
+        batchCount++;
       }
-      if (filters.minPrice !== undefined) variables.minPrice = filters.minPrice;
-      if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
-      if (filters.onSale !== undefined) variables.onSale = filters.onSale;
-      if (filters.search) variables.search = filters.search;
 
-      // Използваме основната getProducts заявка която поддържа всички филтри
-      const { data } = await useAsyncGql('getProducts', variables);
-
-      const result = data.value?.products;
-      const allProducts = result?.nodes || [];
-      filteredCategoryCount.value = allProducts.length > 0 ? allProducts.length : null;
+      filteredCategoryCount.value = totalFilteredCount > 0 ? totalFilteredCount : null;
     } catch (error) {
-      console.error('Error loading filtered count:', error);
       filteredCategoryCount.value = null;
     }
   } else {
