@@ -205,7 +205,7 @@
 
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           <!-- Facebook -->
-          <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300">
+          <div class="bg-white rounded-xl shadow-lg p-4 text-center hover:shadow-xl transition-all duration-300">
             <div class="w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-6">
               <Icon name="ion:logo-facebook" size="40" class="text-white" />
             </div>
@@ -222,7 +222,7 @@
           </div>
 
           <!-- Instagram -->
-          <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300">
+          <div class="bg-white rounded-xl shadow-lg p-4 text-center hover:shadow-xl transition-all duration-300">
             <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
               <Icon name="ion:logo-instagram" size="40" class="text-white" />
             </div>
@@ -239,7 +239,7 @@
           </div>
 
           <!-- TikTok -->
-          <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300">
+          <div class="bg-white rounded-xl shadow-lg p-4 text-center hover:shadow-xl transition-all duration-300">
             <div class="w-20 h-20 bg-gradient-to-br from-black to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
               <Icon name="ion:musical-notes" size="40" class="text-white" />
             </div>
@@ -256,7 +256,7 @@
           </div>
 
           <!-- YouTube -->
-          <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300">
+          <div class="bg-white rounded-xl shadow-lg p-4 text-center hover:shadow-xl transition-all duration-300">
             <div class="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <Icon name="ion:logo-youtube" size="40" class="text-white" />
             </div>
