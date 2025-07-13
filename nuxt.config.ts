@@ -40,6 +40,7 @@ export default defineNuxtConfig({
       FRONT_END_URL: "https://woonuxt-ten.vercel.app",
       PRODUCT_CATEGORY_PERMALINK: "/produkt-kategoriya/",
       PRODUCT_TAG_PERMALINK: "/produkt-etiket/",
+      PRODUCT_BRAND_PERMALINK: "/marka-produkt/",
       PRODUCTS_PER_PAGE: 12,
       // ВРЕМЕННА конфигурация за тестване на атрибутите
       // TODO: Премахнете това след като конфигурирате woonuxt-settings плъгина в WordPress
@@ -83,6 +84,7 @@ export default defineNuxtConfig({
       "/magazin",
       "/categories",
       "/etiketi",
+      "/marki",
       "/contact",
       "/wishlist",
     ],
@@ -110,7 +112,15 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
-      routes: ["/", "/magazin", "/categories", "/etiketi", "/contact", "/blog"],
+      routes: [
+        "/",
+        "/magazin",
+        "/categories",
+        "/etiketi",
+        "/marki",
+        "/contact",
+        "/blog",
+      ],
       concurrency: 10,
       interval: 1000,
       failOnError: false,
@@ -153,6 +163,14 @@ export default defineNuxtConfig({
       "/produkt-etiket/**": {
         isr: {
           expiration: 300, // 5 минути за етикети
+        },
+        headers: {
+          "Cache-Control": "s-maxage=300",
+        },
+      },
+      "/marka-produkt/**": {
+        isr: {
+          expiration: 300, // 5 минути за марки
         },
         headers: {
           "Cache-Control": "s-maxage=300",

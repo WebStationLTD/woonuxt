@@ -1,0 +1,14 @@
+fragment PwbBrands on Product {
+  pwbBrands {
+    id
+    databaseId
+    name
+    slug
+    description
+    count
+    image {
+      sourceUrl
+      altText
+    }
+  }
+}

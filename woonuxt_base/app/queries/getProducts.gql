@@ -1,4 +1,5 @@
 # import "./fragments/ProductTagsFragment.gql"
+# import "./fragments/PwbBrandsFragment.gql"
 
 fragment ProductWithAttributes on ProductWithAttributes {
   attributes {
@@ -71,6 +72,7 @@ query getProducts(
       ...Terms
       ...ProductCategories
       ...ProductWithAttributes
+      ...PwbBrands
       ...SimpleProductGrid
       ...VariableProductGrid
       ...ExternalProduct
@@ -128,6 +130,7 @@ query getProductsOptimized(
       ...ProductCategories
       ...ProductWithAttributes
       ...ProductTags
+      ...PwbBrands
       ...SimpleProductGrid
       ...VariableProductGrid
       ...ExternalProduct

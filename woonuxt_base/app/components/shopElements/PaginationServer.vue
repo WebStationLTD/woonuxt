@@ -25,6 +25,19 @@ const basePath = computed(() => {
       return `/produkt-etiket/${tagSlug}`;
     }
   }
+  // Проверяваме за марки първо
+  else if ((route.name === 'marka-produkt-slug' || route.name === 'marka-produkt-page-pager') && (route.params.brandSlug || route.params.slug)) {
+    const brandSlug = route.params.brandSlug || route.params.slug;
+    return `/marka-produkt/${brandSlug}`;
+  }
+  // Проверяваме за марки с path prefix
+  else if (route.path.startsWith('/marka-produkt/')) {
+    const pathSegments = route.path.split('/');
+    const brandSlug = pathSegments[2]; // /marka-produkt/[slug]
+    if (brandSlug && brandSlug !== 'page') {
+      return `/marka-produkt/${brandSlug}`;
+    }
+  }
   // Проверяваме за йерархични категории (parent/child)
   else if (
     (route.name === 'produkt-kategoriya-parent-child' || route.name === 'produkt-kategoriya-parent-child-pager') &&
