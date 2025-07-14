@@ -1,6 +1,7 @@
 # ГЛАВНА ЗАЯВКА: Single large query за максимална бързина (според obuvki.bg подходa)
 # Техника: Зареждаме максимален брой продукти в ЕДНА заявка без batching
-query getProductsCountFast($first: Int = 10000) {
+# ОПТИМИЗИРАНО: 3000 вместо 10000 за ~2000 реални продукта
+query getProductsCountFast($first: Int = 3000) {
   products(first: $first, where: { visibility: VISIBLE, status: "publish" }) {
     pageInfo {
       hasNextPage
@@ -13,7 +14,7 @@ query getProductsCountFast($first: Int = 10000) {
   }
 }
 
-# FALLBACK ЗАЯВКА: Ако има повече от 10000 продукта (рядко срещано)
+# FALLBACK ЗАЯВКА: Ако има повече от 3000 продукта (рядко срещано при ~2000 реални)
 query getProductsCountBatched($first: Int = 100, $after: String) {
   products(first: $first, after: $after, where: { visibility: VISIBLE, status: "publish" }) {
     pageInfo {

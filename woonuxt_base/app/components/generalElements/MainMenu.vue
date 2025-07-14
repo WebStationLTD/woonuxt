@@ -11,8 +11,6 @@ import MegaMenu from './MegaMenu.vue';
     <NuxtLink class="text-base" to="/blog">Блог</NuxtLink>
     <MegaMenu />
     <NuxtLink class="text-base" to="/contact">{{ $t('messages.general.contact') }}</NuxtLink>
-    <NuxtLink class="lg:hidden text-base" :to="wishlistLink" :prefetch="false">Wishlist</NuxtLink>
-    <NuxtLink class="lg:hidden text-base" to="/my-account" :prefetch="false">My Account</NuxtLink>
   </nav>
 </template>
 

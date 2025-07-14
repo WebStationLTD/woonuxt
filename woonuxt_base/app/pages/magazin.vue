@@ -687,7 +687,7 @@ const loadTotalProductsCount = async (forceLoad = false) => {
   // FALLBACK: Ако директният WordPress count не работи
   try {
     const { data: fallbackData } = await useAsyncGql('getProductsCountFast', {
-      first: 10000,
+      first: 3000, // Оптимизирано за ~2000 продукта (50% buffer)
     });
 
     const result = fallbackData.value?.products;
@@ -696,7 +696,7 @@ const loadTotalProductsCount = async (forceLoad = false) => {
       const edges = result.edges || [];
       let totalCount = edges.length;
 
-      // РЯДКО: Само ако има повече от 10000 продукта
+      // РЯДКО: Само ако има повече от 3000 продукта (при ~2000 реални)
       if (result.pageInfo?.hasNextPage && result.pageInfo?.endCursor) {
         totalCount = await loadRemainingCount(result.pageInfo.endCursor, totalCount);
       }
