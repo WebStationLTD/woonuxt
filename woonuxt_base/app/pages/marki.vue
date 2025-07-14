@@ -1,30 +1,110 @@
 <script lang="ts" setup>
 const { frontEndUrl } = useHelpers();
 
-// Получаване на всички марки от Perfect Brands плъгина
-const { data } = await useAsyncGql('getProducts' as any, {
-  first: 500, // Зареждаме повече продукти за да видим всички марки
-  orderby: 'DATE',
-  order: 'DESC',
+// Марки и loading състояние
+const brands = ref<any[]>([]);
+const isLoading = ref(true);
+
+// Computed за азбучно групиране на марките
+const brandsByLetter = computed(() => {
+  const grouped: { [key: string]: any[] } = {};
+
+  brands.value?.forEach((brand) => {
+    if (brand?.name && typeof brand.name === 'string' && brand.name.length > 0) {
+      const firstLetter = brand.name.charAt(0).toUpperCase();
+      if (!grouped[firstLetter]) {
+        grouped[firstLetter] = [];
+      }
+      grouped[firstLetter].push(brand);
+    }
+  });
+
+  // Сортираме всяка група по име
+  Object.keys(grouped).forEach((letter) => {
+    if (grouped[letter]) {
+      grouped[letter].sort((a, b) => (a?.name || '').localeCompare(b?.name || ''));
+    }
+  });
+
+  return grouped;
 });
 
-// Извличаме уникални марки от продуктите
-const brands = computed(() => {
-  if (!data.value?.products?.nodes) return [];
+// Sorted букви за показване
+const sortedLetters = computed(() => {
+  return Object.keys(brandsByLetter.value || {}).sort();
+});
 
+// СУПЕР БЪРЗА функция за зареждане на марки (БЕЗ count)
+const loadAllBrands = async () => {
   const uniqueBrands = new Map();
 
-  for (const product of data.value.products.nodes) {
-    if (product.pwbBrands && product.pwbBrands.length > 0) {
-      for (const brand of product.pwbBrands) {
-        if (!uniqueBrands.has(brand.slug)) {
-          uniqueBrands.set(brand.slug, brand);
+  try {
+    // СУПЕР БЪРЗА заявка САМО за марки - БЕЗ продуктни данни
+    const { data } = await useAsyncGql('getBrands', {
+      first: 800, // Увеличаваме за да покрием всички марки
+    });
+
+    const result = data.value?.products;
+    if (result && result.nodes) {
+      const products = result.nodes;
+
+      // Извличаме марки от продуктите
+      for (const product of products) {
+        if (product.pwbBrands && product.pwbBrands.length > 0) {
+          for (const brand of product.pwbBrands) {
+            if (brand && brand.slug && !uniqueBrands.has(brand.slug)) {
+              uniqueBrands.set(brand.slug, {
+                databaseId: brand.databaseId,
+                slug: brand.slug,
+                name: brand.name,
+                // Премахнахме count и description
+              });
+            }
+          }
         }
       }
-    }
-  }
 
-  return Array.from(uniqueBrands.values());
+      // Ако имаме по-малко от 40 марки, може да заредим още малко
+      if (uniqueBrands.size < 40 && result.pageInfo?.hasNextPage) {
+        // Зареждаме още един малък batch за да уловим всички марки
+        const { data: additionalData } = await useAsyncGql('getBrands', {
+          first: 400, // По-голям допълнителен batch
+          after: result.pageInfo.endCursor,
+        });
+
+        if (additionalData.value?.products?.nodes) {
+          const additionalProducts = additionalData.value.products.nodes;
+
+          for (const product of additionalProducts) {
+            if (product.pwbBrands && product.pwbBrands.length > 0) {
+              for (const brand of product.pwbBrands) {
+                if (brand && brand.slug && !uniqueBrands.has(brand.slug)) {
+                  uniqueBrands.set(brand.slug, {
+                    databaseId: brand.databaseId,
+                    slug: brand.slug,
+                    name: brand.name,
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Конвертираме в array и сортираме по име
+      const brandsList = Array.from(uniqueBrands.values());
+      brands.value = brandsList.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }
+  } catch (error) {
+    console.error('Error loading brands:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Зареждаме марките при mount
+onMounted(async () => {
+  await loadAllBrands();
 });
 
 // SEO за страницата с всички марки
@@ -58,27 +138,43 @@ useHead({
       <!-- Заглавие -->
       <h1 class="text-3xl font-bold mb-8">Всички марки</h1>
 
-      <!-- Списък с марки -->
-      <div v-if="brands.length" class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        <NuxtLink
-          v-for="brand in brands"
-          :key="brand.databaseId"
-          :to="`/marka-produkt/${brand.slug}`"
-          class="block p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-primary transition-all duration-300 group">
-          <div class="text-center">
-            <h3 class="font-medium text-gray-900 group-hover:text-primary transition-colors duration-300">
-              {{ brand.name }}
-            </h3>
-            <p v-if="brand.count" class="text-sm text-gray-500 mt-1">{{ brand.count }} {{ brand.count === 1 ? 'продукт' : 'продукта' }}</p>
-            <div v-if="brand.description" class="text-xs text-gray-400 mt-2 line-clamp-2">
-              {{ brand.description }}
+      <!-- Loading състояние -->
+      <div v-if="isLoading" class="space-y-8">
+        <div v-for="i in 3" :key="i" class="space-y-4">
+          <div class="h-8 bg-gray-200 rounded w-8 animate-pulse"></div>
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            <div v-for="j in 6" :key="j" class="p-3 bg-white border border-gray-200 rounded-lg shadow-sm animate-pulse">
+              <div class="h-5 bg-gray-200 rounded mx-auto w-3/4"></div>
             </div>
           </div>
-        </NuxtLink>
+        </div>
+      </div>
+
+      <!-- Списък с марки по букви -->
+      <div v-else-if="brands.length" class="space-y-8">
+        <div v-for="letter in sortedLetters" :key="letter" class="space-y-4">
+          <!-- Буква като заглавие -->
+          <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-primary pb-2">{{ letter }}</h2>
+
+          <!-- Марки за тази буква -->
+          <div class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            <NuxtLink
+              v-for="brand in brandsByLetter[letter]"
+              :key="brand.databaseId"
+              :to="`/marka-produkt/${brand.slug}`"
+              class="block p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-primary transition-all duration-300 group">
+              <div class="text-center">
+                <h3 class="font-medium text-gray-900 group-hover:text-primary transition-colors duration-300 text-sm">
+                  {{ brand.name }}
+                </h3>
+              </div>
+            </NuxtLink>
+          </div>
+        </div>
       </div>
 
       <!-- Няма марки -->
-      <div v-else class="text-center py-12">
+      <div v-else-if="!isLoading" class="text-center py-12">
         <div class="text-gray-500 text-lg mb-4">
           <Icon name="ion:business-outline" size="48" class="mx-auto mb-4" />
           Няма налични марки

@@ -1,0 +1,39 @@
+# ЗАЯВКА ЗА МАРКИ КАТО АТРИБУТИ (КАТО getProductTags за етикетите)
+query getProductBrands($first: Int, $after: String, $slug: [String], $hideEmpty: Boolean = true) {
+  # Марките са атрибути в pa_brands таксономия
+  terms(first: $first, after: $after, where: { taxonomies: [PABRANDS], hideEmpty: $hideEmpty, slug: $slug }) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      slug
+      name
+      databaseId
+      id
+      description
+      count
+      taxonomyName
+    }
+  }
+}
+
+# МИНИМАЛНА ЗАЯВКА САМО ЗА ПРОДУКТНИ ДАННИ - С марки count
+query getBrands($first: Int = 300) {
+  products(first: $first, where: { visibility: VISIBLE, status: "publish" }) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      # САМО марки данни - включва count
+      pwbBrands {
+        id
+        databaseId
+        name
+        slug
+        count
+      }
+    }
+  }
+}
