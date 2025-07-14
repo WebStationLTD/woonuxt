@@ -5,7 +5,7 @@
     <div class="bg-gray-800">
       <div class="container py-16 text-center text-white">
         <h1 class="text-4xl md:text-5xl font-bold mb-4">{{ $t('messages.general.contact') }}</h1>
-        <p class="text-xl opacity-90 max-w-2xl mx-auto">Свържете се с нас! Готови сме да отговорим на всичките ви въпроси и да ви помогнем.</p>
+        <p class="text-xl opacity-90">Свържете се с нас! Готови сме да отговорим на всичките ви въпроси и да ви помогнем.</p>
       </div>
     </div>
 

@@ -54,11 +54,19 @@ useHead({
             <nav class="space-y-2" aria-label="Полезни линкове">
               <ul class="text-sm space-y-2">
                 <li><NuxtLink to="/" class="text-gray-300 hover:text-white transition-colors">Начало</NuxtLink></li>
-                <li><a href="/example/terms" class="text-gray-300 hover:text-white transition-colors">Общи условия</a></li>
-                <li><a href="/example/privacy" class="text-gray-300 hover:text-white transition-colors">Политика за поверителност</a></li>
-                <li><a href="/example/delivery" class="text-gray-300 hover:text-white transition-colors">Доставка</a></li>
-                <li><a href="/example/returns" class="text-gray-300 hover:text-white transition-colors">Условия за връщане</a></li>
-                <li><a href="/example/about" class="text-gray-300 hover:text-white transition-colors">За нас</a></li>
+                <li><NuxtLink to="/общи-условия/" class="text-gray-300 hover:text-white transition-colors">Общи условия</NuxtLink></li>
+                <li>
+                  <NuxtLink to="/политика-за-поверителност-и-защита-на/" class="text-gray-300 hover:text-white transition-colors"
+                    >Политика за поверителност</NuxtLink
+                  >
+                </li>
+                <li><NuxtLink to="/доставка/" class="text-gray-300 hover:text-white transition-colors">Доставка</NuxtLink></li>
+                <li>
+                  <a href="/pdfs/return-policy.pdf" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-white transition-colors"
+                    >Условия за връщане</a
+                  >
+                </li>
+                <li><NuxtLink to="/за-нас/" class="text-gray-300 hover:text-white transition-colors">За нас</NuxtLink></li>
                 <li><a href="/example/facilities" class="text-gray-300 hover:text-white transition-colors">Оборудвани обекти</a></li>
                 <li><NuxtLink to="/contact" class="text-gray-300 hover:text-white transition-colors">Контакти</NuxtLink></li>
                 <li><a href="/example/articles" class="text-gray-300 hover:text-white transition-colors">Статии</a></li>
