@@ -6,8 +6,11 @@ const { removeBodyClass } = useHelpers();
 const runtimeConfig = useRuntimeConfig();
 const { storeSettings } = useAppConfig();
 
-// hide-categories prop is used to hide the category filter on the product category page
-const { hideCategories } = defineProps({ hideCategories: { type: Boolean, default: false } });
+// Props: hide-categories и category-slug за контекстуални филтри
+const { hideCategories, categorySlug } = defineProps({
+  hideCategories: { type: Boolean, default: false },
+  categorySlug: { type: String, default: null },
+});
 
 const globalProductAttributes = (runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES as WooNuxtFilter[]) || [];
 const taxonomies = globalProductAttributes.map((attr) => {
@@ -26,37 +29,151 @@ const closeMobileFilters = () => {
   removeBodyClass('show-filters');
 };
 
-// Зареждаме terms с fallback стратегия
-let { data } = await useAsyncGql('getAllTerms', { taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY] });
-let terms = data.value?.terms?.nodes || [];
+// КОНТЕКСТУАЛНИ VS ГЛОБАЛНИ ФИЛТРИ
+let terms: any[] = [];
 
-// Ако няма категории, опитваме без hideEmpty (включва и празни категории)
-if (terms.filter((term) => term.taxonomyName === 'product_cat').length === 0) {
+if (categorySlug && categorySlug.trim().length > 0) {
+  // КОНТЕКСТУАЛНИ ФИЛТРИ: Зареждаме термини само от продуктите в тази категория
+  console.log('🎯 Зареждам КОНТЕКСТУАЛНИ филтри за категория:', categorySlug);
+
   try {
-    const fallbackResult = await useAsyncGql('getAllTerms', {
-      taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY],
-      hideEmpty: false,
+    // Зареждаме продуктите от категорията
+    const { data: productsData } = await useAsyncGql('getProducts', {
+      slug: [categorySlug],
+      first: 500,
     });
 
-    if (fallbackResult.data.value?.terms?.nodes) {
-      terms = fallbackResult.data.value.terms.nodes;
-    }
+    const categoryProducts = productsData.value?.products?.nodes || [];
+    console.log('🔍 Получени продукти от категорията:', categoryProducts.length);
 
-    // Ако и това не работи, опитваме само категории
-    if (terms.filter((term) => term.taxonomyName === 'product_cat').length === 0) {
-      const categoriesOnlyResult = await useAsyncGql('getAllTerms', {
-        taxonomies: [TaxonomyEnum.PRODUCTCATEGORY],
-        hideEmpty: false,
-        first: 50,
-      });
+    if (categoryProducts.length > 0) {
+      // Създаваме термини от продуктните данни
+      const termMap = new Map<string, any>();
 
-      if (categoriesOnlyResult.data.value?.terms?.nodes) {
-        const categoryTerms = categoriesOnlyResult.data.value.terms.nodes;
-        terms = [...terms, ...categoryTerms];
+      for (const product of categoryProducts) {
+        const productAny = product as any;
+
+        // От product.terms (марки, етикети)
+        if (productAny.terms?.nodes) {
+          for (const term of productAny.terms.nodes) {
+            if (term.slug && term.name && term.taxonomyName) {
+              const key = `${term.taxonomyName}-${term.slug}`;
+              if (!termMap.has(key)) {
+                termMap.set(key, {
+                  slug: term.slug,
+                  name: term.name,
+                  taxonomyName: term.taxonomyName,
+                  databaseId: term.databaseId || 0,
+                  count: 0,
+                });
+              }
+              termMap.get(key)!.count++;
+            }
+          }
+        }
+
+        // От product.attributes (размери, цветове)
+        if (productAny.attributes?.nodes) {
+          for (const attr of productAny.attributes.nodes) {
+            const taxonomyName = `PA${attr.name?.toUpperCase()?.replace(/\s+/g, '') || 'UNKNOWN'}`;
+
+            // От options (за прости атрибути)
+            if (attr.options && Array.isArray(attr.options)) {
+              for (const option of attr.options) {
+                if (typeof option === 'string' && option.trim()) {
+                  const slug = option.toLowerCase().replace(/\s+/g, '-');
+                  const key = `${taxonomyName}-${slug}`;
+                  if (!termMap.has(key)) {
+                    termMap.set(key, {
+                      slug: slug,
+                      name: option,
+                      taxonomyName: taxonomyName,
+                      databaseId: 0,
+                      count: 0,
+                    });
+                  }
+                  termMap.get(key)!.count++;
+                }
+              }
+            }
+
+            // От terms (за глобални атрибути)
+            if (attr.terms?.nodes) {
+              for (const term of attr.terms.nodes) {
+                if (term.slug && term.name && term.taxonomyName) {
+                  const key = `${term.taxonomyName}-${term.slug}`;
+                  if (!termMap.has(key)) {
+                    termMap.set(key, {
+                      slug: term.slug,
+                      name: term.name,
+                      taxonomyName: term.taxonomyName,
+                      databaseId: term.databaseId || 0,
+                      count: 0,
+                    });
+                  }
+                  termMap.get(key)!.count++;
+                }
+              }
+            }
+          }
+        }
       }
+
+      terms = Array.from(termMap.values());
+      console.log('✅ Създадени контекстуални термини:', terms.length);
+    } else {
+      console.log('🔄 FALLBACK: Няма продукти, използвам глобални термини');
+      // Fallback към глобални термини
+      const { data } = await useAsyncGql('getAllTerms', {
+        taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY],
+        hideEmpty: true,
+      });
+      terms = data.value?.terms?.nodes || [];
     }
   } catch (error) {
-    // Тихо игнорираме грешки от fallback заявките
+    console.error('❌ Грешка при контекстуални филтри:', error);
+    // Fallback към глобални термини
+    const { data } = await useAsyncGql('getAllTerms', {
+      taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY],
+      hideEmpty: true,
+    });
+    terms = data.value?.terms?.nodes || [];
+  }
+} else {
+  // ГЛОБАЛНИ ФИЛТРИ: Зареждаме всички термини (стария код)
+  console.log('🌍 Зареждам ГЛОБАЛНИ филтри');
+
+  let { data } = await useAsyncGql('getAllTerms', { taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY] });
+  terms = data.value?.terms?.nodes || [];
+
+  // Ако няма категории, опитваме без hideEmpty (включва и празни категории)
+  if (terms.filter((term) => term.taxonomyName === 'product_cat').length === 0) {
+    try {
+      const fallbackResult = await useAsyncGql('getAllTerms', {
+        taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY],
+        hideEmpty: false,
+      });
+
+      if (fallbackResult.data.value?.terms?.nodes) {
+        terms = fallbackResult.data.value.terms.nodes;
+      }
+
+      // Ако и това не работи, опитваме само категории
+      if (terms.filter((term) => term.taxonomyName === 'product_cat').length === 0) {
+        const categoriesOnlyResult = await useAsyncGql('getAllTerms', {
+          taxonomies: [TaxonomyEnum.PRODUCTCATEGORY],
+          hideEmpty: false,
+          first: 50,
+        });
+
+        if (categoriesOnlyResult.data.value?.terms?.nodes) {
+          const categoryTerms = categoriesOnlyResult.data.value.terms.nodes;
+          terms = [...terms, ...categoryTerms];
+        }
+      }
+    } catch (error) {
+      // Тихо игнорираме грешки от fallback заявките
+    }
   }
 }
 

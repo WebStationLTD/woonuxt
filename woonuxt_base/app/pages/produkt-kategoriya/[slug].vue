@@ -434,6 +434,7 @@ let previousQuery = ref({
 // ⚡ ОПТИМИЗАЦИЯ 5: Функция за парсене на филтри (както в magazin.vue)
 const parseFiltersFromQuery = (filterQuery: string) => {
   const filters: any = {};
+  const runtimeConfig = useRuntimeConfig();
 
   if (!filterQuery || typeof filterQuery !== 'string') return filters;
 
@@ -467,6 +468,15 @@ const parseFiltersFromQuery = (filterQuery: string) => {
   if (searchTerm.length > 0 && searchTerm[0]) {
     filters.search = searchTerm[0];
   }
+
+  // ⚡ КРИТИЧНО: Добавяме и атрибутните филтри (ТОЧНО като в magazin.vue)
+  const globalProductAttributes = (runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES as any[]) || [];
+  globalProductAttributes.forEach((attr) => {
+    const attributeValues = getFilterValues(attr.slug);
+    if (attributeValues.length > 0) {
+      filters[attr.slug] = attributeValues;
+    }
+  });
 
   return filters;
 };
@@ -527,11 +537,26 @@ const loadCategoryProducts = async () => {
         else if (orderBy === 'discount') graphqlOrderBy = 'DATE';
       }
 
+      // КРИТИЧНО: Добавяме attributeFilter (ТОЧНО КАТО В /magazin)
+      const runtimeConfig = useRuntimeConfig();
+      const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES) ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES : [];
+
+      const attributeFilters: any[] = [];
+      globalProductAttributes.forEach((attr: any) => {
+        if (filters[attr.slug] && Array.isArray(filters[attr.slug])) {
+          attributeFilters.push({
+            taxonomy: attr.slug,
+            terms: filters[attr.slug],
+            operator: 'IN',
+          });
+        }
+      });
+
       // ПОПРАВЕНО: Използваме оптимизираните функции с fix-натия jumpToPageOptimized
       if (pageNumber === 1) {
-        await loadProductsPageOptimized(pageNumber, [slug], graphqlOrderBy, filters);
+        await loadProductsPageOptimized(pageNumber, [slug], graphqlOrderBy, { ...filters, attributeFilter: attributeFilters });
       } else {
-        await jumpToPageOptimized(pageNumber, [slug], graphqlOrderBy, filters);
+        await jumpToPageOptimized(pageNumber, [slug], graphqlOrderBy, { ...filters, attributeFilter: attributeFilters });
       }
 
       // КРИТИЧНО: Проверяваме дали получихме резултати при филтриране
@@ -730,8 +755,14 @@ const categoryCount = computed(() => {
   if (hasFilters) {
     const filters = parseFiltersFromQuery(route.query.filter as string);
 
-    // ПОПРАВКА: Проверяваме за ВСИЧКИ типове филтри
-    const hasAnyFilters = filters.onSale || filters.search || filters.minPrice !== undefined || filters.maxPrice !== undefined;
+    // ПОПРАВКА: Проверяваме за ВСИЧКИ типове филтри, включително атрибутни
+    const hasAnyFilters =
+      (filters.categorySlug && filters.categorySlug.length > 0) ||
+      filters.onSale ||
+      filters.search ||
+      filters.minPrice !== undefined ||
+      filters.maxPrice !== undefined ||
+      Object.keys(filters).some((key) => key.startsWith('pa_'));
 
     if (hasAnyFilters) {
       // При всякакви филтри използваме филтрирания count
@@ -750,8 +781,14 @@ const loadCategoryCount = async (filters: any) => {
     return;
   }
 
-  // Проверяваме за всички типове филтри
-  const hasAnyFilters = filters.onSale || filters.search || (filters.minPrice !== undefined && filters.maxPrice !== undefined);
+  // ПОПРАВКА: Проверяваме за всички типове филтри, включително атрибутни
+  const hasAnyFilters =
+    (filters.categorySlug && filters.categorySlug.length > 0) ||
+    filters.onSale ||
+    filters.search ||
+    filters.minPrice !== undefined ||
+    filters.maxPrice !== undefined ||
+    Object.keys(filters).some((key) => key.startsWith('pa_'));
 
   if (hasAnyFilters) {
     try {
@@ -778,6 +815,25 @@ const loadCategoryCount = async (filters: any) => {
         if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
         if (filters.onSale !== undefined) variables.onSale = filters.onSale;
         if (filters.search) variables.search = filters.search;
+
+        // ⚡ КРИТИЧНО: Добавяме attributeFilter
+        const runtimeConfig = useRuntimeConfig();
+        const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES) ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES : [];
+
+        const attributeFilters: any[] = [];
+        globalProductAttributes.forEach((attr: any) => {
+          if (filters[attr.slug] && Array.isArray(filters[attr.slug])) {
+            attributeFilters.push({
+              taxonomy: attr.slug,
+              terms: filters[attr.slug],
+              operator: 'IN',
+            });
+          }
+        });
+
+        if (attributeFilters.length > 0) {
+          variables.attributeFilter = attributeFilters;
+        }
 
         // Използваме основната getProducts заявка която поддържа всички филтри
         const { data } = await useAsyncGql('getProducts', variables);
@@ -818,7 +874,7 @@ const loadCategoryCount = async (filters: any) => {
       <!-- Sidebar с филтри - вляво -->
       <aside v-if="storeSettings?.showFilters" class="lg:w-80 flex-shrink-0">
         <div class="sticky top-4">
-          <Filters :hide-categories="true" />
+          <Filters :hide-categories="true" :category-slug="currentSlug" />
         </div>
       </aside>
 

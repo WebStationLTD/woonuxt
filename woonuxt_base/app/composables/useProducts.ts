@@ -391,6 +391,20 @@ export function useProducts() {
               '📝 Продукти с атрибути:',
               productsWithAttributes.map((p) => p.name),
             );
+
+            // ДЕТАЙЛНО: Покажи какви атрибути имат продуктите
+            productsWithAttributes.slice(0, 3).forEach((p: any) => {
+              console.log(
+                `📋 ${p.name} атрибути:`,
+                p.attributes?.nodes?.map((attr: any) => ({
+                  name: attr.name,
+                  label: attr.label,
+                  options: attr.options,
+                  termsCount: attr.terms?.nodes?.length || 0,
+                  terms: attr.terms?.nodes?.map((t: any) => t.name) || [],
+                })),
+              );
+            });
           }
 
           const productsWithoutAttributes = productsToShow.filter((p) => !(p as any).attributes?.nodes?.length);
@@ -399,6 +413,17 @@ export function useProducts() {
               '❌ Продукти БЕЗ атрибути:',
               productsWithoutAttributes.slice(0, 5).map((p) => p.name),
             );
+
+            // ДЕТАЙЛНО: Проверявай дали имат terms
+            productsWithoutAttributes.slice(0, 3).forEach((p: any) => {
+              const termsCount = p.terms?.nodes?.length || 0;
+              if (termsCount > 0) {
+                console.log(
+                  `📋 ${p.name} terms (${termsCount}):`,
+                  p.terms.nodes.map((t: any) => `${t.name} (${t.taxonomyName})`),
+                );
+              }
+            });
           }
         }
 

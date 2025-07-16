@@ -48,13 +48,13 @@ export default defineNuxtConfig({
         {
           slug: "pa_brands", // Този работи!
           label: "Марка",
-          showCount: true,
+          showCount: false,
           openByDefault: false,
         },
         {
           slug: "pa_razmer", // Размер атрибут
           label: "Размер",
-          showCount: true,
+          showCount: false,
           openByDefault: false,
         },
       ],
