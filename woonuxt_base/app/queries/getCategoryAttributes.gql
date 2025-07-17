@@ -1,0 +1,44 @@
+# ОПТИМИЗИРАНА ЗАЯВКА САМО ЗА АТРИБУТИ НА КАТЕГОРИЯ
+# Зарежда минимални данни - само атрибути и термини, БЕЗ снимки, цени, описания
+query getCategoryAttributes($slug: [String], $first: Int = 100, $after: String) {
+  products(first: $first, after: $after, where: { categoryIn: $slug, visibility: VISIBLE, status: "publish" }) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      # САМО атрибутни данни - никакви излишни полета
+      terms(first: 50) {
+        nodes {
+          taxonomyName
+          slug
+          name
+          databaseId
+        }
+      }
+      # Използваме inline fragment за ProductWithAttributes
+      ... on ProductWithAttributes {
+        attributes {
+          nodes {
+            variation
+            name
+            id
+            options
+            label
+            scope
+            ... on GlobalProductAttribute {
+              terms {
+                nodes {
+                  name
+                  slug
+                  taxonomyName
+                  databaseId
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

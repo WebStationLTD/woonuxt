@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { TaxonomyEnum } from '#woo';
+import { useCategoryFilters } from '../../composables/useCategoryFilters';
 
 const { isFiltersActive } = useFiltering();
 const { removeBodyClass } = useHelpers();
 const runtimeConfig = useRuntimeConfig();
 const { storeSettings } = useAppConfig();
+
+// Използваме новия оптимизиран composable за контекстуални филтри
+const { loadCategoryFilters, loading: categoryFiltersLoading } = useCategoryFilters();
 
 // Props: hide-categories и category-slug за контекстуални филтри
 const { hideCategories, categorySlug } = defineProps({
@@ -33,96 +37,12 @@ const closeMobileFilters = () => {
 let terms: any[] = [];
 
 if (categorySlug && categorySlug.trim().length > 0) {
-  // КОНТЕКСТУАЛНИ ФИЛТРИ: Зареждаме термини само от продуктите в тази категория
-  console.log('🎯 Зареждам КОНТЕКСТУАЛНИ филтри за категория:', categorySlug);
-
+  // ОПТИМИЗИРАНИ КОНТЕКСТУАЛНИ ФИЛТРИ с кеширане
   try {
-    // Зареждаме продуктите от категорията
-    const { data: productsData } = await useAsyncGql('getProducts', {
-      slug: [categorySlug],
-      first: 500,
-    });
+    terms = await loadCategoryFilters(categorySlug);
 
-    const categoryProducts = productsData.value?.products?.nodes || [];
-    console.log('🔍 Получени продукти от категорията:', categoryProducts.length);
-
-    if (categoryProducts.length > 0) {
-      // Създаваме термини от продуктните данни
-      const termMap = new Map<string, any>();
-
-      for (const product of categoryProducts) {
-        const productAny = product as any;
-
-        // От product.terms (марки, етикети)
-        if (productAny.terms?.nodes) {
-          for (const term of productAny.terms.nodes) {
-            if (term.slug && term.name && term.taxonomyName) {
-              const key = `${term.taxonomyName}-${term.slug}`;
-              if (!termMap.has(key)) {
-                termMap.set(key, {
-                  slug: term.slug,
-                  name: term.name,
-                  taxonomyName: term.taxonomyName,
-                  databaseId: term.databaseId || 0,
-                  count: 0,
-                });
-              }
-              termMap.get(key)!.count++;
-            }
-          }
-        }
-
-        // От product.attributes (размери, цветове)
-        if (productAny.attributes?.nodes) {
-          for (const attr of productAny.attributes.nodes) {
-            const taxonomyName = `PA${attr.name?.toUpperCase()?.replace(/\s+/g, '') || 'UNKNOWN'}`;
-
-            // От options (за прости атрибути)
-            if (attr.options && Array.isArray(attr.options)) {
-              for (const option of attr.options) {
-                if (typeof option === 'string' && option.trim()) {
-                  const slug = option.toLowerCase().replace(/\s+/g, '-');
-                  const key = `${taxonomyName}-${slug}`;
-                  if (!termMap.has(key)) {
-                    termMap.set(key, {
-                      slug: slug,
-                      name: option,
-                      taxonomyName: taxonomyName,
-                      databaseId: 0,
-                      count: 0,
-                    });
-                  }
-                  termMap.get(key)!.count++;
-                }
-              }
-            }
-
-            // От terms (за глобални атрибути)
-            if (attr.terms?.nodes) {
-              for (const term of attr.terms.nodes) {
-                if (term.slug && term.name && term.taxonomyName) {
-                  const key = `${term.taxonomyName}-${term.slug}`;
-                  if (!termMap.has(key)) {
-                    termMap.set(key, {
-                      slug: term.slug,
-                      name: term.name,
-                      taxonomyName: term.taxonomyName,
-                      databaseId: term.databaseId || 0,
-                      count: 0,
-                    });
-                  }
-                  termMap.get(key)!.count++;
-                }
-              }
-            }
-          }
-        }
-      }
-
-      terms = Array.from(termMap.values());
-      console.log('✅ Създадени контекстуални термини:', terms.length);
-    } else {
-      console.log('🔄 FALLBACK: Няма продукти, използвам глобални термини');
+    if (terms.length === 0) {
+      console.log('🔄 FALLBACK: Няма термини, използвам глобални филтри');
       // Fallback към глобални термини
       const { data } = await useAsyncGql('getAllTerms', {
         taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY],
