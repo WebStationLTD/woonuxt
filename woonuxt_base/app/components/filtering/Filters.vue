@@ -33,53 +33,90 @@ const closeMobileFilters = () => {
   removeBodyClass('show-filters');
 };
 
-// КОНТЕКСТУАЛНИ VS ГЛОБАЛНИ ФИЛТРИ
-let terms: any[] = [];
+// ⚡ ОПТИМИЗИРАНИ ФИЛТРИ с lazy loading и кеширане
+const terms = ref<any[]>([]);
+const loadingTerms = ref(false);
 
-if (categorySlug && categorySlug.trim().length > 0) {
-  // ОПТИМИЗИРАНИ КОНТЕКСТУАЛНИ ФИЛТРИ с кеширане
+// Кеш за глобални термини
+const GLOBAL_TERMS_CACHE_KEY = 'woonuxt_global_terms';
+const GLOBAL_TERMS_CACHE_DURATION = 10 * 60 * 1000; // 10 минути
+
+const getCachedGlobalTerms = (): any[] | null => {
+  if (!process.client) return null;
+
   try {
-    terms = await loadCategoryFilters(categorySlug);
+    const cached = sessionStorage.getItem(GLOBAL_TERMS_CACHE_KEY);
+    if (!cached) return null;
 
-    if (terms.length === 0) {
-      console.log('🔄 FALLBACK: Няма термини, използвам глобални филтри');
-      // Fallback към глобални термини
-      const { data } = await useAsyncGql('getAllTerms', {
-        taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY],
-        hideEmpty: true,
-      });
-      terms = data.value?.terms?.nodes || [];
+    const { terms: cachedTerms, timestamp } = JSON.parse(cached);
+    const now = Date.now();
+
+    if (now - timestamp < GLOBAL_TERMS_CACHE_DURATION) {
+      return cachedTerms;
     }
-  } catch (error) {
-    console.error('❌ Грешка при контекстуални филтри:', error);
-    // Fallback към глобални термини
+
+    sessionStorage.removeItem(GLOBAL_TERMS_CACHE_KEY);
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedGlobalTerms = (termsData: any[]): void => {
+  if (!process.client) return;
+
+  try {
+    const cacheData = {
+      terms: termsData,
+      timestamp: Date.now(),
+    };
+    sessionStorage.setItem(GLOBAL_TERMS_CACHE_KEY, JSON.stringify(cacheData));
+  } catch {
+    // Ignore cache errors
+  }
+};
+
+// Функция за зареждане на термини (lazy)
+const loadTerms = async () => {
+  if (loadingTerms.value) return;
+  loadingTerms.value = true;
+
+  try {
+    if (categorySlug && categorySlug.trim().length > 0) {
+      // КОНТЕКСТУАЛНИ ФИЛТРИ за категории
+      console.log('🎯 Зареждам контекстуални филтри за:', categorySlug);
+      const contextualTerms = await loadCategoryFilters(categorySlug);
+
+      if (contextualTerms.length > 0) {
+        terms.value = contextualTerms;
+        return;
+      }
+
+      console.log('🔄 FALLBACK: Зареждам глобални филтри');
+    }
+
+    // ГЛОБАЛНИ ФИЛТРИ - първо проверяваме кеша
+    const cachedTerms = getCachedGlobalTerms();
+    if (cachedTerms && cachedTerms.length > 0) {
+      console.log('⚡ КЕШИРАНИ глобални филтри:', cachedTerms.length);
+      terms.value = cachedTerms;
+      return;
+    }
+
+    // Зареждаме глобални термини асинхронно
+    console.log('🌐 Зареждам глобални филтри от сървъра...');
+
     const { data } = await useAsyncGql('getAllTerms', {
       taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY],
       hideEmpty: true,
+      first: 200, // Ограничаваме до 200 термина за бързина
     });
-    terms = data.value?.terms?.nodes || [];
-  }
-} else {
-  // ГЛОБАЛНИ ФИЛТРИ: Зареждаме всички термини (стария код)
-  console.log('🌍 Зареждам ГЛОБАЛНИ филтри');
 
-  let { data } = await useAsyncGql('getAllTerms', { taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY] });
-  terms = data.value?.terms?.nodes || [];
+    let globalTerms = data.value?.terms?.nodes || [];
 
-  // Ако няма категории, опитваме без hideEmpty (включва и празни категории)
-  if (terms.filter((term) => term.taxonomyName === 'product_cat').length === 0) {
-    try {
-      const fallbackResult = await useAsyncGql('getAllTerms', {
-        taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY],
-        hideEmpty: false,
-      });
-
-      if (fallbackResult.data.value?.terms?.nodes) {
-        terms = fallbackResult.data.value.terms.nodes;
-      }
-
-      // Ако и това не работи, опитваме само категории
-      if (terms.filter((term) => term.taxonomyName === 'product_cat').length === 0) {
+    // Fallback логика за категории ако няма резултати
+    if (globalTerms.filter((term) => term.taxonomyName === 'product_cat').length === 0) {
+      try {
         const categoriesOnlyResult = await useAsyncGql('getAllTerms', {
           taxonomies: [TaxonomyEnum.PRODUCTCATEGORY],
           hideEmpty: false,
@@ -88,52 +125,80 @@ if (categorySlug && categorySlug.trim().length > 0) {
 
         if (categoriesOnlyResult.data.value?.terms?.nodes) {
           const categoryTerms = categoriesOnlyResult.data.value.terms.nodes;
-          terms = [...terms, ...categoryTerms];
+          globalTerms = [...globalTerms, ...categoryTerms];
         }
+      } catch {
+        // Ignore fallback errors
       }
-    } catch (error) {
-      // Тихо игнорираме грешки от fallback заявките
     }
+
+    console.log('✅ Заредени глобални филтри:', globalTerms.length);
+
+    // Кешираме резултата
+    setCachedGlobalTerms(globalTerms);
+    terms.value = globalTerms;
+  } catch (error) {
+    console.error('❌ Грешка при зареждане на филтри:', error);
+    terms.value = [];
+  } finally {
+    loadingTerms.value = false;
   }
+};
+
+// SSR: Зареждаме само ако има categorySlug (контекстуални филтри)
+if (categorySlug && categorySlug.trim().length > 0) {
+  await loadTerms();
 }
 
+// Client: Lazy loading за глобални филтри
+onMounted(() => {
+  if (!categorySlug || categorySlug.trim().length === 0) {
+    // За /magazin - зареждаме асинхронно след mount
+    setTimeout(() => {
+      loadTerms();
+    }, 100);
+  }
+});
+
 // Filter out the product category terms and the global product attributes with their terms
-const productCategoryTerms = terms?.filter((term) => term.taxonomyName === 'product_cat') || [];
+const productCategoryTerms = computed(() => terms.value?.filter((term: any) => term.taxonomyName === 'product_cat') || []);
 
 // ПОПРАВКА: Добавяме по-интелигентно мачване на термините
-const attributesWithTerms = globalProductAttributes.map((attr) => {
-  // Опитваме точно мачване първо
-  let attributeTerms = terms?.filter((term) => term.taxonomyName === attr.slug) || [];
+const attributesWithTerms = computed(() =>
+  globalProductAttributes.map((attr) => {
+    // Опитваме точно мачване първо
+    let attributeTerms = terms.value?.filter((term: any) => term.taxonomyName === attr.slug) || [];
 
-  // ПОПРАВКА: Ако няма точно мачване и имаме pa_ префикс, опитваме с конвертирания формат
-  if (attributeTerms.length === 0 && attr.slug?.startsWith('pa_')) {
-    // Конвертираме обратно от ENUM към реалното име
-    // pa_brands -> PABRANDS -> търсим в terms с taxonomyName = pa_brands
-    const enumFormat = attr.slug.toUpperCase().replace(/_/g, '');
+    // ПОПРАВКА: Ако няма точно мачване и имаме pa_ префикс, опитваме с конвертирания формат
+    if (attributeTerms.length === 0 && attr.slug?.startsWith('pa_')) {
+      // Конвертираме обратно от ENUM към реалното име
+      // pa_brands -> PABRANDS -> търсим в terms с taxonomyName = pa_brands
+      const enumFormat = attr.slug.toUpperCase().replace(/_/g, '');
 
-    // Намираме кои термини отговарят на този enum
-    attributeTerms =
-      terms?.filter((term) => {
-        if (!term.taxonomyName) return false;
-        const termEnumFormat = term.taxonomyName.toUpperCase().replace(/_/g, '');
-        return termEnumFormat === enumFormat;
-      }) || [];
-  }
+      // Намираме кои термини отговарят на този enum
+      attributeTerms =
+        terms.value?.filter((term: any) => {
+          if (!term.taxonomyName) return false;
+          const termEnumFormat = term.taxonomyName.toUpperCase().replace(/_/g, '');
+          return termEnumFormat === enumFormat;
+        }) || [];
+    }
 
-  // Ако и това не работи, опитваме без pa_ префикса
-  if (attributeTerms.length === 0 && attr.slug?.startsWith('pa_')) {
-    const slugWithoutPrefix = attr.slug.replace('pa_', '');
-    attributeTerms =
-      terms?.filter(
-        (term) =>
-          term.taxonomyName === slugWithoutPrefix ||
-          term.taxonomyName === `pa_${slugWithoutPrefix}` ||
-          term.taxonomyName?.toLowerCase() === attr.slug?.toLowerCase(),
-      ) || [];
-  }
+    // Ако и това не работи, опитваме без pa_ префикса
+    if (attributeTerms.length === 0 && attr.slug?.startsWith('pa_')) {
+      const slugWithoutPrefix = attr.slug.replace('pa_', '');
+      attributeTerms =
+        terms.value?.filter(
+          (term: any) =>
+            term.taxonomyName === slugWithoutPrefix ||
+            term.taxonomyName === `pa_${slugWithoutPrefix}` ||
+            term.taxonomyName?.toLowerCase() === attr.slug?.toLowerCase(),
+        ) || [];
+    }
 
-  return { ...attr, terms: attributeTerms };
-});
+    return { ...attr, terms: attributeTerms };
+  }),
+);
 </script>
 
 <template>

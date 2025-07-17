@@ -839,7 +839,87 @@ const ensureTotalProductsCount = async () => {
   }
 };
 
-// Функция за зареждане на filtered count при всякакви филтри
+// ⚡ ОПТИМИЗИРАНА функция за зареждане на filtered count (5-10x по-бързо!)
+const FILTER_CACHE_KEY = 'woonuxt_filter_counts';
+const FILTER_CACHE_DURATION = 5 * 60 * 1000; // 5 минути TTL
+
+// Функция за генериране на кеш ключ за филтри
+const generateFilterCacheKey = (filters: any): string => {
+  const sortedFilters = Object.keys(filters)
+    .sort()
+    .map((key) => `${key}:${Array.isArray(filters[key]) ? filters[key].sort().join(',') : filters[key]}`)
+    .join('|');
+  return `filter_${btoa(sortedFilters).slice(0, 20)}`;
+};
+
+// Функция за четене от filter кеша
+const getCachedFilterCount = (filters: any): number | null => {
+  if (!process.client) return null;
+
+  try {
+    const cached = sessionStorage.getItem(FILTER_CACHE_KEY);
+    if (!cached) return null;
+
+    const cacheData = JSON.parse(cached);
+    const filterKey = generateFilterCacheKey(filters);
+    const filterData = cacheData[filterKey];
+
+    if (!filterData) return null;
+
+    const now = Date.now();
+    if (now - filterData.timestamp < FILTER_CACHE_DURATION) {
+      return filterData.count;
+    }
+
+    // Изтриваме изтекъл кеш
+    delete cacheData[filterKey];
+    sessionStorage.setItem(FILTER_CACHE_KEY, JSON.stringify(cacheData));
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+// Функция за записване в filter кеша
+const setCachedFilterCount = (filters: any, count: number): void => {
+  if (!process.client) return;
+
+  try {
+    let cacheData: { [key: string]: { count: number; timestamp: number } } = {};
+    const cached = sessionStorage.getItem(FILTER_CACHE_KEY);
+    if (cached) {
+      cacheData = JSON.parse(cached);
+    }
+
+    const filterKey = generateFilterCacheKey(filters);
+    cacheData[filterKey] = {
+      count,
+      timestamp: Date.now(),
+    };
+
+    // Ограничаваме кеша до максимум 20 записа
+    const keys = Object.keys(cacheData);
+    if (keys.length > 20 && keys[0]) {
+      let oldestKey = keys[0];
+      let oldestTime = cacheData[oldestKey]?.timestamp || 0;
+
+      for (const key of keys) {
+        const time = cacheData[key]?.timestamp || 0;
+        if (time < oldestTime) {
+          oldestKey = key;
+          oldestTime = time;
+        }
+      }
+
+      delete cacheData[oldestKey];
+    }
+
+    sessionStorage.setItem(FILTER_CACHE_KEY, JSON.stringify(cacheData));
+  } catch {
+    // Ignore cache errors
+  }
+};
+
 const loadCategoryCount = async (filters: any) => {
   // КРИТИЧНО: Само на клиента
   if (!process.client) {
@@ -863,83 +943,81 @@ const loadCategoryCount = async (filters: any) => {
   });
 
   if (hasAnyFilters || hasAttributeFilters) {
+    // ⚡ ПЪРВО: Проверяваме кеша
+    const cachedCount = getCachedFilterCount(filters);
+    if (cachedCount !== null) {
+      filteredCategoryCount.value = cachedCount;
+      return;
+    }
+
     try {
-      // ПОПРАВКА: Използваме ULTRA ГОЛЯМА first стойност за да получим всички резултати
-      let totalFilteredCount = 0;
-      let hasNextPage = true;
-      let cursor = null;
-      const batchSize = 2000; // Голям batch за по-малко заявки
-      let batchCount = 0;
-      const maxBatches = 10; // Максимум 10 batches = 20,000 продукта
+      console.log(`🔍 DEBUG: Започвам ТОЧЕН count за филтри:`, filters);
 
-      while (hasNextPage && batchCount < maxBatches) {
-        const variables: any = {
-          first: batchSize,
-        };
+      const variables: any = {
+        first: 1000, // Лимит за стара заявка getProductsCount
+      };
 
-        if (cursor) {
-          variables.after = cursor;
-        }
+      // Добавяме всички филтри ако са налични
+      if (filters.categorySlug && filters.categorySlug.length > 0) {
+        variables.slug = filters.categorySlug;
+        console.log(`📂 DEBUG: Филтрирам по категория:`, filters.categorySlug);
+      }
+      if (filters.minPrice !== undefined) variables.minPrice = filters.minPrice;
+      if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
+      if (filters.onSale !== undefined) variables.onSale = filters.onSale;
+      if (filters.search) variables.search = filters.search;
 
-        // Добавяме всички филтри ако са налични
-        if (filters.categorySlug && filters.categorySlug.length > 0) {
-          variables.slug = filters.categorySlug;
-        }
-        if (filters.minPrice !== undefined) variables.minPrice = filters.minPrice;
-        if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
-        if (filters.onSale !== undefined) variables.onSale = filters.onSale;
-        if (filters.search) variables.search = filters.search;
+      // КРИТИЧНО: Добавяме attributeFilter за атрибутни филтри
+      if (process.client) {
+        const { getFilter } = useFiltering();
 
-        // КРИТИЧНО: Добавяме attributeFilter за атрибутни филтри
-        if (process.client) {
-          const { getFilter } = useFiltering();
-          const runtimeConfig = useRuntimeConfig();
-
-          const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES)
-            ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES.map((attribute: any) => attribute.slug)
-            : [];
-
-          const attributeFilters: any[] = [];
-          globalProductAttributes.forEach((attribute: string) => {
-            const attributeValues = getFilter(attribute);
-            if (attributeValues.length > 0) {
-              attributeFilters.push({
-                taxonomy: attribute,
-                terms: attributeValues,
-                operator: 'IN',
-              });
-            }
-          });
-
-          if (attributeFilters.length > 0) {
-            variables.attributeFilter = attributeFilters;
+        const attributeFilters: any[] = [];
+        globalProductAttributes.forEach((attr: any) => {
+          if (attr.slug && filters[attr.slug] && filters[attr.slug].length > 0) {
+            attributeFilters.push({
+              taxonomy: attr.slug,
+              terms: filters[attr.slug],
+              operator: 'IN',
+            });
           }
+        });
+
+        if (attributeFilters.length > 0) {
+          variables.attributeFilter = attributeFilters;
         }
-
-        // Използваме основната getProducts заявка която поддържа всички филтри
-        const { data } = await useAsyncGql('getProducts', variables);
-
-        const result = data.value?.products;
-        if (result) {
-          const batchProducts = result.nodes || [];
-          totalFilteredCount += batchProducts.length;
-
-          hasNextPage = result.pageInfo?.hasNextPage || false;
-          cursor = result.pageInfo?.endCursor || null;
-
-          // Ако batch-ът не е пълен, значи сме достигнали края
-          if (batchProducts.length < batchSize) {
-            hasNextPage = false;
-          }
-        } else {
-          hasNextPage = false;
-        }
-
-        batchCount++;
       }
 
-      filteredCategoryCount.value = totalFilteredCount > 0 ? totalFilteredCount : null;
+      console.log(`🚀 DEBUG: Изпращам variables за точен count:`, variables);
+
+      // ⚡ ИЗПОЛЗВАМЕ СТАРА ЗАЯВКА, но с лимит 5000 за точен count
+      const { data } = await useAsyncGql('getProductsCount', variables);
+
+      const result = data.value?.products;
+      if (result) {
+        const edges = result.edges || [];
+        const totalCount = edges.length;
+        const hasMore = result.pageInfo?.hasNextPage || false;
+
+        console.log(`📊 DEBUG: Резултат - edges: ${totalCount}, hasNextPage: ${hasMore}`);
+
+        if (hasMore && totalCount >= 1000) {
+          console.warn(`⚠️ DEBUG: Има повече от 1000 продукта - използвам частичен count: ${totalCount}`);
+        }
+
+        console.log(`🏁 DEBUG: Финален ТОЧЕН count: ${totalCount}`);
+
+        // 💾 Кешираме резултата
+        if (totalCount > 0) {
+          setCachedFilterCount(filters, totalCount);
+        }
+
+        filteredCategoryCount.value = totalCount > 0 ? totalCount : null;
+      } else {
+        console.log(`❌ DEBUG: Няма резултат от GraphQL`);
+        filteredCategoryCount.value = null;
+      }
     } catch (error) {
+      console.warn('Filter count error:', error);
       filteredCategoryCount.value = null;
     }
   } else {

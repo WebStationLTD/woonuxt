@@ -1,5 +1,27 @@
-query getProductsCount($slug: [String], $productTag: [String]) {
-  products(first: 1000, where: { categoryIn: $slug, tagIn: $productTag, visibility: VISIBLE, status: "publish" }) {
+query getProductsCount(
+  $slug: [String]
+  $productTag: [String]
+  $minPrice: Float
+  $maxPrice: Float
+  $onSale: Boolean
+  $search: String
+  $attributeFilter: [WooNuxtTaxonomyFilterInput]
+  $first: Int = 1000
+) {
+  products(
+    first: $first
+    where: {
+      categoryIn: $slug
+      tagIn: $productTag
+      visibility: VISIBLE
+      minPrice: $minPrice
+      maxPrice: $maxPrice
+      onSale: $onSale
+      search: $search
+      attributeFilter: $attributeFilter
+      status: "publish"
+    }
+  ) {
     pageInfo {
       hasNextPage
       hasPreviousPage
