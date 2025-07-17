@@ -28,6 +28,12 @@ const filteredCategoryCount = ref<number | null>(null);
 // Ref за общия брой продукти в магазина (без филтри)
 const totalProductsCount = ref<number | null>(null);
 
+// ⚡ ПОПРАВКА: Зареждаме общия брой продукти още при SSR за правилни SEO тагове
+const { data: initialCountData } = await useAsyncGql('getTotalProductsCountInstant');
+if (initialCountData.value?.totalProductsCount) {
+  totalProductsCount.value = initialCountData.value.totalProductsCount;
+}
+
 // ИНТЕЛИГЕНТНО кеширане (според obuvki.bg подхода)
 const CACHE_KEY = 'woonuxt_total_products_count';
 const CACHE_DURATION = 30 * 60 * 1000; // 30 минути (като obuvki.bg)
@@ -162,8 +168,11 @@ useSeoMeta({
 // Canonical URL (използваме само frontend URL-а)
 const canonicalUrl = seoMeta.canonicalUrl;
 
+// ПОПРАВКА: Използваме reactive ref за линковете, точно както в категориите
+const headLinks = ref([{ rel: 'canonical', href: canonicalUrl }]);
+
 useHead({
-  link: [{ rel: 'canonical', href: canonicalUrl }],
+  link: headLinks,
 });
 
 // Schema markup от Yoast ако е наличен
@@ -178,29 +187,29 @@ if (shopSeo?.schema?.raw) {
   });
 }
 
-// Prev/Next links за pagination SEO
-const initialPrevNextLinks: any[] = [];
+// Prev/Next links за pagination SEO - ПРЕМАХНАТА placeholder логика
+// const initialPrevNextLinks: any[] = [];
 
-if (seoMeta.pageNumber > 1) {
-  const prevUrl =
-    seoMeta.pageNumber === 2
-      ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin`
-      : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber - 1}`;
+// if (seoMeta.pageNumber > 1) {
+//   const prevUrl =
+//     seoMeta.pageNumber === 2
+//       ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin`
+//       : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber - 1}`;
 
-  initialPrevNextLinks.push({ rel: 'prev', href: prevUrl });
-}
+//   initialPrevNextLinks.push({ rel: 'prev', href: prevUrl });
+// }
 
-// Добавяме next link изначално като placeholder - ще се обновява динамично
-const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber + 1}`;
-initialPrevNextLinks.push({ rel: 'next', href: nextUrl });
+// // Добавяме next link изначално като placeholder - ще се обновява динамично
+// const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber + 1}`;
+// initialPrevNextLinks.push({ rel: 'next', href: nextUrl });
 
-useHead({
-  link: initialPrevNextLinks,
-});
+// useHead({
+//   link: initialPrevNextLinks,
+// });
 
 // Функция за динамично обновяване на next/prev links
 const updateNextPrevLinks = () => {
-  const updatedLinks: any[] = [];
+  const updatedLinks: any[] = [{ rel: 'canonical', href: seoMeta.canonicalUrl }]; // Винаги започваме с canonical
 
   if (seoMeta.pageNumber > 1) {
     const prevUrl =
@@ -219,9 +228,7 @@ const updateNextPrevLinks = () => {
   if (!hasFilters && totalProductsCount.value) {
     // БЕЗ филтри - проверяваме точния брой страници
     const maxPages = Math.ceil(totalProductsCount.value / productsPerPage.value);
-    if (seoMeta.pageNumber >= maxPages) {
-      hasNextPage = false;
-    }
+    hasNextPage = seoMeta.pageNumber < maxPages; // Ключова поправка: използваме < вместо >=
   }
 
   if (hasNextPage) {
@@ -229,9 +236,7 @@ const updateNextPrevLinks = () => {
     updatedLinks.push({ rel: 'next', href: nextUrl });
   }
 
-  useHead({
-    link: updatedLinks,
-  });
+  headLinks.value = updatedLinks; // Обновяваме reactive ref
 };
 
 // Race condition protection
@@ -441,6 +446,9 @@ const loadProductsFromRoute = async () => {
     isNavigating = false;
   }
 };
+
+// ПОПРАВКА: Извикваме updateNextPrevLinks и извън onMounted, за да работи при SSR
+updateNextPrevLinks();
 
 // Зареждаме продуктите веднага при SSR и след hydration
 onMounted(async () => {
