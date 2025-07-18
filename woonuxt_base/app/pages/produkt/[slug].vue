@@ -258,26 +258,6 @@ const showProductFeatures = computed(() => {
             <hr />
           </div>
 
-          <!-- Етикети на продукта -->
-          <div v-if="product.productTags && product.productTags.nodes && product.productTags.nodes.length > 0">
-            <div class="grid gap-2 my-8 text-sm">
-              <div class="flex items-center gap-2">
-                <span class="text-gray-400">Етикети:</span>
-                <div class="product-tags">
-                  <NuxtLink
-                    v-for="tag in product.productTags.nodes"
-                    :key="tag.databaseId"
-                    :to="generateTagUrl(tag)"
-                    class="hover:text-primary"
-                    :title="tag.name"
-                    >{{ tag.name }}<span class="comma">, </span>
-                  </NuxtLink>
-                </div>
-              </div>
-            </div>
-            <hr />
-          </div>
-
           <div class="flex flex-wrap gap-4">
             <WishlistButton :product />
             <ShareButton :product />
@@ -287,6 +267,23 @@ const showProductFeatures = computed(() => {
       <div v-if="product.description || product.reviews" class="my-32">
         <ProductTabs :product />
       </div>
+
+      <!-- Етикети на продукта -->
+      <div v-if="product.productTags && product.productTags.nodes && product.productTags.nodes.length > 0" class="my-16">
+        <div class="relative bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-2xl p-8 shadow-sm border border-gray-100">
+          <!-- Декоративен елемент -->
+          <div class="absolute top-4 right-4 w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full opacity-20"></div>
+          <div class="absolute bottom-4 left-4 w-8 h-8 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full opacity-15"></div>
+
+          <h3 class="text-xl font-semibold text-gray-800 mb-6 relative z-10">Вижте още...</h3>
+          <div class="flex flex-wrap gap-4 relative z-10">
+            <NuxtLink v-for="tag in product.productTags.nodes" :key="tag.databaseId" :to="generateTagUrl(tag)" :title="tag.name" class="clothing-tag"
+              >{{ tag.name }}
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
+
       <div class="my-32" v-if="relatedProducts.length && storeSettings.showRelatedProducts">
         <div class="mb-4 text-xl font-semibold">{{ $t('messages.shop.youMayLike') }}</div>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
@@ -307,11 +304,70 @@ const showProductFeatures = computed(() => {
   display: none;
 }
 
-.product-tags > a:last-child .comma {
-  display: none;
-}
-
 input[type='number']::-webkit-inner-spin-button {
   opacity: 1;
+}
+
+/* Стилове за етикети като дрешни етикети */
+.clothing-tag {
+  position: relative;
+  display: inline-block;
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 9.5px 16px 9.5px 16px;
+  margin-right: 8px;
+  text-decoration: none;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  overflow: visible;
+  margin-left: 18px;
+}
+
+/* Заострен връх като стрела отляво - по-дълъг */
+.clothing-tag::before {
+  content: '';
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
+  border-right: 18px solid #6b7280;
+}
+
+/* Бяла точица в етикета */
+.clothing-tag::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Hover ефект */
+.clothing-tag:hover {
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.clothing-tag:hover::before {
+  border-right-color: #374151;
+}
+
+/* Активен ефект */
+.clothing-tag:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>
