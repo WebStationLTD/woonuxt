@@ -149,6 +149,7 @@ const attributeNames = computed(() => {
       // Hardcoded mapping за често използваните атрибути
       const nameMap: { [key: string]: string } = {
         размер: 'Размер',
+        razmer: 'Размер',
         size: 'Размер',
         цвят: 'Цвят',
         color: 'Цвят',
