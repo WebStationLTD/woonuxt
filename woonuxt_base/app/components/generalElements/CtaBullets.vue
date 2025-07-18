@@ -1,26 +1,26 @@
 <script setup>
 const boxingBenefits = [
-  'Lorem ipsum dolor sit amet consectetur',
-  'Adipiscing elit sed do eiusmod tempor',
-  'Incididunt ut labore et dolore magna',
-  'Aliqua enim ad minim veniam quis',
-  'Nostrud exercitation ullamco laboris',
+  'Висококачествени ръкавици и протектори',
+  'Професионални боксови чували и стойки',
+  'Оригинални екипировки от водещи марки',
+  'Сертифицирани продукти за всички нива',
+  'Бърза доставка и гаранция за качество',
 ];
 
 const fitnessBenefits = [
-  'Lorem ipsum dolor sit amet consectetur',
-  'Adipiscing elit sed do eiusmod tempor',
-  'Incididunt ut labore et dolore magna',
-  'Aliqua enim ad minim veniam quis',
-  'Nostrud exercitation ullamco laboris',
+  'Модерни уреди за домашни фитнес зали',
+  'Професионални тежести и хантели',
+  'Кардио машини с най-нови технологии',
+  'Функционални аксесоари за тренировки',
+  'Консултации за избор на оборудване',
 ];
 
 const clothingBenefits = [
-  'Lorem ipsum dolor sit amet consectetur',
-  'Adipiscing elit sed do eiusmod tempor',
-  'Incididunt ut labore et dolore magna',
-  'Aliqua enim ad minim veniam quis',
-  'Nostrud exercitation ullamco laboris',
+  'Дишащи материали за максимален комфорт',
+  'Стилни дизайни за тренировки и ежедневие',
+  'Размери за всяка фигура и възраст',
+  'Устойчиви тъкани за дълготрайна употреба',
+  'Специални промоции и сезонни намаления',
 ];
 
 // Зареждаме данните за категориите
@@ -60,8 +60,8 @@ const getCategoryAltText = (slug) => {
           <div class="w-full flex-auto">
             <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">Бокс</h2>
             <p class="mt-6 text-lg/8 text-pretty text-gray-300">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-              veniam, quis nostrud exercitation ullamco.
+              Открийте професионалния свят на бокса с нашата експертна колекция от висококачествени ръкавици, боксови чували, протектори и аксесоари. Всички
+              продукти са подбрани от водещи световни марки за максимална безопасност и ефективност във вашите тренировки.
             </p>
             <ul role="list" class="mt-10 grid grid-cols-1 gap-x-8 gap-y-3 text-base/7 text-white sm:grid-cols-2">
               <li v-for="benefit in boxingBenefits" :key="benefit" class="flex gap-x-3">
@@ -132,8 +132,8 @@ const getCategoryAltText = (slug) => {
           <div class="w-full flex-auto">
             <h2 class="text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">Фитнес Оборудване и Аксесоари</h2>
             <p class="mt-6 text-lg/8 text-pretty text-gray-600">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-              veniam, quis nostrud exercitation ullamco.
+              Изградете перфектната фитнес зала с нашето модерно оборудване. От професионални кардио машини до функционални тежести и иновативни аксесоари -
+              всичко необходимо за постигане на вашите фитнес цели на едно място.
             </p>
             <ul role="list" class="mt-10 grid grid-cols-1 gap-x-8 gap-y-3 text-base/7 text-gray-700 sm:grid-cols-2">
               <li v-for="benefit in fitnessBenefits" :key="benefit" class="flex gap-x-3">
@@ -204,8 +204,8 @@ const getCategoryAltText = (slug) => {
           <div class="w-full flex-auto">
             <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">Дрехи</h2>
             <p class="mt-6 text-lg/8 text-pretty text-gray-300">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-              veniam, quis nostrud exercitation ullamco.
+              Облечете се стилно и функционално с нашата премиум колекция спортни дрехи. Съчетаваме последните модни тенденции с високо качество и комфорт, за
+              да изглеждате и се чувствате перфектно по време на тренировки и в ежедневието.
             </p>
             <ul role="list" class="mt-10 grid grid-cols-1 gap-x-8 gap-y-3 text-base/7 text-white sm:grid-cols-2">
               <li v-for="benefit in clothingBenefits" :key="benefit" class="flex gap-x-3">
