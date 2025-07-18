@@ -34,4 +34,24 @@ const show = ref(initialTab);
 .tabs button.active {
   @apply border-primary text-primary;
 }
+
+/* Responsive video стилове */
+.tab-contents :deep(video) {
+  @apply w-full h-auto;
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+}
+
+/* За контейнери на видео съдържание */
+.tab-contents :deep(.wp-block-video),
+.tab-contents :deep(.wp-video) {
+  @apply w-full;
+  max-width: 100% !important;
+}
+
+/* Специфично за WordPress .wp-video с inline стилове в табовете */
+.tab-contents :deep(div.wp-video) {
+  width: 100% !important;
+  max-width: 100% !important;
+}
 </style>

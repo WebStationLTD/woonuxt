@@ -326,4 +326,124 @@ input[type='radio']:checked:after {
   opacity: 1;
   transform: scale(1);
 }
+
+/* Глобални responsive стилове за video елементи */
+video {
+  max-width: 100% !important;
+  height: auto !important;
+  width: 100% !important;
+}
+
+/* Специални стилове за video елементи */
+video {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9 !important;
+}
+
+/* Стилове за WordPress video блокове */
+.wp-block-video video,
+video {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9 !important;
+}
+
+/* Стилове за prose съдържание */
+.prose video {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9 !important;
+  border-radius: 8px;
+}
+
+/* За стари HTML структури */
+p video,
+div video {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Специфично за WordPress .wp-video с inline стилове */
+div.wp-video,
+.wp-video {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+div.wp-video video,
+.wp-video video {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Още по-специфични селектори за упорити inline стилове */
+[class*='wp-video'],
+div[style*='width'] {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Максимална специфичност за WordPress video containers */
+body div.wp-video[style],
+body .wp-video[style],
+body [class*='wp-video'][style] {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* За video елементи в тези containers */
+body div.wp-video[style] video,
+body .wp-video[style] video,
+body [class*='wp-video'][style] video {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Специални стилове за video елементи */
+video {
+  object-fit: cover;
+  background-color: #000;
+  border-radius: 8px;
+}
+
+/* WordPress video блокове */
+.wp-block-video,
+.wp-video {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.wp-block-video video,
+.wp-video video {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9 !important;
+}
+
+/* HTML5 video controls оптимизация */
+video::-webkit-media-controls-panel {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Responsive video wrapper (като за iframe) */
+.responsive-video-wrapper {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.responsive-video-wrapper video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
 </style>
