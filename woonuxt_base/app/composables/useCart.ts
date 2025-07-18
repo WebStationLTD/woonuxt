@@ -64,11 +64,29 @@ export function useCart() {
 
     try {
       const { addToCart } = await GqlAddToCart({ input });
-      if (addToCart?.cart) cart.value = addToCart.cart;
+      if (addToCart?.cart) {
+        cart.value = addToCart.cart;
+
+        // Показваме success нотификация
+        const { showCartSuccess } = useNotifications();
+
+        // Намираме добавения продукт за да получим името му
+        const cartItems = addToCart.cart.contents?.nodes || [];
+        const addedItem = cartItems.find((item: any) => item.product?.node?.databaseId === input.productId);
+
+        const productName = addedItem?.product?.node?.name || addedItem?.variation?.node?.name || 'Продуктът';
+        const quantity = input.quantity || 1;
+
+        showCartSuccess(productName, quantity);
+      }
+
       // Auto open the cart when an item is added to the cart if the setting is enabled
       const { storeSettings } = useAppConfig();
       if (storeSettings.autoOpenCart && !isShowingCart.value) toggleCart(true);
     } catch (error: any) {
+      // Показваме error нотификация при грешка
+      const { showError } = useNotifications();
+      showError('Грешка при добавяне', 'Възникна проблем при добавяне на продукта в количката');
       logGQLError(error);
     }
   }

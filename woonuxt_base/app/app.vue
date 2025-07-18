@@ -93,6 +93,9 @@ if (process.client) {
 
     <!-- Бутон за връщане към началото -->
     <BackToTop />
+
+    <!-- Глобални нотификации -->
+    <NotificationContainer />
   </div>
 </template>
 
