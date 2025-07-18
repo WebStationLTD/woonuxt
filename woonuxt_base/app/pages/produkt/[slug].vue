@@ -162,15 +162,18 @@ const showProductFeatures = computed(() => {
         </div>
 
         <div class="lg:max-w-md xl:max-w-lg md:py-2 w-full">
-          <div class="flex justify-between mb-4">
-            <div class="flex-1">
-              <h1 class="flex flex-wrap items-center gap-2 mb-2 text-2xl font-sesmibold">
-                {{ type.name }}
-                <LazyWPAdminLink :link="`/wp-admin/post.php?post=${product.databaseId}&action=edit`">Edit</LazyWPAdminLink>
-              </h1>
-              <StarRating :rating="product.averageRating || 0" :count="product.reviewCount || 0" v-if="storeSettings.showReviews" />
+          <div class="mb-4">
+            <h1 class="flex flex-wrap items-center gap-2 mb-3 text-2xl font-sesmibold">
+              {{ type.name }}
+              <LazyWPAdminLink :link="`/wp-admin/post.php?post=${product.databaseId}&action=edit`">Edit</LazyWPAdminLink>
+            </h1>
+
+            <!-- Цена на отделен ред -->
+            <div class="mb-3">
+              <ProductPrice class="text-3xl font-bold text-[#dc2626]" :sale-price="type.salePrice" :regular-price="type.regularPrice" />
             </div>
-            <ProductPrice class="text-xl" :sale-price="type.salePrice" :regular-price="type.regularPrice" />
+
+            <StarRating :rating="product.averageRating || 0" :count="product.reviewCount || 0" v-if="storeSettings.showReviews" />
           </div>
 
           <div class="grid gap-2 my-8 text-sm empty:hidden">
