@@ -5,6 +5,8 @@ const route = useRoute();
 const { storeSettings } = useAppConfig();
 const { addToCart, isUpdatingCart, cart } = useCart();
 const { t } = useI18n();
+const { sortVariations: sortProductVariations } = useProductVariations();
+
 const props = defineProps({
   node: { type: Object as PropType<Product>, required: true },
   index: { type: Number, default: 1 },
@@ -175,43 +177,10 @@ const primaryAttributeName = computed((): string => {
   return (attributeNames.value[0] as string) || 'Вариации';
 });
 
-// Функция за сортиране на вариациите по размер (от малко към голямо)
-const sortVariations = (variations: any[]) => {
-  return [...variations].sort((a, b) => {
-    // Получаваме стойността на първия атрибут за всяка вариация
-    const getVariationValue = (variation: any): string => {
-      if (variation.attributes?.nodes?.length && variation.attributes.nodes[0]?.value) {
-        return String(variation.attributes.nodes[0].value);
-      }
-      return String(variation.name || '');
-    };
-
-    const valueA: string = getVariationValue(a);
-    const valueB: string = getVariationValue(b);
-
-    // Опитваме се да извлечем числа от стойностите (за размери като "10-oz", "12-oz")
-    const extractNumber = (value: string): number => {
-      const match = value.match(/(\d+)/);
-      return match ? parseInt(match[1]) : 0;
-    };
-
-    const numA: number = extractNumber(valueA);
-    const numB: number = extractNumber(valueB);
-
-    // Ако и двете стойности съдържат числа, сортираме по числата
-    if (numA > 0 && numB > 0) {
-      return numA - numB;
-    }
-
-    // В противен случай сортираме алфабетно
-    return valueA.localeCompare(valueB);
-  });
-};
-
 // Сортирани вариации за използване в селекта
 const sortedVariations = computed(() => {
   if (!hasVariations.value || !props.node?.variations?.nodes) return [];
-  return sortVariations(props.node.variations.nodes);
+  return sortProductVariations(props.node.variations.nodes);
 });
 
 // Изчисляване на вариациите за текстово показване (сортирани от малко към голямо)

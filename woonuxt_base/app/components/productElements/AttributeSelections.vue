@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { sortVariations } = useProductVariations();
+
 interface Props {
   attributes: any[];
   defaultAttributes?: { nodes: VariationAttribute[] } | null;
@@ -28,6 +30,26 @@ const updateAttrs = () => {
 
   activeVariations.value = selectedVariations;
   emit('attrs-changed', selectedVariations);
+};
+
+const getSortedTerms = (terms: any[]) => {
+  if (!terms) return [];
+  // Преобразуваме terms, за да имат структура, подобна на вариациите, очаквана от sortVariations
+  const variationsForSorting = terms.map((term) => ({
+    attributes: {
+      nodes: [{ value: term.name || term.slug }],
+    },
+    name: term.name || term.slug,
+  }));
+
+  const sortedVariations = sortVariations(variationsForSorting);
+
+  // Обратно преобразуване към оригиналния формат на terms
+  return sortedVariations
+    .map((sortedVar: any) => {
+      return terms.find((term) => (term.name || term.slug) === sortedVar.name);
+    })
+    .filter(Boolean); // Филтрираме възможни null/undefined стойности
 };
 
 const setDefaultAttributes = () => {
@@ -111,7 +133,12 @@ onMounted(() => {
         </div>
         <select :id="attr.name" :ref="attr.name" :name="attr.name" required class="border-white shadow" @change="updateAttrs">
           <option disabled hidden>{{ $t('messages.general.choose') }} {{ decodeURIComponent(attr.label) }}</option>
-          <option v-for="(term, dropdownIndex) in attr.terms.nodes" :key="dropdownIndex" :value="term.slug" v-html="term.name" :selected="dropdownIndex == 0" />
+          <option
+            v-for="(term, dropdownIndex) in getSortedTerms(attr.terms.nodes)"
+            :key="dropdownIndex"
+            :value="term.slug"
+            v-html="term.name"
+            :selected="dropdownIndex == 0" />
         </select>
       </div>
 
@@ -121,7 +148,7 @@ onMounted(() => {
           {{ attr.label }} <span v-if="activeVariations.length" class="text-gray-400">: {{ getSelectedName(attr, activeVariations[i]) }}</span>
         </div>
         <div class="flex gap-2">
-          <span v-for="(term, index) in attr.terms.nodes" :key="index">
+          <span v-for="(term, index) in getSortedTerms(attr.terms.nodes)" :key="index">
             <label :for="`${term.slug}_${index}`">
               <input
                 :id="`${term.slug}_${index}`"
