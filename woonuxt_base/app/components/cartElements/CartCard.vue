@@ -16,6 +16,48 @@ const regularPrice = computed(() => parseFloat(productType.value.rawRegularPrice
 const salePrice = computed(() => parseFloat(productType.value.rawSalePrice));
 const salePercentage = computed(() => Math.round(((regularPrice.value - salePrice.value) / regularPrice.value) * 100) + '%');
 
+// Показване на атрибутите на вариацията
+const variationAttributes = computed(() => {
+  if (!item.variation?.node?.attributes?.nodes) return '';
+
+  const attrs = item.variation.node.attributes.nodes
+    .map((attr) => {
+      if (!attr.value) return '';
+
+      // Hardcoded mapping за често използваните атрибути
+      const nameMap = {
+        размер: 'Размер',
+        razmer: 'Размер',
+        size: 'Размер',
+        цвят: 'Цвят',
+        color: 'Цвят',
+        материал: 'Материал',
+        material: 'Материал',
+      };
+
+      let attrName = attr.name || '';
+      if (attrName.startsWith('pa_')) {
+        attrName = attrName.replace('pa_', '');
+      }
+
+      // Декодиране на URL encoded кирилица
+      try {
+        attrName = decodeURIComponent(attrName);
+      } catch (e) {
+        // Ако декодирането се провали, оставяме оригинала
+      }
+
+      const mappedName = nameMap[attrName.toLowerCase()];
+      const displayName = mappedName || attrName.charAt(0).toUpperCase() + attrName.slice(1);
+
+      return `${displayName}: ${attr.value}`;
+    })
+    .filter(Boolean)
+    .join(' | ');
+
+  return attrs;
+});
+
 const removeItem = () => {
   updateItemQuantity(item.key, 0);
 };
@@ -41,13 +83,17 @@ const moveToWishList = () => {
       </NuxtLink>
       <div class="flex-1 min-w-0">
         <div class="flex flex-wrap gap-x-2 gap-y-1 items-center">
-          <NuxtLink class="leading-tight truncate max-w-full block" :to="productSlug">{{ productType.name }}</NuxtLink>
+          <NuxtLink class="leading-tight truncate max-w-full block" :to="productSlug">{{ item.product.node.name }}</NuxtLink>
           <span v-if="productType.salePrice" class="text-[10px] border-green-200 leading-none bg-green-100 inline-block p-0.5 rounded text-green-600 border">
             Save {{ salePercentage }}
           </span>
           <span v-if="isLowStock" class="text-[10px] border-yellow-200 leading-none bg-yellow-100 inline-block p-0.5 rounded text-orange-500 border">
             Low Stock
           </span>
+        </div>
+        <!-- Показване на атрибутите на вариацията -->
+        <div v-if="variationAttributes" class="text-xs text-gray-500 mt-1">
+          {{ variationAttributes }}
         </div>
         <ProductPrice class="mt-1 text-xs" :sale-price="productType.salePrice" :regular-price="productType.regularPrice" />
       </div>

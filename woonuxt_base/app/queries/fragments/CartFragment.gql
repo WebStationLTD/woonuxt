@@ -55,6 +55,12 @@ fragment Cart on Cart {
             altText
             title
           }
+          attributes {
+            nodes {
+              name
+              value
+            }
+          }
         }
       }
     }

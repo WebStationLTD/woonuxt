@@ -68,7 +68,9 @@
       "updating": "Обновяване",
       "updateDetails": "Обнови данните",
       "updateSuccess": "Успешно обновено",
-      "failed": "Неуспешно обновяване"
+      "failed": "Неуспешно обновяване",
+      "alreadyRegistered": "Вече имате регистрация?",
+      "contactInformation": "Информация за контакт"
     },
     "shop": {
       "shopByCategory": "Пазарувай по категория",

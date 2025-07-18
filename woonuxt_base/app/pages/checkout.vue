@@ -134,31 +134,6 @@ useSeoMeta({
 
       <form v-else class="container flex flex-wrap items-start gap-8 my-16 justify-evenly lg:gap-20" @submit.prevent="payNow">
         <div class="grid w-full max-w-2xl gap-8 checkout-form md:flex-1">
-          <div v-if="!viewer && customer?.billing">
-            <h2 class="w-full mb-2 text-2xl font-semibold leading-none">Contact Information</h2>
-            <p class="mt-1 text-sm text-gray-500">
-              {{ $t('messages.account.alreadyRegistered') }}
-              <NuxtLink to="/my-account" class="text-primary font-semibold">{{ $t('messages.account.login') }}</NuxtLink>
-            </p>
-
-            <div class="w-full mt-4">
-              <label for="email">{{ $t('messages.billing.email') }}</label>
-              <input
-                v-model="customer.billing.email"
-                placeholder="johndoe@email.com"
-                autocomplete="email"
-                type="email"
-                name="email"
-                :class="{ 'has-error': isInvalidEmail }"
-                @blur="checkEmailOnBlur(customer.billing.email)"
-                @input="checkEmailOnInput(customer.billing.email)"
-                required />
-              <Transition name="scale-y" mode="out-in">
-                <div v-if="isInvalidEmail" class="mt-1 text-sm text-red-500">Invalid email address</div>
-              </Transition>
-            </div>
-          </div>
-
           <div>
             <h2 class="w-full mb-3 text-2xl font-semibold">{{ $t('messages.billing.billingDetails') }}</h2>
             <BillingDetails :model-value="customer?.billing || {}" />
@@ -196,6 +171,17 @@ useSeoMeta({
               class="w-full min-h-[100px]"
               rows="4"
               :placeholder="$t('messages.shop.orderNotePlaceholder')"></textarea>
+          </div>
+
+          <div v-if="!viewer && customer?.billing" class="flex flex-col md:flex-row md:gap-8 text-sm text-gray-500">
+            <p>
+              {{ $t('messages.account.alreadyRegistered') }}
+              <NuxtLink to="/my-account" class="text-primary font-semibold">{{ $t('messages.account.login') }}</NuxtLink>
+            </p>
+            <p>
+              Нямате профил? Можете да се регистрирате
+              <NuxtLink to="/my-account" class="text-primary font-semibold">тук</NuxtLink>!
+            </p>
           </div>
         </div>
 
