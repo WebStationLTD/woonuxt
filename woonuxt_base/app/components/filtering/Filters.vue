@@ -203,7 +203,7 @@ const attributesWithTerms = computed(() =>
 
 <template>
   <!-- Desktop филтри - остават на мястото си -->
-  <aside id="filters" class="hidden md:block">
+  <aside id="filters" class="hidden lg:block">
     <div class="relative z-30 grid mb-12 space-y-8 divide-y">
       <PriceFilter />
       <CategoryFilter v-if="!hideCategories" :terms="productCategoryTerms" />
@@ -220,7 +220,7 @@ const attributesWithTerms = computed(() =>
 
   <!-- Mobile филтри - teleport до body -->
   <Teleport to="body">
-    <aside id="mobile-filters" class="block md:hidden">
+    <aside id="mobile-filters" class="block lg:hidden">
       <!-- Back/Close button -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-50">
         <h2 class="text-lg font-semibold">Филтри</h2>
@@ -230,7 +230,12 @@ const attributesWithTerms = computed(() =>
       </div>
 
       <div class="p-4">
-        <OrderByDropdown class="block w-full mb-4" />
+        <div class="mb-4">
+          <div class="cursor-pointer flex font-semibold leading-none justify-between items-center mb-3">
+            <span>Сортиране</span>
+          </div>
+          <OrderByDropdown class="w-full" />
+        </div>
         <div class="relative z-30 grid mb-12 space-y-8 divide-y">
           <PriceFilter />
           <CategoryFilter v-if="!hideCategories" :terms="productCategoryTerms" />
@@ -277,7 +282,7 @@ const attributesWithTerms = computed(() =>
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   #mobile-filters {
     @apply bg-white h-full fixed top-0 right-0 w-full max-w-sm transform transition-transform duration-300 ease-in-out translate-x-full overflow-y-auto;
     z-index: 99999 !important;

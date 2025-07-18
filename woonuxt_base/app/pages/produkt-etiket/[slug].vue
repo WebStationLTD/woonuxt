@@ -714,7 +714,7 @@ const loadTagCount = async (filters: any) => {
   <div class="container mx-auto px-2 py-4 sm:py-6">
     <div :key="currentSlug || 'no-tag'" class="flex flex-col lg:flex-row gap-0 sm:gap-8">
       <!-- Sidebar с филтри - вляво -->
-      <aside v-if="storeSettings?.showFilters" class="lg:w-80 flex-shrink-0">
+      <aside v-if="storeSettings?.showFilters" class="hidden lg:block lg:w-80 flex-shrink-0">
         <div class="sticky top-4">
           <Filters :hide-categories="true" />
         </div>
@@ -728,13 +728,13 @@ const loadTagCount = async (filters: any) => {
           <div class="flex items-center justify-between w-full gap-4 mb-8">
             <div class="h-6 bg-gray-200 rounded-md w-32 animate-pulse"></div>
             <div class="flex items-center gap-4">
-              <div class="h-8 bg-gray-200 rounded-md w-24 animate-pulse hidden md:block"></div>
+              <div class="h-8 bg-gray-200 rounded-md w-24 animate-pulse hidden lg:block"></div>
               <div class="h-8 bg-gray-200 rounded-md w-10 animate-pulse lg:hidden"></div>
             </div>
           </div>
 
           <!-- Products grid skeleton -->
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
             <div v-for="i in 12" :key="i" class="space-y-3">
               <div class="aspect-square bg-gray-200 rounded-lg animate-pulse"></div>
               <div class="space-y-2">
@@ -759,7 +759,7 @@ const loadTagCount = async (filters: any) => {
           <div class="flex items-center justify-between w-full gap-4 mb-2 sm:mb-8">
             <ProductResultCount />
             <div class="flex items-center gap-4">
-              <OrderByDropdown class="hidden md:inline-flex" v-if="storeSettings?.showOrderByDropdown" />
+              <OrderByDropdown class="hidden lg:inline-flex" v-if="storeSettings?.showOrderByDropdown" />
               <div v-if="storeSettings?.showFilters" class="flex items-center gap-2 lg:hidden">
                 <span class="text-sm font-light">Филтри</span>
                 <ShowFilterTrigger />
@@ -772,6 +772,9 @@ const loadTagCount = async (filters: any) => {
 
           <!-- Пагинация -->
           <PaginationServer :category-count="tagCount" />
+
+          <!-- Описание на етикета -->
+          <TaxonomyDescription v-if="matchingTagRef?.description" :description="matchingTagRef.description" :name="matchingTagRef.name" :max-height="200" />
         </div>
 
         <!-- No products found - показва се само когато сме сигурни че няма продукти -->

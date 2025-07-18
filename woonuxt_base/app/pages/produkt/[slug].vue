@@ -289,7 +289,7 @@ const showProductFeatures = computed(() => {
 
       <div class="my-32" v-if="relatedProducts.length && storeSettings.showRelatedProducts">
         <div class="mb-4 text-xl font-semibold">{{ $t('messages.shop.youMayLike') }}</div>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
           <div
             v-for="(relatedItem, i) in relatedProducts"
             :key="relatedItem.databaseId"

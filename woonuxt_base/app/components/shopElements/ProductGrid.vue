@@ -41,8 +41,16 @@ const productsToShow = computed(() => products.value || []);
   }
 }
 
-/* Desktop: 4 колони */
-@media (min-width: 1024px) {
+/* Large Tablet до Desktop: 3 колони */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+    @apply gap-6;
+  }
+}
+
+/* Desktop XL: 4 колони */
+@media (min-width: 1280px) {
   .product-grid {
     grid-template-columns: repeat(4, 1fr);
     @apply gap-6;
