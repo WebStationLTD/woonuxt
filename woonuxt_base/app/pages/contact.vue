@@ -69,15 +69,15 @@
           <div class="space-y-3 text-gray-600">
             <div class="flex justify-between items-center py-2 border-b border-gray-100">
               <span class="font-medium">Понеделник - Петък:</span>
-              <span class="font-semibold text-primary">9:00 - 18:00</span>
+              <span class="font-semibold text-primary">10:00 – 19:00 ч.</span>
             </div>
             <div class="flex justify-between items-center py-2 border-b border-gray-100">
               <span class="font-medium">Събота:</span>
-              <span class="font-semibold text-primary">10:00 - 16:00</span>
+              <span class="font-semibold text-primary">11:00 – 17:00 ч.</span>
             </div>
             <div class="flex justify-between items-center py-2">
               <span class="font-medium">Неделя:</span>
-              <span class="font-semibold text-red-500">Затворено</span>
+              <span class="font-semibold text-red-500">ПОЧИВЕН ДЕН</span>
             </div>
           </div>
         </div>
