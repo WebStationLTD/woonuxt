@@ -43,7 +43,7 @@ const getCategoryUrl = (category: Category): string => {
 </script>
 
 <template>
-  <section class="py-8 px-4">
+  <section class="py-8 px-0 sm:px-4">
     <div v-for="(parentCategory, index) in parentCategories" :key="parentCategory.slug || index" class="mb-12">
       <!-- Родителска категория - широк правоъгълник -->
       <div class="mx-auto w-[95%] lg:w-[80%]">
