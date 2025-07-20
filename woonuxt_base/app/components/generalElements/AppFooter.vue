@@ -79,11 +79,27 @@ useHead({
             <h3 class="text-white font-semibold text-lg mb-4">Топ категории</h3>
             <nav class="space-y-2" aria-label="Основни категории продукти">
               <ul class="text-sm space-y-2">
-                <li><a href="/example/fitness-equipment" class="text-gray-300 hover:text-white transition-colors">Фитнес Оборудване и Аксесоари</a></li>
-                <li><a href="/example/combat-sports" class="text-gray-300 hover:text-white transition-colors">Бойни спортове</a></li>
-                <li><a href="/example/treadmills" class="text-gray-300 hover:text-white transition-colors">Бягащи пътеки</a></li>
-                <li><a href="/example/clothing" class="text-gray-300 hover:text-white transition-colors">Дрехи</a></li>
-                <li><a href="/example/venum" class="text-gray-300 hover:text-white transition-colors">Venum</a></li>
+                <li><a href="/produkt-kategoriya/бокс" class="text-gray-300 hover:text-white transition-colors">Бокс</a></li>
+                <li><a href="/produkt-kategoriya/бокс/боксов-чувал" class="text-gray-300 hover:text-white transition-colors">Боксови чували</a></li>
+                <li><a href="/produkt-kategoriya/бокс/боксови-ръкавици" class="text-gray-300 hover:text-white transition-colors">Боксови ръкавици</a></li>
+                <li><a href="/produkt-kategoriya/дрехи" class="text-gray-300 hover:text-white transition-colors">Дрехи</a></li>
+                <li><a href="/produkt-kategoriya/дрехи/детски-дрехи" class="text-gray-300 hover:text-white transition-colors">Детски дрехи</a></li>
+                <li><a href="/produkt-kategoriya/дрехи/суичъри" class="text-gray-300 hover:text-white transition-colors">Суичъри</a></li>
+                <li>
+                  <a href="/produkt-kategoriya/фитнес-оборудване-и-аксесоари" class="text-gray-300 hover:text-white transition-colors"
+                    >Фитнес оборудване и аксесоари</a
+                  >
+                </li>
+                <li>
+                  <a href="/produkt-kategoriya/фитнес-оборудване-и-аксесоари/бягаща-пътека" class="text-gray-300 hover:text-white transition-colors"
+                    >Бягащи пътеки</a
+                  >
+                </li>
+                <li>
+                  <a href="/produkt-kategoriya/фитнес-оборудване-и-аксесоари/велоергометри" class="text-gray-300 hover:text-white transition-colors"
+                    >Велоергометри</a
+                  >
+                </li>
               </ul>
             </nav>
           </div>
