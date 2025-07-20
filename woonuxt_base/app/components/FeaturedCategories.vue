@@ -72,7 +72,7 @@ const getCategoryUrl = (category: Category): string => {
         </NuxtLink>
 
         <!-- Подкатегории в grid -->
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6 px-2">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
           <NuxtLink
             v-for="(subcategory, subIndex) in getSubcategories(parentCategory)"
             :key="subcategory.slug || subIndex"
