@@ -15,6 +15,11 @@ query getProductCategories($first: Int, $after: String, $slug: [String], $hideEm
       image {
         ...Image
       }
+      secondImage {
+        sourceUrl
+        altText
+        title
+      }
       children(first: 25) {
         nodes {
           slug
@@ -25,6 +30,11 @@ query getProductCategories($first: Int, $after: String, $slug: [String], $hideEm
           uri
           image {
             ...Image
+          }
+          secondImage {
+            sourceUrl
+            altText
+            title
           }
           parent {
             node {
@@ -55,6 +65,11 @@ fragment ProductCategory on ProductCategory {
   name
   slug
   image {
+    sourceUrl(size: MEDIUM_LARGE)
+    altText
+    title
+  }
+  secondImage {
     sourceUrl(size: MEDIUM_LARGE)
     altText
     title

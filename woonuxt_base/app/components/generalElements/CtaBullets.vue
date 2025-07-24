@@ -31,13 +31,13 @@ const { data: categoriesData } = await useAsyncGql('getCategoryImages', {
 // Функция за получаване на снимка по slug на категория
 const getCategoryImage = (slug) => {
   const category = categoriesData.value?.productCategories?.nodes?.find((cat) => cat.slug === slug);
-  return category?.image?.sourceUrl || '/images/placeholder.jpg';
+  return category?.secondImage?.sourceUrl || category?.image?.sourceUrl || '/images/placeholder.jpg';
 };
 
 // Функция за получаване на alt текст по slug на категория
 const getCategoryAltText = (slug) => {
   const category = categoriesData.value?.productCategories?.nodes?.find((cat) => cat.slug === slug);
-  return category?.image?.altText || category?.name || 'Категория снимка';
+  return category?.secondImage?.altText || category?.image?.altText || category?.name || 'Категория снимка';
 };
 </script>
 
@@ -53,9 +53,9 @@ const getCategoryAltText = (slug) => {
               :alt="getCategoryAltText('бокс')"
               :src="getCategoryImage('бокс')"
               class="absolute inset-0 w-full h-full object-cover rounded-2xl"
-              sizes="sm:100vw lg:400px"
-              width="400"
-              height="400" />
+              sizes="sm:100vw lg:384px"
+              width="384"
+              height="384" />
           </div>
           <div class="w-full flex-auto">
             <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">Бокс</h2>
@@ -125,9 +125,9 @@ const getCategoryAltText = (slug) => {
               :alt="getCategoryAltText('фитнес-оборудване-и-аксесоари')"
               :src="getCategoryImage('фитнес-оборудване-и-аксесоари')"
               class="absolute inset-0 w-full h-full object-cover rounded-2xl"
-              sizes="sm:100vw lg:400px"
-              width="400"
-              height="400" />
+              sizes="sm:100vw lg:384px"
+              width="384"
+              height="384" />
           </div>
           <div class="w-full flex-auto">
             <h2 class="text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">Фитнес Оборудване и Аксесоари</h2>
@@ -197,9 +197,9 @@ const getCategoryAltText = (slug) => {
               :alt="getCategoryAltText('дрехи')"
               :src="getCategoryImage('дрехи')"
               class="absolute inset-0 w-full h-full object-cover rounded-2xl"
-              sizes="sm:100vw lg:400px"
-              width="400"
-              height="400" />
+              sizes="sm:100vw lg:384px"
+              width="384"
+              height="384" />
           </div>
           <div class="w-full flex-auto">
             <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">Дрехи</h2>

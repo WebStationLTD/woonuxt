@@ -8,6 +8,11 @@ query getCategoryImages($slugs: [String]) {
       image {
         ...Image
       }
+      secondImage {
+        sourceUrl
+        altText
+        title
+      }
     }
   }
 }
