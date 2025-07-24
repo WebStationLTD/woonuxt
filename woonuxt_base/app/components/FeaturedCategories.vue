@@ -58,7 +58,10 @@ const getCategoryUrl = (category: Category): string => {
               :title="parentCategory.image?.title || parentCategory.name || ''"
               class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               loading="eager"
-              sizes="(max-width: 768px) 95vw, 80vw" />
+              :quality="95"
+              width="1200"
+              height="400"
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 90vw, 1200px" />
             <!-- Overlay градиент -->
             <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent"></div>
 
