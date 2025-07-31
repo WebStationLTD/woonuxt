@@ -78,9 +78,9 @@ const payNow = async () => {
       orderInput.value.transactionId = new Date().getTime().toString();
       orderInput.value.metaData.push({ key: '_chosen_payment_method', value: 'cash_on_delivery' });
     } else if (method === 'borica_emv') {
-      isPaid.value = false;
-      orderInput.value.transactionId = new Date().getTime().toString();
-      orderInput.value.metaData.push({ key: '_chosen_payment_method', value: 'borica_emv' });
+      // Обработка на Borica плащане
+      await handleBoricaPayment();
+      return; // Не продължаваме с нормалния checkout flow
     } else {
       isPaid.value = false;
       orderInput.value.transactionId = new Date().getTime().toString();
@@ -111,6 +111,58 @@ const checkEmailOnBlur = (email?: string | null): void => {
 
 const checkEmailOnInput = (email?: string | null): void => {
   if (email && isInvalidEmail.value) isInvalidEmail.value = !emailRegex.test(email);
+};
+
+// Обработка на Borica плащане
+const handleBoricaPayment = async (): Promise<void> => {
+  try {
+    buttonText.value = 'Подготвяне на плащането...';
+
+    // Първо създаваме поръчката в WooCommerce
+    isPaid.value = false;
+    orderInput.value.transactionId = new Date().getTime().toString();
+    orderInput.value.metaData.push({ key: '_chosen_payment_method', value: 'borica_emv' });
+
+    const order = await processCheckout(false);
+
+    if (!order?.databaseId) {
+      throw new Error('Грешка при създаване на поръчката');
+    }
+
+    // Подготвяме данните за Borica плащане
+    const amount = extractAmountFromCart(cart.value);
+    const paymentData = {
+      orderId: order.databaseId.toString(),
+      amount: amount,
+      currency: 'BGN',
+      description: generateOrderDescription({ orderId: order.databaseId }),
+      customerEmail: customer.value?.billing?.email || customer.value?.email,
+    };
+
+    // Валидираме данните
+    if (!validatePaymentData(paymentData)) {
+      return;
+    }
+
+    buttonText.value = 'Пренасочване към Борика...';
+
+    // Инициализираме плащането
+    const result = await initiatePayment(paymentData);
+
+    if (result.success && result.formData) {
+      // Пренасочваме към Borica gateway
+      redirectToGateway(result.formData);
+    } else {
+      throw new Error(result.error || 'Грешка при инициализиране на плащането');
+    }
+  } catch (error: any) {
+    console.error('Borica payment error:', error);
+    buttonText.value = t('messages.shop.placeOrder');
+
+    // Показваме грешка на потребителя
+    const { showError } = useNotifications();
+    showError('Грешка при плащане', error.message || 'Възникна грешка при обработка на плащането');
+  }
 };
 
 useSeoMeta({

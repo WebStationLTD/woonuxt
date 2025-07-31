@@ -158,7 +158,7 @@ export function useCheckout() {
         });
 
         // За Borica просто пренасочваме към тяхната страница
-        // Borica ще направи callback към WordPress директно
+        // Borica ще направи callback към WordPress и ще пренасочи потребителя към нашия BACKREF URL
         window.location.href = redirectUrl;
         return checkout;
       } else {
