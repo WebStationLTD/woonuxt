@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
       merchantUrl: process.env.BORICA_MERCHANT_URL || "https://myshop.com/",
       backrefUrl:
         process.env.BORICA_BACKREF_URL ||
-        "https://myshop.com/api/borica/result",
+        "https://myshop.com/api/borica/callback",
       gatewayUrl:
         process.env.BORICA_GATEWAY_URL ||
         "https://3dsgate-dev.borica.bg/cgi-bin/cgi_link",
@@ -74,7 +74,7 @@ export default defineEventHandler(async (event) => {
     const amountInCents = Math.round(amount * 100).toString();
 
     // Параметри за заявката
-    const params = {
+    const params: Record<string, string> = {
       TERMINAL: config.terminalId,
       TRTYPE: "1", // Sale transaction
       AMOUNT: amountInCents,
@@ -133,30 +133,38 @@ export default defineEventHandler(async (event) => {
 
 function generateMacSignature(data: string, privateKeyPem: string): string {
   try {
-    // Почистване на private key
-    const cleanPrivateKey = privateKeyPem
-      .replace(/-----BEGIN PRIVATE KEY-----/, "")
-      .replace(/-----END PRIVATE KEY-----/, "")
-      .replace(/\\n/g, "")
-      .replace(/\s/g, "");
+    // Проверяваме дали ключът има PEM headers
+    let formattedKey = privateKeyPem;
 
-    const privateKeyDer = Buffer.from(cleanPrivateKey, "base64");
+    if (!formattedKey.includes("-----BEGIN PRIVATE KEY-----")) {
+      // Ако няма headers, добавяме ги
+      formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
+    }
+
+    // Заменяме \\n с реални нови редове
+    formattedKey = formattedKey.replace(/\\n/g, "\n");
+
+    console.log("Using private key format:", {
+      hasBeginHeader: formattedKey.includes("-----BEGIN PRIVATE KEY-----"),
+      hasEndHeader: formattedKey.includes("-----END PRIVATE KEY-----"),
+      keyLength: formattedKey.length,
+    });
 
     // Създаване на подпис
     const sign = crypto.createSign("SHA1");
     sign.update(Buffer.from(data, "utf8"));
 
-    const privateKeyObject = crypto.createPrivateKey({
-      key: privateKeyDer,
-      format: "der",
-      type: "pkcs8",
-    });
-
-    const signature = sign.sign(privateKeyObject);
+    const signature = sign.sign(formattedKey);
     return signature.toString("hex").toUpperCase();
-  } catch (error) {
+  } catch (error: any) {
     console.error("Signature generation error:", error);
-    throw new Error("Failed to generate signature");
+    console.error(
+      "Private key format:",
+      privateKeyPem.substring(0, 100) + "..."
+    );
+    throw new Error(
+      "Failed to generate signature: " + (error?.message || error)
+    );
   }
 }
 

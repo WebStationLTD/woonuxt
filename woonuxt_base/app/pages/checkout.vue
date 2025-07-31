@@ -118,26 +118,70 @@ const handleBoricaPayment = async (): Promise<void> => {
   try {
     buttonText.value = 'Подготвяне на плащането...';
 
-    // Първо създаваме поръчката в WooCommerce
-    isPaid.value = false;
-    orderInput.value.transactionId = new Date().getTime().toString();
-    orderInput.value.metaData.push({ key: '_chosen_payment_method', value: 'borica_emv' });
-
-    const order = await processCheckout(false);
-
-    if (!order?.databaseId) {
-      throw new Error('Грешка при създаване на поръчката');
+    // Проверяваме дали има количка
+    if (!cart.value || cart.value.isEmpty) {
+      throw new Error('Количката е празна');
     }
+
+    // Подготвяме метаданните без да променяме orderInput преждевременно
+    const metadata = [
+      { key: 'order_via', value: 'WooNuxt' },
+      { key: '_chosen_payment_method', value: 'borica_emv' },
+    ];
+
+    // Подготвяме checkout payload за Borica
+    const { customer } = useAuth();
+    const billing = customer.value?.billing;
+    const shipping = orderInput.value.shipToDifferentAddress ? customer.value?.shipping : billing;
+    const shippingMethod = cart.value?.chosenShippingMethods;
+
+    const checkoutPayload = {
+      billing,
+      shipping,
+      shippingMethod,
+      metaData: metadata,
+      paymentMethod: 'borica_emv',
+      customerNote: orderInput.value.customerNote || '',
+      shipToDifferentAddress: orderInput.value.shipToDifferentAddress || false,
+      transactionId: new Date().getTime().toString(),
+      isPaid: false,
+      account: orderInput.value.createAccount
+        ? {
+            username: orderInput.value.username,
+            password: orderInput.value.password,
+          }
+        : null,
+    };
+
+    console.log('Creating Borica order with payload:', {
+      paymentMethod: checkoutPayload.paymentMethod,
+      amount: cart.value.total,
+      hasCustomer: !!billing?.email,
+      metaData: checkoutPayload.metaData,
+    });
+
+    // Създаваме поръчката директно чрез GraphQL
+    const { checkout } = await GqlCheckout(checkoutPayload);
+
+    if (!checkout?.order?.databaseId) {
+      console.error('Checkout failed:', checkout);
+      throw new Error('Не може да се създаде поръчката. Моля, проверете данните си.');
+    }
+
+    const orderId = checkout.order.databaseId;
+    console.log('Order created successfully:', { orderId, orderKey: checkout.order.orderKey });
 
     // Подготвяме данните за Borica плащане
     const amount = extractAmountFromCart(cart.value);
     const paymentData = {
-      orderId: order.databaseId.toString(),
+      orderId: orderId.toString(),
       amount: amount,
       currency: 'BGN',
-      description: generateOrderDescription({ orderId: order.databaseId }),
-      customerEmail: customer.value?.billing?.email || customer.value?.email,
+      description: generateOrderDescription({ orderId }),
+      customerEmail: billing?.email || customer.value?.email || '',
     };
+
+    console.log('Borica payment data:', paymentData);
 
     // Валидираме данните
     if (!validatePaymentData(paymentData)) {
@@ -151,6 +195,7 @@ const handleBoricaPayment = async (): Promise<void> => {
 
     if (result.success && result.formData) {
       // Пренасочваме към Borica gateway
+      console.log('Redirecting to Borica gateway');
       redirectToGateway(result.formData);
     } else {
       throw new Error(result.error || 'Грешка при инициализиране на плащането');
@@ -161,7 +206,16 @@ const handleBoricaPayment = async (): Promise<void> => {
 
     // Показваме грешка на потребителя
     const { showError } = useNotifications();
-    showError('Грешка при плащане', error.message || 'Възникна грешка при обработка на плащането');
+
+    let errorMessage = 'Възникна грешка при обработка на плащането';
+
+    if (error?.gqlErrors?.[0]?.message) {
+      errorMessage = error.gqlErrors[0].message;
+    } else if (error?.message) {
+      errorMessage = error.message;
+    }
+
+    showError('Грешка при плащане', errorMessage);
   }
 };
 

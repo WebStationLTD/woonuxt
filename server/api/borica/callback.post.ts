@@ -21,7 +21,10 @@ interface BoricaCallbackData {
 }
 
 export default defineEventHandler(async (event) => {
-  if (getMethod(event) !== "POST") {
+  const method = getMethod(event);
+
+  // Поддържаме и GET и POST заявки
+  if (method !== "POST" && method !== "GET") {
     throw createError({
       statusCode: 405,
       statusMessage: "Method not allowed",
@@ -29,72 +32,99 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const body = await readBody<BoricaCallbackData>(event);
-    console.log("Borica callback received:", {
-      action: body.ACTION,
-      rc: body.RC,
-      order: body.ORDER,
-      amount: body.AMOUNT,
-      timestamp: body.TIMESTAMP,
-    });
+    // За GET заявки вземаме данните от query parameters
+    // За POST заявки вземаме данните от body
+    let data: BoricaCallbackData;
 
-    // Проверка на подписа
-    const isValidSignature = verifyBoricaSignature(body);
-
-    if (!isValidSignature) {
-      console.error("Invalid Borica signature");
-      throw createError({
-        statusCode: 400,
-        statusMessage: "Invalid signature",
+    if (method === "GET") {
+      const query = getQuery(event);
+      data = query as unknown as BoricaCallbackData;
+      console.log("Borica GET callback received:", query);
+    } else {
+      data = await readBody<BoricaCallbackData>(event);
+      console.log("Borica POST callback received:", {
+        action: data.ACTION,
+        rc: data.RC,
+        order: data.ORDER,
+        amount: data.AMOUNT,
+        timestamp: data.TIMESTAMP,
       });
     }
 
+    // Проверка на подписа само за POST заявки (system callbacks)
+    if (method === "POST") {
+      const isValidSignature = verifyBoricaSignature(data);
+
+      if (!isValidSignature) {
+        console.error("Invalid Borica signature");
+        throw createError({
+          statusCode: 400,
+          statusMessage: "Invalid signature",
+        });
+      }
+    }
+
     // Анализ на response code
-    const rc = parseInt(body.RC);
+    const rc = parseInt(data.RC);
     const isSuccessful = rc === 0;
-    const amount = parseInt(body.AMOUNT) / 100; // Convert from cents
+    const amount = parseInt(data.AMOUNT) / 100; // Convert from cents
 
     console.log("Payment result:", {
-      orderId: body.ORDER,
+      orderId: data.ORDER,
       successful: isSuccessful,
       amount,
-      currency: body.CURRENCY,
+      currency: data.CURRENCY,
       responseCode: rc,
-      statusMessage: body.STATUSMSG,
-      approval: body.APPROVAL,
-      rrn: body.RRN,
-      intRef: body.INT_REF,
+      statusMessage: data.STATUSMSG,
+      approval: data.APPROVAL,
+      rrn: data.RRN,
+      intRef: data.INT_REF,
+      method: method,
     });
 
     // Тук можете да добавите логика за обновяване на статуса на поръчката във WordPress/WooCommerce
     // Например чрез GraphQL mutation или REST API заявка
 
-    if (isSuccessful) {
-      // Успешно плащане - обновете поръчката като платена
-      await updateOrderStatus(body.ORDER, "completed", {
-        transactionId: body.RRN,
-        approval: body.APPROVAL,
-        intRef: body.INT_REF,
-        amount: amount,
-        currency: body.CURRENCY,
-        timestamp: body.TIMESTAMP,
-      });
-    } else {
-      // Неуспешно плащане - обновете поръчката като неплатена
-      await updateOrderStatus(body.ORDER, "failed", {
-        responseCode: rc,
-        statusMessage: body.STATUSMSG,
-        timestamp: body.TIMESTAMP,
-      });
-    }
+    // Обновяване на статуса на поръчката (само за POST callbacks)
+    if (method === "POST") {
+      if (isSuccessful) {
+        // Успешно плащане - обновете поръчката като платена
+        await updateOrderStatus(data.ORDER, "completed", {
+          transactionId: data.RRN,
+          approval: data.APPROVAL,
+          intRef: data.INT_REF,
+          amount: amount,
+          currency: data.CURRENCY,
+          timestamp: data.TIMESTAMP,
+        });
+      } else {
+        // Неуспешно плащане - обновете поръчката като неплатена
+        await updateOrderStatus(data.ORDER, "failed", {
+          responseCode: rc,
+          statusMessage: data.STATUSMSG,
+          timestamp: data.TIMESTAMP,
+        });
+      }
 
-    // Връщане на успешен отговор към Borica
-    return {
-      success: true,
-      message: "Callback processed successfully",
-      orderId: body.ORDER,
-      status: isSuccessful ? "success" : "failed",
-    };
+      // Връщане на успешен отговор към Borica
+      return {
+        success: true,
+        message: "Callback processed successfully",
+        orderId: data.ORDER,
+        status: isSuccessful ? "success" : "failed",
+      };
+    } else {
+      // За GET заявки (user return) пренасочваме към резултатната страница
+      const message = isSuccessful
+        ? "Плащането е завършено успешно"
+        : getErrorMessage(rc, data.STATUSMSG);
+
+      const redirectUrl = `/payment-result?order=${data.ORDER}&success=${isSuccessful}&message=${encodeURIComponent(message)}&rc=${rc}`;
+
+      console.log("Redirecting user to:", redirectUrl);
+
+      return await sendRedirect(event, redirectUrl, 302);
+    }
   } catch (error: any) {
     console.error("Borica callback error:", error);
 
@@ -197,4 +227,16 @@ async function updateOrderStatus(
   // `;
 
   // await executeGraphQLMutation(mutation, { id: orderId, status, metadata });
+}
+
+function getErrorMessage(rc: string, statusMsg?: string): string {
+  const errorMessages: Record<string, string> = {
+    "-17": "Невалиден подпис или изтекла заявка",
+    "-25": "Потребителят отказа плащането",
+    "-19": "Грешка при автентикация",
+    "-1": "Системна грешка",
+    "-2": "Невалидни данни",
+  };
+
+  return errorMessages[rc] || statusMsg || "Възникна грешка при плащането";
 }
