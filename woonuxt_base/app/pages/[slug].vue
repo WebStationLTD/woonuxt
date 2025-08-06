@@ -23,10 +23,9 @@ const reservedRoutes = [
   'oauth',
   'order-pay',
   'porachka-2',
-  'нови-продукти',
 ];
 
-// Ако slug-ът е резервиран route, пренасочи към 404
+// Ако slug-ът е резервиран route, не го обработваме тук
 if (reservedRoutes.includes(slug as string)) {
   throw createError({
     statusCode: 404,

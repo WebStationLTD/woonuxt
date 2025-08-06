@@ -84,6 +84,9 @@ export default defineNuxtConfig({
 
       // Нови маршрути за produkt вместо product
       addPage('produkt-page', '/produkt/:slug', 'produkt/[slug].vue');
+
+      // Explicit route за нови продукти за да има приоритет над [slug].vue
+      addPage('novi-produkti', '/нови-продукти', 'нови-продукти.vue');
     },
   },
 
