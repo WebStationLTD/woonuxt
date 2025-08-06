@@ -206,9 +206,9 @@ const availableVariationsText = computed(() => {
 
 <template>
   <div class="relative group">
-    <NuxtLink v-if="node.slug" :to="`/produkt/${decodeURIComponent(node.slug)}`" :title="node.name">
+    <NuxtLink v-if="node.slug" :to="`/produkt/${decodeURIComponent(node.slug)}`" :title="node.name" class="relative block">
       <SaleBadge :node class="absolute top-2 right-2" />
-      <OutOfStockBadge :node class="absolute top-2 right-2" />
+      <OutOfStockBadge :node class="absolute inset-0" />
       <ProductWishlistButton :product="node" />
       <NuxtImg
         v-if="imagetoDisplay"
