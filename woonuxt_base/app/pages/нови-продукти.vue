@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ProductsOrderByEnum, OrderEnum } from '#woo';
+
 const { t } = useI18n();
 
 // SEO Meta данни
@@ -10,8 +12,8 @@ useSeoMeta({
 // Зареждаме най-новите 24 продукта
 const { data, pending, error } = await useAsyncGql('getProducts', {
   first: 24,
-  orderby: 'DATE',
-  order: 'DESC',
+  orderby: ProductsOrderByEnum.DATE,
+  order: OrderEnum.DESC,
 });
 
 const products = computed(() => data.value?.products?.nodes || []);
