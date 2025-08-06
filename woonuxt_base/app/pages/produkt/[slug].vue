@@ -147,17 +147,17 @@ const showProductFeatures = computed(() => {
       <Breadcrumb :product class="mb-6" v-if="storeSettings.showBreadcrumbOnSingleProduct" />
 
       <div class="flex flex-col gap-10 md:flex-row md:justify-between lg:gap-24">
-        <div v-if="product.image" class="relative flex-1">
-          <OutOfStockBadge :node="type" class="absolute top-4 left-4 z-20" />
+        <div v-if="product.image" class="flex-1">
           <ProductImageGallery
             class="relative"
             :main-image="product.image"
             :gallery="product.galleryImages!"
             :node="type"
-            :activeVariation="activeVariation || {}" />
+            :activeVariation="activeVariation || {}"
+            :show-out-of-stock="true" />
         </div>
         <div v-else class="relative flex-1">
-          <OutOfStockBadge :node="type" class="absolute top-4 left-4 z-20" />
+          <OutOfStockBadge :node="type" class="absolute inset-0 z-20" :large="true" />
           <NuxtImg class="relative skeleton" src="/images/placeholder.jpg" :alt="product?.name || 'Product'" />
         </div>
 

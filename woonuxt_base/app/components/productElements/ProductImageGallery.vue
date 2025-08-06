@@ -6,6 +6,7 @@ const props = defineProps({
   gallery: { type: Object, required: true },
   node: { type: Object as PropType<Product | Variation>, required: true },
   activeVariation: { type: Object, required: false },
+  showOutOfStock: { type: Boolean, default: false },
 });
 
 const primaryImage = computed(() => ({
@@ -41,17 +42,20 @@ const imgWidth = 640;
 
 <template>
   <div>
-    <SaleBadge :node class="absolute text-base top-4 right-4" />
-    <NuxtImg
-      class="rounded-xl object-contain w-full min-w-[350px]"
-      :width="imgWidth"
-      :height="imgWidth"
-      :alt="imageToShow.altText || node.name"
-      :title="imageToShow.title || node.name"
-      :src="imageToShow.sourceUrl || FALLBACK_IMG"
-      fetchpriority="high"
-      placeholder
-      placeholder-class="blur-xl" />
+    <div class="relative">
+      <SaleBadge :node class="absolute text-base top-4 right-4 z-10" />
+      <OutOfStockBadge v-if="showOutOfStock" :node="node" class="absolute inset-0 z-20" :large="true" />
+      <NuxtImg
+        class="rounded-xl object-contain w-full min-w-[350px]"
+        :width="imgWidth"
+        :height="imgWidth"
+        :alt="imageToShow.altText || node.name"
+        :title="imageToShow.title || node.name"
+        :src="imageToShow.sourceUrl || FALLBACK_IMG"
+        fetchpriority="high"
+        placeholder
+        placeholder-class="blur-xl" />
+    </div>
     <div v-if="gallery.nodes.length" class="my-4 gallery-images">
       <NuxtImg
         v-for="galleryImg in galleryImages"
