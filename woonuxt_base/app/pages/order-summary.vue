@@ -169,10 +169,11 @@ useSeoMeta({
             <span>{{ $t('messages.general.shipping') }}</span>
             <span>{{ order.shippingTotal }}</span>
           </div>
-          <div v-if="hasDiscount" class="flex justify-between text-primary">
+          <!-- СКРИТО: Показване на отстъпки скрито по искане на клиента -->
+          <!-- <div v-if="hasDiscount" class="flex justify-between text-primary">
             <span>{{ $t('messages.shop.discount') }}</span>
             <span>- {{ order.discountTotal }}</span>
-          </div>
+          </div> -->
           <hr class="my-8" />
           <div class="flex justify-between">
             <span class>{{ $t('messages.shop.total') }}</span>

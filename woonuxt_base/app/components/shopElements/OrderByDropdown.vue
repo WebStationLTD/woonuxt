@@ -60,7 +60,8 @@ watch(
       <option value="alphabetically">{{ $t('messages.general.alphabetically') }}</option>
       <option value="price">{{ $t('messages.shop.price') }}</option>
       <option v-if="storeSettings.showReviews" value="rating">{{ $t('messages.shop.rating') }}</option>
-      <option value="discount">{{ $t('messages.shop.discount') }}</option>
+      <!-- СКРИТО: Сортиране по отстъпка скрито по искане на клиента -->
+      <!-- <option value="discount">{{ $t('messages.shop.discount') }}</option> -->
     </select>
   </div>
 </template>

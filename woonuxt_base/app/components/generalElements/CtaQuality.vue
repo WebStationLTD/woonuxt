@@ -6,7 +6,7 @@
   <div class="relative isolate overflow-hidden bg-gray-800">
     <div class="px-6 py-12 sm:px-6 sm:py-12 lg:px-8">
       <div class="mx-auto max-w-2xl text-center">
-        <h2 class="text-4xl font-semibold tracking-tight text-balance text-white sm:text-5xl">Качествени продукти от Leaderfitness.bg</h2>
+        <h2 class="text-4xl font-semibold tracking-tight text-balance text-white sm:text-5xl">Качествени продукти от Leaderfitness.net</h2>
         <p class="mx-auto mt-6 max-w-xl text-lg/8 text-pretty text-gray-300">
           Вече над 16 години се стремим да предложим най-доброто, което се предлага в световен мащаб.
         </p>

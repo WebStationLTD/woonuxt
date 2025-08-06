@@ -6,10 +6,12 @@
       <p class="text-gray-500 mt-2">Welcome back! Select method to login.</p>
     </div>
 
-    <LoginProviders class="my-8" v-if="formView === 'login' || formView === 'register'" />
+    <!-- СКРИТО: LoginProviders за регистрация скрити по искане на клиента -->
+    <LoginProviders class="my-8" v-if="formView === 'login'" />
 
     <form class="mt-6" @submit.prevent="handleFormSubmit(userInfo)">
-      <div v-if="formView === 'register' || formView === 'forgotPassword'" for="email">
+      <!-- СКРИТО: Email поле за регистрация скрито по искане на клиента -->
+      <div v-if="formView === 'forgotPassword'" for="email">
         <input id="email" v-model="userInfo.email" :placeholder="inputPlaceholder.email" autocomplete="email" type="text" required />
       </div>
       <p v-if="formView === 'forgotPassword'" class="text-sm text-gray-500">{{ $t('messages.account.enterEmailOrUsernameForReset') }}</p>
@@ -44,7 +46,8 @@
       </button>
     </form>
 
-    <div v-if="formView === 'login'" class="my-6 text-center">
+    <!-- СКРИТО: Линк за регистрация скрит по искане на клиента -->
+    <!-- <div v-if="formView === 'login'" class="my-6 text-center">
       {{ $t('messages.account.noAccount') }}
       <a class="font-semibold cursor-pointer text-primary" @click="navigate('register')"> {{ $t('messages.account.accountRegister') }} </a>.
     </div>
@@ -54,7 +57,7 @@
       <a class="font-semibold cursor-pointer text-primary" @click="navigate('login')">
         {{ $t('messages.general.please') }} {{ $t('messages.account.accountLogin') }}
       </a>
-    </div>
+    </div> -->
 
     <div class="my-8 text-center cursor-pointer" @click="navigate('login')" v-if="formView === 'forgotPassword'">{{ $t('messages.account.backToLogin') }}</div>
   </div>
@@ -74,8 +77,9 @@ const errorMessage = ref('');
 const updateFormView = () => {
   if (route.query.action === 'forgotPassword') {
     formView.value = 'forgotPassword';
-  } else if (route.query.action === 'register') {
-    formView.value = 'register';
+    // СКРИТО: Регистрация скрита по искане на клиента
+    // } else if (route.query.action === 'register') {
+    //   formView.value = 'register';
   } else {
     formView.value = 'login';
   }
@@ -103,20 +107,22 @@ const login = async (userInfo: UserInfo) => {
 };
 
 const handleFormSubmit = async (userInfo: UserInfo) => {
-  if (formView.value === 'register') {
-    const { email, password, username } = userInfo;
-    const registerData = { email, password, username };
-    const { success, error } = await registerUser(registerData);
-    if (success) {
-      errorMessage.value = '';
-      message.value = t('messages.account.accountCreated') + ' ' + t('messages.account.loggingIn');
-      setTimeout(() => {
-        login(userInfo);
-      }, 2000);
-    } else {
-      errorMessage.value = error;
-    }
-  } else if (formView.value === 'forgotPassword') {
+  // СКРИТО: Обработка на регистрация скрита по искане на клиента
+  // if (formView.value === 'register') {
+  //   const { email, password, username } = userInfo;
+  //   const registerData = { email, password, username };
+  //   const { success, error } = await registerUser(registerData);
+  //   if (success) {
+  //     errorMessage.value = '';
+  //     message.value = t('messages.account.accountCreated') + ' ' + t('messages.account.loggingIn');
+  //     setTimeout(() => {
+  //       login(userInfo);
+  //     }, 2000);
+  //   } else {
+  //     errorMessage.value = error;
+  //   }
+  // } else
+  if (formView.value === 'forgotPassword') {
     resetPassword(userInfo);
   } else {
     login(userInfo);
@@ -137,8 +143,9 @@ const navigate = (view: string) => {
   formView.value = view;
   if (view === 'forgotPassword') {
     router.push({ query: { action: 'forgotPassword' } });
-  } else if (view === 'register') {
-    router.push({ query: { action: 'register' } });
+    // СКРИТО: Навигация към регистрация скрита по искане на клиента
+    // } else if (view === 'register') {
+    //   router.push({ query: { action: 'register' } });
   } else {
     router.push({ query: {} });
   }
@@ -147,8 +154,9 @@ const navigate = (view: string) => {
 const formTitle = computed(() => {
   if (formView.value === 'login') {
     return t('messages.account.loginToAccount');
-  } else if (formView.value === 'register') {
-    return t('messages.account.accountRegister');
+    // СКРИТО: Заглавие за регистрация скрито по искане на клиента
+    // } else if (formView.value === 'register') {
+    //   return t('messages.account.accountRegister');
   } else if (formView.value === 'forgotPassword') {
     return t('messages.account.forgotPassword');
   }
@@ -157,21 +165,23 @@ const formTitle = computed(() => {
 const buttonText = computed(() => {
   if (formView.value === 'login') {
     return t('messages.account.login');
-  } else if (formView.value === 'register') {
-    return t('messages.account.register');
+    // СКРИТО: Текст на бутон за регистрация скрит по искане на клиента
+    // } else if (formView.value === 'register') {
+    //   return t('messages.account.register');
   } else if (formView.value === 'forgotPassword') {
     return t('messages.account.sendPasswordResetEmail');
   }
 });
 
-const emailLabel = computed(() => (formView.value === 'register' ? t('messages.billing.email') : t('messages.account.emailOrUsername')));
-const usernameLabel = computed(() => (formView.value === 'login' ? t('messages.account.emailOrUsername') : t('messages.account.username')));
+// СКРИТО: Етикети за регистрация скрити по искане на клиента
+const emailLabel = computed(() => t('messages.account.emailOrUsername'));
+const usernameLabel = computed(() => t('messages.account.emailOrUsername'));
 const passwordLabel = computed(() => t('messages.account.password'));
 
 const inputPlaceholder = computed(() => {
   return {
     email: 'johndoe@email.com',
-    username: formView.value === 'login' ? 'johndoe@email.com' : 'johndoe',
+    username: 'johndoe@email.com',
     password: '********',
   };
 });

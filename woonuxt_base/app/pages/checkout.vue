@@ -280,7 +280,8 @@ useSeoMeta({
               :placeholder="$t('messages.shop.orderNotePlaceholder')"></textarea>
           </div>
 
-          <div v-if="!viewer && customer?.billing" class="flex flex-col md:flex-row md:gap-8 text-sm text-gray-500">
+          <!-- СКРИТО: Линкове за регистрация и логин скрити по искане на клиента -->
+          <!-- <div v-if="!viewer && customer?.billing" class="flex flex-col md:flex-row md:gap-8 text-sm text-gray-500">
             <p>
               {{ $t('messages.account.alreadyRegistered') }}
               <NuxtLink to="/my-account" class="text-primary font-semibold">{{ $t('messages.account.login') }}</NuxtLink>
@@ -289,7 +290,7 @@ useSeoMeta({
               Нямате профил? Можете да се регистрирате
               <NuxtLink to="/my-account" class="text-primary font-semibold">тук</NuxtLink>!
             </p>
-          </div>
+          </div> -->
         </div>
 
         <OrderSummary>

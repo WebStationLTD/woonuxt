@@ -15,7 +15,8 @@ const { isShowingSearch } = useSearching();
         <ProductSearch class="hidden sm:inline-flex max-w-[320px] w-[60%]" />
         <SearchTrigger />
         <div class="flex gap-4 items-center">
-          <SignInLink />
+          <!-- СКРИТО: Регистрация/Влизане скрито по искане на клиента -->
+          <!-- <SignInLink /> -->
           <WishlistTrigger />
           <CartTrigger />
         </div>
