@@ -54,6 +54,7 @@ useHead({
             <nav class="space-y-2" aria-label="Полезни линкове">
               <ul class="text-sm space-y-2">
                 <li><NuxtLink to="/" class="text-gray-300 hover:text-white transition-colors">Начало</NuxtLink></li>
+                <li><NuxtLink to="/нови-продукти" class="text-gray-300 hover:text-white transition-colors">Нови продукти</NuxtLink></li>
                 <li><NuxtLink to="/общи-условия/" class="text-gray-300 hover:text-white transition-colors">Общи условия</NuxtLink></li>
                 <li>
                   <NuxtLink to="/политика-за-поверителност-и-защита-на/" class="text-gray-300 hover:text-white transition-colors"
