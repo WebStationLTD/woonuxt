@@ -23,6 +23,7 @@ const reservedRoutes = [
   'oauth',
   'order-pay',
   'porachka-2',
+  'нови-продукти',
 ];
 
 // Ако slug-ът е резервиран route, пренасочи към 404
