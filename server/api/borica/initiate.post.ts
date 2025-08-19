@@ -58,11 +58,12 @@ export default defineEventHandler(async (event) => {
     const config: BoricaConfig = {
       terminalId: process.env.BORICA_TERMINAL_ID || "V5400641",
       privateKey: process.env.BORICA_PRIVATE_KEY || "",
-      merchantName: process.env.BORICA_MERCHANT_NAME || "MyStore",
-      merchantUrl: process.env.BORICA_MERCHANT_URL || "https://myshop.com/",
+      merchantName: process.env.BORICA_MERCHANT_NAME || "LIDERFITNES EOOD",
+      merchantUrl:
+        process.env.BORICA_MERCHANT_URL || "https://leaderfitness.net/",
       backrefUrl:
         process.env.BORICA_BACKREF_URL ||
-        "https://myshop.com/api/borica/callback",
+        "https://leaderfitness.net/api/borica/callback",
       gatewayUrl:
         process.env.BORICA_GATEWAY_URL ||
         "https://3dsgate-dev.borica.bg/cgi-bin/cgi_link",

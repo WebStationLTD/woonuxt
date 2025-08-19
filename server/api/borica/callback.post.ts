@@ -201,32 +201,60 @@ async function updateOrderStatus(
   status: string,
   metadata: any
 ): Promise<void> {
-  // Тук трябва да се имплементира логиката за обновяване на поръчката
-  // в WordPress/WooCommerce чрез GraphQL или REST API
+  try {
+    console.log("Updating order status:", {
+      orderId,
+      status,
+      metadata,
+    });
 
-  console.log("Updating order status:", {
-    orderId,
-    status,
-    metadata,
-  });
+    // Използваме WooCommerce REST API за обновяване на поръчката
+    const wpApiUrl =
+      process.env.WORDPRESS_API_URL ||
+      "https://leaderfitness.admin-panels.com/wp-json/wc/v3";
+    const consumerKey = process.env.WC_CONSUMER_KEY;
+    const consumerSecret = process.env.WC_CONSUMER_SECRET;
 
-  // Пример за GraphQL mutation (трябва да се адаптира според вашия setup)
-  // const mutation = `
-  //   mutation UpdateOrder($id: ID!, $status: String!, $metadata: [MetaDataInput!]) {
-  //     updateOrder(input: {
-  //       id: $id
-  //       status: $status
-  //       metaData: $metadata
-  //     }) {
-  //       order {
-  //         id
-  //         status
-  //       }
-  //     }
-  //   }
-  // `;
+    if (!consumerKey || !consumerSecret) {
+      console.error("WooCommerce API credentials missing");
+      return;
+    }
 
-  // await executeGraphQLMutation(mutation, { id: orderId, status, metadata });
+    // Подготвяме данните за обновяване
+    const updateData: any = {
+      status: status === "completed" ? "processing" : "failed", // WooCommerce статуси
+    };
+
+    // Добавяме meta data за транзакцията
+    if (metadata.transactionId) {
+      updateData.transaction_id = metadata.transactionId;
+    }
+
+    if (metadata.approval) {
+      updateData.meta_data = [
+        { key: "_borica_approval", value: metadata.approval },
+        { key: "_borica_rrn", value: metadata.intRef },
+        { key: "_borica_amount", value: metadata.amount },
+        { key: "_payment_method", value: "borica_emv" },
+        { key: "_payment_method_title", value: "Borica EMV" },
+      ];
+    }
+
+    // Изпращаме заявката към WooCommerce
+    const response = await $fetch(`${wpApiUrl}/orders/${orderId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${consumerKey}:${consumerSecret}`).toString("base64")}`,
+        "Content-Type": "application/json",
+      },
+      body: updateData,
+    });
+
+    console.log("Order status updated successfully:", response);
+  } catch (error: any) {
+    console.error("Failed to update order status:", error);
+    // Не хвърляме грешка, защото не искаме да прекъснем callback процеса
+  }
 }
 
 function getErrorMessage(rc: string, statusMsg?: string): string {

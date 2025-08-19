@@ -160,7 +160,7 @@ export function useBorica() {
    * @returns Форматирано описание
    */
   function generateOrderDescription(orderData: any): string {
-    const merchantName = "MyStore"; // Или от конфигурацията
+    const merchantName = "LeaderFitness"; // Или от конфигурацията
     const orderNumber = orderData.orderId || orderData.id;
 
     return `${merchantName} - Поръчка #${orderNumber}`;
