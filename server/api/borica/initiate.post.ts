@@ -60,10 +60,10 @@ export default defineEventHandler(async (event) => {
       privateKey: process.env.BORICA_PRIVATE_KEY || "",
       merchantName: process.env.BORICA_MERCHANT_NAME || "LIDERFITNES EOOD",
       merchantUrl:
-        process.env.BORICA_MERCHANT_URL || "https://leaderfitness.net/",
+        process.env.BORICA_MERCHANT_URL || "https://woonuxt-ten.vercel.app/",
       backrefUrl:
         process.env.BORICA_BACKREF_URL ||
-        "https://leaderfitness.net/api/borica/callback",
+        "https://woonuxt-ten.vercel.app/api/borica/callback",
       gatewayUrl:
         process.env.BORICA_GATEWAY_URL ||
         "https://3dsgate-dev.borica.bg/cgi-bin/cgi_link",
