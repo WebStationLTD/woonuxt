@@ -35,6 +35,17 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Private keys (только за server-side)
+    BORICA_TERMINAL_ID: process.env.BORICA_TERMINAL_ID,
+    BORICA_PRIVATE_KEY: process.env.BORICA_PRIVATE_KEY,
+    BORICA_MERCHANT_NAME: process.env.BORICA_MERCHANT_NAME,
+    BORICA_MERCHANT_URL: process.env.BORICA_MERCHANT_URL,
+    BORICA_BACKREF_URL: process.env.BORICA_BACKREF_URL,
+    BORICA_GATEWAY_URL: process.env.BORICA_GATEWAY_URL,
+    WORDPRESS_API_URL: process.env.WORDPRESS_API_URL,
+    WC_CONSUMER_KEY: process.env.WC_CONSUMER_KEY,
+    WC_CONSUMER_SECRET: process.env.WC_CONSUMER_SECRET,
+
     public: {
       GQL_HOST: "https://leaderfitness.admin-panels.com/graphql",
       FRONT_END_URL: "https://woonuxt-ten.vercel.app",

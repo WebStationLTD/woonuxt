@@ -26,37 +26,96 @@ export function useBorica() {
    */
   async function initiatePayment(
     data: BoricaPaymentData
-  ): Promise<BoricaResponse> {
+  ): Promise<BoricaResponse & { debugInfo?: any }> {
     isProcessing.value = true;
 
-    try {
-      console.log("Initiating Borica payment:", {
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      step: "initiating_request",
+      requestData: {
         orderId: data.orderId,
         amount: data.amount,
         currency: data.currency || "BGN",
-        description: data.description?.substring(0, 50) + "...",
-      });
+        description: data.description,
+        customerEmail: data.customerEmail,
+        merchantData: data.merchantData,
+      },
+      requestUrl: "/api/borica/initiate",
+      requestMethod: "POST",
+    };
+
+    try {
+      console.log("🚀 DEBUG: Initiating Borica payment request:", debugInfo);
+
+      const requestBody = {
+        orderId: data.orderId,
+        amount: data.amount,
+        currency: data.currency || "BGN",
+        description: data.description,
+        customerEmail: data.customerEmail,
+        merchantData: data.merchantData,
+      };
+
+      console.log(
+        "📤 DEBUG: Request body to /api/borica/initiate:",
+        requestBody
+      );
+
+      // Записваме времето преди заявката
+      const requestStartTime = performance.now();
 
       const response = await $fetch<BoricaResponse>("/api/borica/initiate", {
         method: "POST",
-        body: {
-          orderId: data.orderId,
-          amount: data.amount,
-          currency: data.currency || "BGN",
-          description: data.description,
-          customerEmail: data.customerEmail,
-          merchantData: data.merchantData,
-        },
+        body: requestBody,
+      });
+
+      const requestEndTime = performance.now();
+      const requestDuration = Math.round(requestEndTime - requestStartTime);
+
+      debugInfo.step = "request_completed";
+      debugInfo.responseTime = `${requestDuration}ms`;
+      debugInfo.response = {
+        success: response.success,
+        hasFormData: !!response.formData,
+        hasGatewayUrl: !!response.gatewayUrl,
+        hasParameters: !!response.parameters,
+        error: response.error,
+        formDataLength: response.formData?.length,
+        parametersCount: response.parameters
+          ? Object.keys(response.parameters).length
+          : 0,
+      };
+
+      console.log("📥 DEBUG: Response from /api/borica/initiate:", {
+        ...debugInfo,
+        fullResponse: response,
       });
 
       if (response.success && response.formData) {
-        console.log("Borica payment initiated successfully");
-        return response;
+        console.log("✅ DEBUG: Borica payment initiated successfully");
+        return {
+          ...response,
+          debugInfo,
+        };
       } else {
+        debugInfo.step = "request_failed";
+        debugInfo.error = response.error;
+        console.log("❌ DEBUG: Borica payment initiation failed:", debugInfo);
         throw new Error(response.error || "Failed to initiate payment");
       }
     } catch (error: any) {
-      console.error("Borica payment initiation failed:", error);
+      debugInfo.step = "request_error";
+      debugInfo.error = {
+        name: error?.name,
+        message: error?.message,
+        statusCode: error?.statusCode,
+        statusMessage: error?.statusMessage,
+        data: error?.data,
+        stack: error?.stack?.substring(0, 300),
+      };
+
+      console.error("💥 DEBUG: Borica payment initiation failed:", debugInfo);
+      console.error("Full error object:", error);
 
       const errorMessage =
         error?.data?.message ||
@@ -67,6 +126,7 @@ export function useBorica() {
       return {
         success: false,
         error: errorMessage,
+        debugInfo,
       };
     } finally {
       isProcessing.value = false;

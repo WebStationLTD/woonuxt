@@ -29,6 +29,24 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    const runtimeConfig = useRuntimeConfig();
+
+    // DEBUG: Тестваме дали .env файлът се чете
+    console.log("DEBUG: Testing .env file reading:");
+    console.log("DEBUG: process.env.GQL_HOST =", process.env.GQL_HOST);
+    console.log(
+      "DEBUG: process.env.BORICA_TERMINAL_ID =",
+      process.env.BORICA_TERMINAL_ID
+    );
+    console.log(
+      "DEBUG: process.env.BORICA_PRIVATE_KEY length =",
+      process.env.BORICA_PRIVATE_KEY?.length || 0
+    );
+    console.log(
+      "DEBUG: process.env.TBI_RESELLER_CODE =",
+      process.env.TBI_RESELLER_CODE
+    );
+
     const body = await readBody<BoricaInitiateRequest>(event);
     console.log("Request body:", {
       orderId: body.orderId,
@@ -54,7 +72,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Конфигурация от environment variables
+    // Конфигурация от process.env (директно)
     const config: BoricaConfig = {
       terminalId: process.env.BORICA_TERMINAL_ID || "V5400641",
       privateKey: process.env.BORICA_PRIVATE_KEY || "",
@@ -77,10 +95,34 @@ export default defineEventHandler(async (event) => {
       backrefUrl: config.backrefUrl,
     });
 
+    // DEBUG: Показваме всички runtime config variables
+    console.log("DEBUG: Runtime config status:", {
+      BORICA_TERMINAL_ID: !!runtimeConfig.BORICA_TERMINAL_ID,
+      BORICA_PRIVATE_KEY: !!runtimeConfig.BORICA_PRIVATE_KEY,
+      BORICA_MERCHANT_NAME: !!runtimeConfig.BORICA_MERCHANT_NAME,
+      BORICA_MERCHANT_URL: !!runtimeConfig.BORICA_MERCHANT_URL,
+      BORICA_BACKREF_URL: !!runtimeConfig.BORICA_BACKREF_URL,
+      BORICA_GATEWAY_URL: !!runtimeConfig.BORICA_GATEWAY_URL,
+      privateKeyPreview:
+        runtimeConfig.BORICA_PRIVATE_KEY?.substring(0, 50) + "...",
+      privateKeyLength: runtimeConfig.BORICA_PRIVATE_KEY?.length || 0,
+    });
+
+    // DEBUG: Проверяваме конкретно BORICA_PRIVATE_KEY
+    console.log("DEBUG: Raw BORICA_PRIVATE_KEY check:", {
+      value: runtimeConfig.BORICA_PRIVATE_KEY ? "EXISTS" : "MISSING",
+      type: typeof runtimeConfig.BORICA_PRIVATE_KEY,
+      isEmpty: runtimeConfig.BORICA_PRIVATE_KEY === "",
+      isUndefined: runtimeConfig.BORICA_PRIVATE_KEY === undefined,
+      isNull: runtimeConfig.BORICA_PRIVATE_KEY === null,
+    });
+
     if (!config.privateKey) {
+      console.error("BORICA_PRIVATE_KEY is missing or empty!");
       throw createError({
         statusCode: 500,
-        statusMessage: "Borica configuration missing",
+        statusMessage:
+          "Borica configuration missing - BORICA_PRIVATE_KEY not found",
       });
     }
 
