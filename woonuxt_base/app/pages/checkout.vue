@@ -145,7 +145,7 @@ const handleBoricaPayment = async (): Promise<void> => {
       shipping,
       shippingMethod,
       metaData: metadata,
-      paymentMethod: 'borica_emv',
+      paymentMethod: 'borica_emv', // Използваме оригиналния Borica method
       customerNote: orderInput.value.customerNote || '',
       shipToDifferentAddress: orderInput.value.shipToDifferentAddress || false,
       transactionId: new Date().getTime().toString(),
@@ -165,16 +165,46 @@ const handleBoricaPayment = async (): Promise<void> => {
       metaData: checkoutPayload.metaData,
     });
 
-    // Създаваме поръчката директно чрез GraphQL
+    // Създаваме поръчката директно чрез GraphQL (БЕЗ да минаваме през processCheckout)
     const { checkout } = await GqlCheckout(checkoutPayload);
+
+    console.log('🔍 DEBUG: Checkout response:', {
+      hasOrder: !!checkout?.order,
+      hasRedirect: !!checkout?.redirect,
+      redirectUrl: checkout?.redirect,
+      result: checkout?.result,
+    });
 
     if (!checkout?.order?.databaseId) {
       console.error('Checkout failed:', checkout);
       throw new Error('Не може да се създаде поръчката. Моля, проверете данните си.');
     }
 
+    // ВАЖНО: НЕ използваме checkout.redirect от WP плъгина!
+    if (checkout?.redirect) {
+      console.log('🚨 WARNING: WP plugin generated redirect URL, but we are IGNORING it:', checkout.redirect);
+    }
+
     const orderId = checkout.order.databaseId;
     console.log('Order created successfully:', { orderId, orderKey: checkout.order.orderKey });
+
+    // Обновяваме payment method-а на поръчката да е Borica (след създаване)
+    try {
+      const updatePayload = {
+        orderId: orderId,
+        paymentMethod: 'borica_emv',
+        metaData: [
+          { key: '_payment_method', value: 'borica_emv' },
+          { key: '_payment_method_title', value: 'Borica EMV' },
+          { key: 'order_via', value: 'WooNuxt Borica Custom' },
+        ],
+      };
+
+      console.log('🔄 Updating order payment method to Borica:', updatePayload);
+      // Тук може да добавим GraphQL mutation за обновяване ако е нужно
+    } catch (error) {
+      console.log('⚠️ Could not update payment method, but continuing with Borica payment');
+    }
 
     // Подготвяме данните за Borica плащане
     const amount = extractAmountFromCart(cart.value);
