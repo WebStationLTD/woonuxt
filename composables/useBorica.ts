@@ -138,6 +138,12 @@ export function useBorica() {
    * @param formData - HTML форма за изпращане към Borica
    */
   function redirectToGateway(formData: string): void {
+    console.log(
+      "🚀 redirectToGateway called with form data length:",
+      formData.length
+    );
+    console.log("🚀 Form data preview:", formData.substring(0, 200) + "...");
+
     // Създаваме временен div за формата
     const div = document.createElement("div");
     div.innerHTML = formData;
@@ -145,9 +151,21 @@ export function useBorica() {
 
     // Намираме формата и я изпращаме
     const form = div.querySelector("form") as HTMLFormElement;
+
+    console.log("🚀 Form found:", !!form);
+    console.log("🚀 Form action:", form?.action);
+    console.log("🚀 Form method:", form?.method);
+    console.log(
+      "🚀 Form inputs count:",
+      form?.querySelectorAll("input").length
+    );
+
     if (form) {
+      console.log("🚀 Submitting form to Borica gateway...");
       form.submit();
+      console.log("🚀 Form submitted!");
     } else {
+      console.error("❌ Form not found in HTML!");
       showError("Грешка", "Невалидна форма за плащане");
     }
   }
