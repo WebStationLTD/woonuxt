@@ -254,9 +254,11 @@ const handleBoricaPayment = async (): Promise<void> => {
       buttonText.value = 'DEBUG: Готов за Борика - виж данните по-долу';
 
       if (!debugMode.value) {
-        // Пренасочваме към Borica gateway само ако debug режимът е изключен
-        console.log('Redirecting to Borica gateway');
+        // Пренасочваме към Borica gateway
+        console.log('🚀 REDIRECTING TO BORICA GATEWAY NOW!');
         redirectToGateway(result.formData);
+        // ВАЖНО: След redirect функцията трябва да спре изпълнението
+        return;
       } else {
         console.log('DEBUG MODE: Спряно пренасочване към Борика');
       }
