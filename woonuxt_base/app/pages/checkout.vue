@@ -304,6 +304,8 @@ const handleBoricaPayment = async (): Promise<void> => {
 
     showError('Грешка при плащане', errorMessage);
   }
+
+  console.log('🔚 handleBoricaPayment() function COMPLETED');
 };
 
 // Функция за продължаване към Борика след debug преглед
