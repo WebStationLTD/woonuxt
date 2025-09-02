@@ -137,13 +137,15 @@ export default defineEventHandler(async (event) => {
       };
     } else {
       // За GET заявки (user return) пренасочваме към резултатната страница
+      console.log("🔄 Processing user return (GET request)");
+
       const message = isSuccessful
         ? "Плащането е завършено успешно"
         : getErrorMessage(rc, data.STATUSMSG);
 
       const redirectUrl = `/payment-result?order=${data.ORDER}&success=${isSuccessful}&message=${encodeURIComponent(message)}&rc=${rc}`;
 
-      console.log("Redirecting user to:", redirectUrl);
+      console.log("🔄 Redirecting user to:", redirectUrl);
 
       return await sendRedirect(event, redirectUrl, 302);
     }
