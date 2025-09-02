@@ -23,6 +23,13 @@ interface BoricaCallbackData {
 export default defineEventHandler(async (event) => {
   const method = getMethod(event);
 
+  console.log("🔔 BORICA CALLBACK RECEIVED:", {
+    method,
+    timestamp: new Date().toISOString(),
+    url: event.node.req.url,
+    headers: event.node.req.headers,
+  });
+
   // Поддържаме и GET и POST заявки
   if (method !== "POST" && method !== "GET") {
     throw createError({
@@ -39,28 +46,43 @@ export default defineEventHandler(async (event) => {
     if (method === "GET") {
       const query = getQuery(event);
       data = query as unknown as BoricaCallbackData;
-      console.log("Borica GET callback received:", query);
+      console.log("🔵 Borica GET callback received:", query);
     } else {
       data = await readBody<BoricaCallbackData>(event);
-      console.log("Borica POST callback received:", {
+      console.log("🔴 Borica POST callback received:", {
         action: data.ACTION,
         rc: data.RC,
         order: data.ORDER,
         amount: data.AMOUNT,
         timestamp: data.TIMESTAMP,
+        signature: data.P_SIGN?.substring(0, 20) + "...",
       });
     }
 
+    console.log("📋 Full callback data:", data);
+
     // Проверка на подписа само за POST заявки (system callbacks)
     if (method === "POST") {
+      console.log("🔐 Verifying Borica signature...");
       const isValidSignature = verifyBoricaSignature(data);
+      console.log("🔐 Signature verification result:", isValidSignature);
 
       if (!isValidSignature) {
-        console.error("Invalid Borica signature");
+        console.error("❌ Invalid Borica signature");
+        console.error("❌ Signature data used for verification:", {
+          action: data.ACTION,
+          rc: data.RC,
+          approval: data.APPROVAL,
+          terminal: data.TERMINAL,
+          order: data.ORDER,
+          receivedSignature: data.P_SIGN?.substring(0, 30) + "...",
+        });
         throw createError({
           statusCode: 400,
           statusMessage: "Invalid signature",
         });
+      } else {
+        console.log("✅ Borica signature verified successfully");
       }
     }
 
