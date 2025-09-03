@@ -82,8 +82,8 @@ const payNow = async () => {
       isPaid.value = false;
       orderInput.value.transactionId = new Date().getTime().toString();
       orderInput.value.metaData.push({ key: '_chosen_payment_method', value: 'cash_on_delivery' });
-    } else if (method === 'borica_emv' || method === 'borica_custom') {
-      // Обработка на Borica плащане (custom интеграция)
+    } else if (method === 'borica_emv') {
+      // Използваме custom Borica интеграция
       await handleBoricaPayment();
       return; // Не продължаваме с нормалния checkout flow
     } else {

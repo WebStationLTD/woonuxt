@@ -145,13 +145,20 @@ export function useCheckout() {
           }
         }
       }
-      // Borica redirect - ЗАОБИКАЛЯМЕ WP плъгина напълно
+      // Borica redirect - ИЗПОЛЗВАМЕ WP плъгина
       else if ((await checkout?.redirect) && isBorica) {
-        console.log('🚨 BYPASSING WordPress Borica plugin redirect - using custom Nuxt integration');
+        const redirectUrl = checkout?.redirect ?? '';
 
-        // НЕ правим нищо - връщаме checkout без redirect
-        // Custom кодът в checkout.vue ще обработи плащането
-        return { ...checkout, redirect: null };
+        console.log('🔄 Using WordPress Borica plugin redirect:', {
+          redirectUrl,
+          orderId,
+          orderKey,
+        });
+
+        // Пренасочваме към WordPress Borica URL
+        // WordPress ще генерира Borica формата и ще пренасочи към gateway
+        window.location.href = redirectUrl;
+        return checkout;
       } else {
         // За регистрирани потребители, продължаваме към страницата с детайли за поръчката
         if (customer.value?.email && customer.value.email !== 'guest') {

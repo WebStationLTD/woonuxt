@@ -226,18 +226,22 @@ async function updateOrderStatus(
   metadata: any
 ): Promise<void> {
   try {
-    console.log("Updating order status:", {
+    console.log("🔄 Updating order status:", {
       orderId,
       status,
       metadata,
     });
 
     // Използваме WooCommerce REST API за обновяване на поръчката
+    const runtimeConfig = useRuntimeConfig();
     const wpApiUrl =
+      runtimeConfig.WORDPRESS_API_URL ||
       process.env.WORDPRESS_API_URL ||
       "https://leaderfitness.admin-panels.com/wp-json/wc/v3";
-    const consumerKey = process.env.WC_CONSUMER_KEY;
-    const consumerSecret = process.env.WC_CONSUMER_SECRET;
+    const consumerKey =
+      runtimeConfig.WC_CONSUMER_KEY || process.env.WC_CONSUMER_KEY;
+    const consumerSecret =
+      runtimeConfig.WC_CONSUMER_SECRET || process.env.WC_CONSUMER_SECRET;
 
     if (!consumerKey || !consumerSecret) {
       console.error("WooCommerce API credentials missing");
