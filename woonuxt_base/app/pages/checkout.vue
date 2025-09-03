@@ -120,6 +120,8 @@ const checkEmailOnInput = (email?: string | null): void => {
 
 // Обработка на Borica плащане
 const handleBoricaPayment = async (): Promise<void> => {
+  console.log('🔵 handleBoricaPayment() STARTED');
+
   try {
     buttonText.value = 'Подготвяне на плащането...';
 
@@ -305,7 +307,7 @@ const handleBoricaPayment = async (): Promise<void> => {
     showError('Грешка при плащане', errorMessage);
   }
 
-  console.log('🔚 handleBoricaPayment() function COMPLETED');
+  console.log('🔚 handleBoricaPayment() function COMPLETED - SHOULD NOT CONTINUE TO processCheckout()');
 };
 
 // Функция за продължаване към Борика след debug преглед
