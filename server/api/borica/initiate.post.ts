@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import fs from 'fs';
 
 interface BoricaInitiateRequest {
   orderId: string;
@@ -12,10 +13,12 @@ interface BoricaInitiateRequest {
 interface BoricaConfig {
   terminalId: string;
   privateKey: string;
+  passphrase: string;
   merchantName: string;
   merchantUrl: string;
   backrefUrl: string;
   gatewayUrl: string;
+  merchantId: string;
 }
 
 export default defineEventHandler(async (event) => {
@@ -29,31 +32,9 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const runtimeConfig = useRuntimeConfig();
-
-    // DEBUG: Тестваме дали .env файлът се чете
-    console.log("DEBUG: Testing .env file reading:");
-    console.log("DEBUG: process.env.GQL_HOST =", process.env.GQL_HOST);
-    console.log(
-      "DEBUG: process.env.BORICA_TERMINAL_ID =",
-      process.env.BORICA_TERMINAL_ID
-    );
-    console.log(
-      "DEBUG: process.env.BORICA_PRIVATE_KEY length =",
-      process.env.BORICA_PRIVATE_KEY?.length || 0
-    );
-    console.log(
-      "DEBUG: process.env.TBI_RESELLER_CODE =",
-      process.env.TBI_RESELLER_CODE
-    );
-
     const body = await readBody<BoricaInitiateRequest>(event);
-    console.log("Request body:", {
-      orderId: body.orderId,
-      amount: body.amount,
-      currency: body.currency,
-      description: body.description?.substring(0, 50) + "...",
-    });
+
+    console.log("Request body:", body);
 
     const {
       orderId,
@@ -76,6 +57,7 @@ export default defineEventHandler(async (event) => {
     const config: BoricaConfig = {
       terminalId: process.env.BORICA_TERMINAL_ID || "V5400641",
       privateKey: process.env.BORICA_PRIVATE_KEY || "",
+      passphrase: process.env.BORICA_PASSPHRASE || "",
       merchantName: process.env.BORICA_MERCHANT_NAME || "LIDERFITNES EOOD",
       merchantUrl:
         process.env.BORICA_MERCHANT_URL || "https://woonuxt-ten.vercel.app/",
@@ -85,37 +67,10 @@ export default defineEventHandler(async (event) => {
       gatewayUrl:
         process.env.BORICA_GATEWAY_URL ||
         "https://3dsgate-dev.borica.bg/cgi-bin/cgi_link",
+      merchantId: process.env.BORICA_MERCHANT_ID || "",
     };
 
-    console.log("Borica config loaded:", {
-      terminalId: config.terminalId,
-      hasPrivateKey: !!config.privateKey,
-      privateKeyLength: config.privateKey.length,
-      merchantName: config.merchantName,
-      backrefUrl: config.backrefUrl,
-    });
-
-    // DEBUG: Показваме всички runtime config variables
-    console.log("DEBUG: Runtime config status:", {
-      BORICA_TERMINAL_ID: !!runtimeConfig.BORICA_TERMINAL_ID,
-      BORICA_PRIVATE_KEY: !!runtimeConfig.BORICA_PRIVATE_KEY,
-      BORICA_MERCHANT_NAME: !!runtimeConfig.BORICA_MERCHANT_NAME,
-      BORICA_MERCHANT_URL: !!runtimeConfig.BORICA_MERCHANT_URL,
-      BORICA_BACKREF_URL: !!runtimeConfig.BORICA_BACKREF_URL,
-      BORICA_GATEWAY_URL: !!runtimeConfig.BORICA_GATEWAY_URL,
-      privateKeyPreview:
-        runtimeConfig.BORICA_PRIVATE_KEY?.substring(0, 50) + "...",
-      privateKeyLength: runtimeConfig.BORICA_PRIVATE_KEY?.length || 0,
-    });
-
-    // DEBUG: Проверяваме конкретно BORICA_PRIVATE_KEY
-    console.log("DEBUG: Raw BORICA_PRIVATE_KEY check:", {
-      value: runtimeConfig.BORICA_PRIVATE_KEY ? "EXISTS" : "MISSING",
-      type: typeof runtimeConfig.BORICA_PRIVATE_KEY,
-      isEmpty: runtimeConfig.BORICA_PRIVATE_KEY === "",
-      isUndefined: runtimeConfig.BORICA_PRIVATE_KEY === undefined,
-      isNull: runtimeConfig.BORICA_PRIVATE_KEY === null,
-    });
+    console.log("Borica config loaded:", config);
 
     if (!config.privateKey) {
       console.error("BORICA_PRIVATE_KEY is missing or empty!");
@@ -127,44 +82,51 @@ export default defineEventHandler(async (event) => {
     }
 
     // Генериране на уникални стойности
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const nonce = crypto.randomBytes(16).toString("hex").toUpperCase();
+    const timestamp = generateTimestamp();
+    const nonce = crypto.randomBytes(16).toString("hex").toUpperCase().substring(0, 32);
 
     // Форматиране на сумата (в стотинки)
     const amountInCents = Math.round(amount * 100).toString();
+
+    const formattedOrderId = orderId.padStart(6, "0");
 
     // Параметри за заявката
     const params: Record<string, string> = {
       TERMINAL: config.terminalId,
       TRTYPE: "1", // Sale transaction
-      AMOUNT: amountInCents,
+      AMOUNT: amount.toFixed(2),
       CURRENCY: currency,
-      ORDER: orderId,
+      ORDER: formattedOrderId,
+      COUNTRY: 'BG',
       DESC: description,
       MERCH_NAME: config.merchantName,
       MERCH_URL: config.merchantUrl,
-      MERCHANT: config.terminalId,
+      MERCHANT: config.merchantId,
       TIMESTAMP: timestamp,
       NONCE: nonce,
       EMAIL: customerEmail || "",
-      MERCH_TOKEN_ID: merchantData || "",
       BACKREF: config.backrefUrl,
+      "AD.CUST_BOR_ORDER_ID": `${formattedOrderId}@${formattedOrderId}`,
+      ADDENDUM: "AD,TD",
+      M_INFO: btoa(JSON.stringify({
+        email: customerEmail,
+        cardholderName: ""
+      }))
     };
 
     // Генериране на подпис
-    const signatureData = [
-      params.TERMINAL,
-      params.TRTYPE,
-      params.AMOUNT,
-      params.CURRENCY,
-      params.ORDER,
-      params.TIMESTAMP,
-      params.NONCE,
-      params.MERCH_TOKEN_ID,
-    ].join("");
+    const signatureData: string[] = [
+      params.TERMINAL || '',
+      params.TRTYPE || '',
+      params.AMOUNT || '',
+      params.CURRENCY || '',
+      params.ORDER || '',
+      params.TIMESTAMP || '',
+      params.NONCE || '',
+    ];
 
     // Създаване на подпис с private key
-    const signature = generateMacSignature(signatureData, config.privateKey);
+    const signature = generateMacSignature(signatureData, config.privateKey, config.passphrase);
     params.P_SIGN = signature;
 
     console.log("Borica payment initiated:", {
@@ -199,88 +161,41 @@ export default defineEventHandler(async (event) => {
   }
 });
 
-function generateMacSignature(data: string, privateKeyPem: string): string {
+function generateMacSignature(data: string[], privateKeyPem: string, passphrase: string): string {
   try {
+    let signData = '';
+
+    for (const token of data) {
+      signData += token.length + token;
+    }
+
+    signData = signData + '-';
+
     console.log(
       "Generating signature for data:",
-      data.substring(0, 100) + "..."
+      signData
     );
 
     // Проверяваме дали ключът има PEM headers
-    let formattedKey = privateKeyPem.trim();
-
-    if (!formattedKey.includes("-----BEGIN PRIVATE KEY-----")) {
-      // Ако няма headers, добавяме ги
-      formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
-    }
-
-    // Заменяме \\n с реални нови редове
+    let formattedKey = atob(privateKeyPem);
     formattedKey = formattedKey.replace(/\\n/g, "\n");
 
-    console.log("Using private key format:", {
-      hasBeginHeader: formattedKey.includes("-----BEGIN PRIVATE KEY-----"),
-      hasEndHeader: formattedKey.includes("-----END PRIVATE KEY-----"),
-      keyLength: formattedKey.length,
-      firstLine: formattedKey.split("\n")[0],
-      lastLine: formattedKey.split("\n").slice(-1)[0],
-    });
+    console.log(formattedKey);
 
-    // Създаване на подпис
-    const sign = crypto.createSign("SHA1");
-    sign.update(Buffer.from(data, "utf8"));
+    const sign = crypto.createSign("SHA256");
+    sign.update(signData, "utf8");
+    sign.end();
 
-    const signature = sign.sign(formattedKey);
-    const hexSignature = signature.toString("hex").toUpperCase();
+    const hexSignature = sign.sign({
+      key: formattedKey,
+      passphrase: passphrase,
+    }, 'hex').toUpperCase();
 
-    console.log(
-      "Signature generated successfully, length:",
-      hexSignature.length
-    );
     return hexSignature;
   } catch (error: any) {
-    console.error("Signature generation error:", error);
-    console.error("Error name:", error.name);
-    console.error("Error code:", error.code);
-    console.error(
-      "Private key preview:",
-      privateKeyPem.substring(0, 100) + "..."
-    );
+    console.log(error);
 
-    // Опитваме се с различни формати на ключа
-    if (
-      error.code === "ERR_OSSL_ASN1_HEADER_TOO_LONG" ||
-      error.message.includes("header too long")
-    ) {
-      console.log("Trying to fix private key format...");
-      try {
-        // Може би ключът е в PKCS#8 формат, но без правилни headers
-        let fixedKey = privateKeyPem.trim();
-
-        // Премахваме всички headers ако има
-        fixedKey = fixedKey
-          .replace(/-----BEGIN PRIVATE KEY-----/g, "")
-          .replace(/-----END PRIVATE KEY-----/g, "")
-          .replace(/-----BEGIN RSA PRIVATE KEY-----/g, "")
-          .replace(/-----END RSA PRIVATE KEY-----/g, "")
-          .replace(/\s/g, "");
-
-        // Добавяме правилните headers за PKCS#8
-        const pkcs8Key = `-----BEGIN PRIVATE KEY-----\n${fixedKey}\n-----END PRIVATE KEY-----`;
-
-        const sign2 = crypto.createSign("SHA1");
-        sign2.update(Buffer.from(data, "utf8"));
-        const signature2 = sign2.sign(pkcs8Key);
-
-        console.log("Fixed key format worked!");
-        return signature2.toString("hex").toUpperCase();
-      } catch (error2: any) {
-        console.error("Fixed format also failed:", error2);
-      }
-    }
-
-    throw new Error(
-      "Failed to generate signature: " + (error?.message || error)
-    );
+    return '';
   }
 }
 
@@ -302,4 +217,17 @@ function createFormHTML(
       document.getElementById('borica-form').submit();
     </script>
   `;
+}
+
+function generateTimestamp() {
+  const d = new Date(); // current UTC timestamp in ms
+  
+  const YYYY = d.getUTCFullYear().toString();
+  const MM   = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const DD   = String(d.getUTCDate()).padStart(2, "0");
+  const HH   = String(d.getUTCHours()).padStart(2, "0");
+  const mm   = String(d.getUTCMinutes()).padStart(2, "0");
+  const SS   = String(d.getUTCSeconds()).padStart(2, "0");
+
+  return YYYY + MM + DD + HH + mm + SS; // always 14 chars, in UTC
 }
