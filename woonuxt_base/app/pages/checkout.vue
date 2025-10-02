@@ -210,12 +210,15 @@ const handleBoricaPayment = async (): Promise<void> => {
 
     // Подготвяме данните за Borica плащане
     const amount = extractAmountFromCart(cart.value);
+    const firstName = billing?.firstName || customer.value?.firstName || '';
+    const lastName = billing?.lastName || customer.value?.lastName || '';
     const paymentData = {
       orderId: orderId.toString(),
       amount: amount,
       currency: 'BGN',
       description: generateOrderDescription({ orderId }),
       customerEmail: billing?.email || customer.value?.email || '',
+      customerName: [firstName, lastName].filter(Boolean).join(' ').toUpperCase(),
     };
 
     console.log('Borica payment data:', paymentData);
