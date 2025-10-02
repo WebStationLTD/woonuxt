@@ -7,6 +7,7 @@ interface BoricaInitiateRequest {
   currency: string;
   description: string;
   customerEmail?: string;
+  customerName?: string;
   merchantData?: string;
 }
 
@@ -42,6 +43,7 @@ export default defineEventHandler(async (event) => {
       currency = "BGN",
       description,
       customerEmail,
+      customerName,
       merchantData,
     } = body;
 
@@ -110,7 +112,7 @@ export default defineEventHandler(async (event) => {
       ADDENDUM: "AD,TD",
       M_INFO: btoa(JSON.stringify({
         email: customerEmail,
-        cardholderName: ""
+        cardholderName: customerName
       }))
     };
 

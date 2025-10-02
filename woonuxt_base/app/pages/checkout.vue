@@ -6,7 +6,7 @@ const { t } = useI18n();
 const { query } = useRoute();
 const router = useRouter();
 const { cart, isUpdatingCart, paymentGateways } = useCart();
-const { customer, viewer } = useAuth();
+const { viewer, customer } = useAuth();
 const { orderInput, isProcessingOrder, processCheckout } = useCheckout();
 const { initiatePayment, redirectToGateway, validatePaymentData, generateOrderDescription, extractAmountFromCart } = useBorica();
 const runtimeConfig = useRuntimeConfig();
@@ -180,11 +180,6 @@ const handleBoricaPayment = async (): Promise<void> => {
     if (!checkout?.order?.databaseId) {
       console.error('Checkout failed:', checkout);
       throw new Error('Не може да се създаде поръчката. Моля, проверете данните си.');
-    }
-
-    // ВАЖНО: НЕ използваме checkout.redirect от WP плъгина!
-    if (checkout?.redirect) {
-      console.log('🚨 WARNING: WP plugin generated redirect URL, but we are IGNORING it:', checkout.redirect);
     }
 
     const orderId = checkout.order.databaseId;
