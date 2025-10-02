@@ -162,30 +162,15 @@ export default defineEventHandler(async (event) => {
 
 function verifyBoricaSignature(data: BoricaCallbackData): boolean {
   try {
-    // Borica public key за тестова среда
-    const publicKeyPem = `-----BEGIN CERTIFICATE-----
-MIIEaTCCA1GgAwIBAgIJAK3ZW+0aemn/MA0GCSqGSIb3DQEBBQUAMIGIMQswCQYD
-VQQGEwJCRzETMBEGA1UECAwKQnVsZ2FyaWFkODESMBAGA1UEBwwJU29maWFkODE4
-MRwwGgYDVQQKDBNCT1JJQ0EgQUQgVEVTVCBTSUdOMRwwGgYDVQQLDBNCT1JJQ0Eg
-QURURXNUU0lHTjEUMBIGA1UEAwwLQm9yaWNhVGVzdDAeFw0xOTA3MjQxNTM2MDBa
-Fw0yOTA3MjExNTM2MDBaMIGJMQswCQYDVQQGEwJCRzEOMAwGA1UECAwFU29maWEx
-DjAMBgNVBAcMBVNvZmlhMQ4wDAYDVQQKDAVCb3JpYzEOMAwGA1UECwwFQm9yaWMx
-BTADBgNVBAcMBlRlc3Q3NDQwEgYJKoZIhvcNAQkBFgV0ZXN0QUBib3JpY2FhZC5i
-ZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJ8L3vKMn1TtW/gDHr4Z
-PdUKI5XqKmdAVOejxe1d9t1K7u6PLjE+GjcTr8T5TdZJzYHfFYFBjn2s2xz3VLkf
-YDO8xJwYxM/3RsH5LjlEi8q4tJE+dWZ+dUjI6E1DP1g7g9+6O6zJXKJrN4rK2Q5b
-KoE8M1S1MwT7gUYT3HyW2A7+8d2vF+7gQ+3h2H5K1BX5lF0Z7PJhZKP+eaLjzAOp
-kFR0q8KQEZ9V8k9+tHlA6EqZ8D5y8/eB+x7sQwc8P8tC6F5v5k8iVSH7l+qZFjPs
-MJ5+5Hhd1aG5s1+H7Q+Q9B5wJ3+N8ZkU6/5Ds7N2hT8vEV2mJ9yF7kRANv31o8hj
-CAwIBAgMBAAGjUzBRMB0GA1UdDgQWBBRhW3P3/rP4RxL9P5KtKq5Zq+5yJTAfBgNV
-HSMEGDAWGBRG3P3/rP4RxL9P5KtKq5Zq+5yJTAPBgNVHRMBAf8EBTADAQH/MA0G
-CSqGSIb3DQEBBQUAA4IBAQAwKq4L8sRQ9r7u7+6ywKcr1Gn2EgwMpHdIYzMHy8KQ
-cEU7EeOI8t5rz5VcS+q6CK5o3f5kJtJrYbO3wKqJj5y1mGi5ykdZq6Gy1zYzVjJJ
-L8+xMQL3RZY+m5hXL7QZ9K5B3D8T9F5S0z9E3n8B6Q+Y8F8wQZ3f1g+R7xJ3zYhz
-SUrz5K6G8Z3k3q8Sj8V2TdJI8d7h6C3E1kSKjm7sSsWq1CoBHf3zJ7QgOT6L8Z8M
-B5Hq8hFq1Gz7gJ8+XKQ9f3K5W6l1vQ8ZRHYY2fq5Q3H7Uv6E8Y8g3K5N1H1E7Jx4
-c1F1S3e7t4F6Y9K3r4T6M1G7Y+Hg2Z3q4L1fQrJV=
------END CERTIFICATE-----`;
+    const publicKey = process.env.BORICA_PUBLIC_KEY;
+
+    if (!publicKey) {
+      console.error("BORICA_PUBLIC_KEY is missing or empty!");
+      return false;
+    }
+
+    let formattedKey = atob(publicKey);
+    formattedKey = formattedKey.replace(/\\n/g, "\n");
 
     // Генериране на данните за проверка на подписа
     const signatureData = [
@@ -203,15 +188,22 @@ c1F1S3e7t4F6Y9K3r4T6M1G7Y+Hg2Z3q4L1fQrJV=
       data.ECI,
       data.TIMESTAMP,
       data.NONCE,
-      data.MERCH_TOKEN_ID,
-    ].join("");
+    ];
+
+    let macSignatureData = "";
+    
+    for (const token of signatureData) {
+      macSignatureData += token.length + token;
+    }
+
+    macSignatureData = macSignatureData + "-";
 
     // Проверка на подписа
     const verify = crypto.createVerify("SHA1");
-    verify.update(Buffer.from(signatureData, "utf8"));
+    verify.update(Buffer.from(macSignatureData, "utf8"));
 
     const signature = Buffer.from(data.P_SIGN, "hex");
-    const result = verify.verify(publicKeyPem, signature);
+    const result = verify.verify(formattedKey, signature);
 
     return result;
   } catch (error) {

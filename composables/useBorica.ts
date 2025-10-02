@@ -4,6 +4,7 @@ interface BoricaPaymentData {
   currency?: string;
   description: string;
   customerEmail?: string;
+  customerName?: string;
   merchantData?: string;
 }
 
@@ -38,6 +39,7 @@ export function useBorica() {
         currency: data.currency || "BGN",
         description: data.description,
         customerEmail: data.customerEmail,
+        customerName: data.customerName,
         merchantData: data.merchantData,
       },
       requestUrl: "/api/borica/initiate",
@@ -53,6 +55,7 @@ export function useBorica() {
         currency: data.currency || "BGN",
         description: data.description,
         customerEmail: data.customerEmail,
+        customerName: data.customerName,
         merchantData: data.merchantData,
       };
 

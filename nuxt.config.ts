@@ -47,7 +47,8 @@ export default defineNuxtConfig({
     WC_CONSUMER_SECRET: process.env.WC_CONSUMER_SECRET,
 
     public: {
-      GQL_HOST: "https://leaderfitness.admin-panels.com/graphql",
+      // GQL_HOST: "https://leaderfitness.admin-panels.com/graphql",
+      GQL_HOST: "http://leaderfitness.local/graphql",
       FRONT_END_URL: "https://woonuxt-ten.vercel.app",
       PRODUCT_CATEGORY_PERMALINK: "/produkt-kategoriya/",
       PRODUCT_TAG_PERMALINK: "/produkt-etiket/",
@@ -105,6 +106,7 @@ export default defineNuxtConfig({
     clients: {
       default: {
         host: "https://leaderfitness.admin-panels.com/graphql",
+        // host: "http://leaderfitness.local/graphql",
         retainQuery: true,
         tokenStorage: {
           cookieOptions: {

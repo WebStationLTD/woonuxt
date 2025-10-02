@@ -6,7 +6,7 @@ const { t } = useI18n();
 const { query } = useRoute();
 const router = useRouter();
 const { cart, isUpdatingCart, paymentGateways } = useCart();
-const { customer, viewer } = useAuth();
+const { viewer, customer } = useAuth();
 const { orderInput, isProcessingOrder, processCheckout } = useCheckout();
 const { initiatePayment, redirectToGateway, validatePaymentData, generateOrderDescription, extractAmountFromCart } = useBorica();
 const runtimeConfig = useRuntimeConfig();
@@ -182,11 +182,6 @@ const handleBoricaPayment = async (): Promise<void> => {
       throw new Error('Не може да се създаде поръчката. Моля, проверете данните си.');
     }
 
-    // ВАЖНО: НЕ използваме checkout.redirect от WP плъгина!
-    if (checkout?.redirect) {
-      console.log('🚨 WARNING: WP plugin generated redirect URL, but we are IGNORING it:', checkout.redirect);
-    }
-
     const orderId = checkout.order.databaseId;
     console.log('Order created successfully:', { orderId, orderKey: checkout.order.orderKey });
 
@@ -210,12 +205,15 @@ const handleBoricaPayment = async (): Promise<void> => {
 
     // Подготвяме данните за Borica плащане
     const amount = extractAmountFromCart(cart.value);
+    const firstName = billing?.firstName || customer.value?.firstName || '';
+    const lastName = billing?.lastName || customer.value?.lastName || '';
     const paymentData = {
       orderId: orderId.toString(),
       amount: amount,
       currency: 'BGN',
       description: generateOrderDescription({ orderId }),
       customerEmail: billing?.email || customer.value?.email || '',
+      customerName: [firstName, lastName].filter(Boolean).join(' ').toUpperCase(),
     };
 
     console.log('Borica payment data:', paymentData);
