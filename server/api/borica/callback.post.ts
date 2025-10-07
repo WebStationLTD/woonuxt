@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { H3Event } from "h3";
 
 interface BoricaCallbackData {
   ACTION: string;
@@ -21,7 +22,12 @@ interface BoricaCallbackData {
 }
 
 export default defineEventHandler(async (event) => {
-  const method = getMethod(event);
+  const method = event.method;
+  const isTesting = process.env.BORICA_TEST_ENABLED && process.env.BORICA_TEST_ENABLED === "true" || false;
+
+  console.log("🔔 BORICA TEST ENABLED:", isTesting);
+  
+  console.log("🔔 BORICA TEST ENABLED:", typeof isTesting);
 
   console.log("🔔 BORICA CALLBACK RECEIVED:", {
     method,
@@ -41,55 +47,37 @@ export default defineEventHandler(async (event) => {
   try {
     // За GET заявки вземаме данните от query parameters
     // За POST заявки вземаме данните от body
-    let data: BoricaCallbackData;
-
-    if (method === "GET") {
-      const query = getQuery(event);
-      data = query as unknown as BoricaCallbackData;
-      console.log("🔵 Borica GET callback received:", query);
-    } else {
-      data = await readBody<BoricaCallbackData>(event);
-      console.log("🔴 Borica POST callback received:", {
-        action: data.ACTION,
-        rc: data.RC,
-        order: data.ORDER,
-        amount: data.AMOUNT,
-        timestamp: data.TIMESTAMP,
-        signature: data.P_SIGN?.substring(0, 20) + "...",
-      });
-    }
-
-    console.log("📋 Full callback data:", data);
-
-    // Проверка на подписа само за POST заявки (system callbacks)
-    if (method === "POST") {
-      console.log("🔐 Verifying Borica signature...");
-      const isValidSignature = verifyBoricaSignature(data);
-      console.log("🔐 Signature verification result:", isValidSignature);
-
-      if (!isValidSignature) {
-        console.error("❌ Invalid Borica signature");
-        console.error("❌ Signature data used for verification:", {
-          action: data.ACTION,
-          rc: data.RC,
-          approval: data.APPROVAL,
-          terminal: data.TERMINAL,
-          order: data.ORDER,
-          receivedSignature: data.P_SIGN?.substring(0, 30) + "...",
-        });
-        throw createError({
-          statusCode: 400,
-          statusMessage: "Invalid signature",
-        });
-      } else {
-        console.log("✅ Borica signature verified successfully");
-      }
-    }
+    let data = await getRequestData(event);
 
     // Анализ на response code
     const rc = parseInt(data.RC);
     const isSuccessful = rc === 0;
     const amount = parseInt(data.AMOUNT) / 100; // Convert from cents
+
+    console.log("📋 Full callback data:", data);
+
+    if(method === "GET") {
+      const message = isSuccessful
+        ? "Плащането е завършено успешно"
+        : getErrorMessage(rc.toString(), data.STATUSMSG);
+
+      const redirectUrl = `/payment-result?order=${data.ORDER}&success=${isSuccessful}&message=${encodeURIComponent(message)}&rc=${rc}`;
+
+      console.log("🔄 Redirecting user to:", redirectUrl);
+
+      return await sendRedirect(event, redirectUrl, 302);
+    }
+
+    // Проверка на подписа
+    const isValidSignature = verifyBoricaSignature(data);
+    console.log("🔐 Signature verification result:", isValidSignature);
+
+    if(isTesting === false && isValidSignature === false) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Invalid signature",
+      });
+    }
 
     console.log("Payment result:", {
       orderId: data.ORDER,
@@ -104,50 +92,28 @@ export default defineEventHandler(async (event) => {
       method: method,
     });
 
-    // Тук можете да добавите логика за обновяване на статуса на поръчката във WordPress/WooCommerce
-    // Например чрез GraphQL mutation или REST API заявка
-
     // Обновяване на статуса на поръчката (само за POST callbacks)
-    if (method === "POST") {
-      if (isSuccessful) {
-        // Успешно плащане - обновете поръчката като платена
-        await updateOrderStatus(data.ORDER, "completed", {
-          transactionId: data.RRN,
-          approval: data.APPROVAL,
-          intRef: data.INT_REF,
-          amount: amount,
-          currency: data.CURRENCY,
-          timestamp: data.TIMESTAMP,
-        });
-      } else {
-        // Неуспешно плащане - обновете поръчката като неплатена
-        await updateOrderStatus(data.ORDER, "failed", {
-          responseCode: rc,
-          statusMessage: data.STATUSMSG,
-          timestamp: data.TIMESTAMP,
-        });
-      }
+    if (isSuccessful) {
+      // Успешно плащане - обновете поръчката като платена
+      await updateOrderStatus(data.ORDER, "completed", {
+        transactionId: data.RRN,
+        approval: data.APPROVAL,
+        intRef: data.INT_REF,
+        amount: amount,
+        currency: data.CURRENCY,
+        timestamp: data.TIMESTAMP,
+      });
+      return await sendRedirect(event, "/thank-you", 302);
 
-      // Връщане на успешен отговор към Borica
-      return {
-        success: true,
-        message: "Callback processed successfully",
-        orderId: data.ORDER,
-        status: isSuccessful ? "success" : "failed",
-      };
     } else {
-      // За GET заявки (user return) пренасочваме към резултатната страница
-      console.log("🔄 Processing user return (GET request)");
+      // Неуспешно плащане - обновете поръчката като неплатена
+      await updateOrderStatus(data.ORDER, "failed", {
+        responseCode: rc,
+        statusMessage: data.STATUSMSG,
+        timestamp: data.TIMESTAMP,
+      });
 
-      const message = isSuccessful
-        ? "Плащането е завършено успешно"
-        : getErrorMessage(rc, data.STATUSMSG);
-
-      const redirectUrl = `/payment-result?order=${data.ORDER}&success=${isSuccessful}&message=${encodeURIComponent(message)}&rc=${rc}`;
-
-      console.log("🔄 Redirecting user to:", redirectUrl);
-
-      return await sendRedirect(event, redirectUrl, 302);
+      return await sendRedirect(event, `/checkout?payment_error=true&order=${data.ORDER}`, 302);
     }
   } catch (error: any) {
     console.error("Borica callback error:", error);
@@ -159,6 +125,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 });
+
+async function getRequestData(event: H3Event): Promise<BoricaCallbackData> {
+  if (event.method === "GET") {
+    return getQuery(event) as unknown as BoricaCallbackData;
+  } else {
+    return await readBody<BoricaCallbackData>(event);
+  }
+}
 
 function verifyBoricaSignature(data: BoricaCallbackData): boolean {
   try {
@@ -199,8 +173,9 @@ function verifyBoricaSignature(data: BoricaCallbackData): boolean {
     macSignatureData = macSignatureData + "-";
 
     // Проверка на подписа
-    const verify = crypto.createVerify("SHA1");
-    verify.update(Buffer.from(macSignatureData, "utf8"));
+    const verify = crypto.createVerify("SHA256");
+    verify.update(macSignatureData, "utf8");
+    verify.end();
 
     const signature = Buffer.from(data.P_SIGN, "hex");
     const result = verify.verify(formattedKey, signature);

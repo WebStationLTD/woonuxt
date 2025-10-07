@@ -44,7 +44,6 @@ export default defineEventHandler(async (event) => {
       description,
       customerEmail,
       customerName,
-      merchantData,
     } = body;
 
     // Валидация на входящите данни
@@ -92,12 +91,16 @@ export default defineEventHandler(async (event) => {
 
     const formattedOrderId = orderId.padStart(6, "0");
 
+    const isTestMode = process.env.BORICA_TEST_ENABLED || false;
+
+    console.log("🔔 BORICA TEST MODE:", isTestMode);
+
     // Параметри за заявката
     const params: Record<string, string> = {
       TERMINAL: config.terminalId,
       TRTYPE: "1", // Sale transaction
       AMOUNT: amount.toFixed(2),
-      CURRENCY: currency,
+      CURRENCY: isTestMode ? "EUR" : currency,
       ORDER: formattedOrderId,
       COUNTRY: 'BG',
       DESC: description,

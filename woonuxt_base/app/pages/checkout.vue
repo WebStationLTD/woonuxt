@@ -170,13 +170,8 @@ const handleBoricaPayment = async (): Promise<void> => {
     // Създаваме поръчката директно чрез GraphQL (БЕЗ да минаваме през processCheckout)
     const { checkout } = await GqlCheckout(checkoutPayload);
 
-    console.log('🔍 DEBUG: Checkout response:', {
-      hasOrder: !!checkout?.order,
-      hasRedirect: !!checkout?.redirect,
-      redirectUrl: checkout?.redirect,
-      result: checkout?.result,
-    });
-
+    console.log('DEBUG: Checkout response:', checkout);
+    
     if (!checkout?.order?.databaseId) {
       console.error('Checkout failed:', checkout);
       throw new Error('Не може да се създаде поръчката. Моля, проверете данните си.');
