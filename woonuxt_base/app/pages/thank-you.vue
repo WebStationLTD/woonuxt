@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Извличане на информация за последната поръчка от localStorage
 const order = ref<any>(null);
+const { emptyCart } = useCart();
 const { formatDate } = useHelpers();
 const { t } = useI18n();
 
@@ -8,14 +9,21 @@ onMounted(() => {
   // Проверка дали сме в браузър
   if (process.client) {
     try {
-      const savedOrder = localStorage.getItem('lastOrder');
-      if (savedOrder) {
-        order.value = JSON.parse(savedOrder);
-      }
+      getOrder();
     } catch (e) {
       // Грешка при извличане на данни за поръчката
     }
   }
+
+  async function getOrder() {
+    await emptyCart();
+
+    const savedOrder = localStorage.getItem('lastOrder');
+
+    if (savedOrder) {
+      order.value = JSON.parse(savedOrder);
+    }
+  } 
 });
 </script>
 
