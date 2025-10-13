@@ -100,7 +100,7 @@ export default defineEventHandler(async (event) => {
       TERMINAL: config.terminalId,
       TRTYPE: "1", // Sale transaction
       AMOUNT: amount.toFixed(2),
-      CURRENCY: isTestMode ? "EUR" : currency,
+      CURRENCY: currency,
       ORDER: formattedOrderId,
       COUNTRY: 'BG',
       DESC: description,
