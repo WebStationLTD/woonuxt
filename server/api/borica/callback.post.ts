@@ -167,10 +167,14 @@ function verifyBoricaSignature(data: BoricaCallbackData): boolean {
     let macSignatureData = "";
     
     for (const token of signatureData) {
-      macSignatureData += token.length + token;
+      if(token.length === 0) {
+        macSignatureData += "-";
+      } else {
+        macSignatureData += token.length + token;
+      }
     }
 
-    macSignatureData = macSignatureData + "-";
+    // macSignatureData = macSignatureData + "-";
 
     // Проверка на подписа
     const verify = crypto.createVerify("SHA256");

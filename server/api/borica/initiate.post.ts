@@ -126,6 +126,7 @@ export default defineEventHandler(async (event) => {
       params.AMOUNT || '',
       params.CURRENCY || '',
       params.ORDER || '',
+      params.MERCHANT || '',
       params.TIMESTAMP || '',
       params.NONCE || '',
     ];
@@ -174,7 +175,7 @@ function generateMacSignature(data: string[], privateKeyPem: string, passphrase:
       signData += token.length + token;
     }
 
-    signData = signData + '-';
+    // signData = signData + '-';
 
     console.log(
       "Generating signature for data:",
