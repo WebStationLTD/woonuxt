@@ -7,7 +7,7 @@
     <div class="relative h-80 overflow-hidden bg-indigo-600 md:absolute md:left-0 md:h-full md:w-1/3 lg:w-1/2">
       <NuxtImg
         alt="Leaderfitness.bg - Професионални фитнес уреди и аксесоари"
-        src="https://leaderfitness.admin-panels.com/wp-content/uploads/2025/06/shop-leaderfitness.jpg"
+        src="https://admin.leaderfitness.net/wp-content/uploads/2025/06/shop-leaderfitness.jpg"
         class="absolute inset-0 h-full w-full object-cover"
         sizes="(max-width: 768px) 100vw, 50vw"
         width="800"

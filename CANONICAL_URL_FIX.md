@@ -2,7 +2,7 @@
 
 ## 🎯 Проблем
 
-Всички canonical URL-и сочеха към backend URL-а (leaderfitness.admin-panels.com) вместо към правилния frontend URL (woonuxt-ten.vercel.app).
+Всички canonical URL-и сочеха към backend URL-а (admin.leaderfitness.net) вместо към правилния frontend URL (woonuxt-ten.vercel.app).
 
 ## ✅ Направени корекции
 
@@ -11,7 +11,7 @@
 ```typescript
 runtimeConfig: {
   public: {
-    GQL_HOST: "https://leaderfitness.admin-panels.com/graphql",
+    GQL_HOST: "https://admin.leaderfitness.net/graphql",
     FRONT_END_URL: "https://woonuxt-ten.vercel.app", // ✅ ДОБАВЕНО
     PRODUCT_CATEGORY_PERMALINK: "/produkt-kategoriya/",
     PRODUCTS_PER_PAGE: 12,

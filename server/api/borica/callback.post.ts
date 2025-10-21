@@ -23,10 +23,13 @@ interface BoricaCallbackData {
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
-  const isTesting = process.env.BORICA_TEST_ENABLED && process.env.BORICA_TEST_ENABLED === "true" || false;
+  const isTesting =
+    (process.env.BORICA_TEST_ENABLED &&
+      process.env.BORICA_TEST_ENABLED === "true") ||
+    false;
 
   console.log("🔔 BORICA TEST ENABLED:", isTesting);
-  
+
   console.log("🔔 BORICA TEST ENABLED:", typeof isTesting);
 
   console.log("🔔 BORICA CALLBACK RECEIVED:", {
@@ -56,7 +59,7 @@ export default defineEventHandler(async (event) => {
 
     console.log("📋 Full callback data:", data);
 
-    if(method === "GET") {
+    if (method === "GET") {
       const message = isSuccessful
         ? "Плащането е завършено успешно"
         : getErrorMessage(rc.toString(), data.STATUSMSG);
@@ -72,7 +75,7 @@ export default defineEventHandler(async (event) => {
     const isValidSignature = verifyBoricaSignature(data);
     console.log("🔐 Signature verification result:", isValidSignature);
 
-    if(isTesting === false && isValidSignature === false) {
+    if (isTesting === false && isValidSignature === false) {
       throw createError({
         statusCode: 400,
         statusMessage: "Invalid signature",
@@ -104,7 +107,6 @@ export default defineEventHandler(async (event) => {
         timestamp: data.TIMESTAMP,
       });
       return await sendRedirect(event, "/thank-you", 302);
-
     } else {
       // Неуспешно плащане - обновете поръчката като неплатена
       await updateOrderStatus(data.ORDER, "failed", {
@@ -113,7 +115,11 @@ export default defineEventHandler(async (event) => {
         timestamp: data.TIMESTAMP,
       });
 
-      return await sendRedirect(event, `/checkout?payment_error=true&order=${data.ORDER}`, 302);
+      return await sendRedirect(
+        event,
+        `/checkout?payment_error=true&order=${data.ORDER}`,
+        302
+      );
     }
   } catch (error: any) {
     console.error("Borica callback error:", error);
@@ -165,9 +171,9 @@ function verifyBoricaSignature(data: BoricaCallbackData): boolean {
     ];
 
     let macSignatureData = "";
-    
+
     for (const token of signatureData) {
-      if(token.length === 0) {
+      if (token.length === 0) {
         macSignatureData += "-";
       } else {
         macSignatureData += token.length + token;
@@ -208,7 +214,7 @@ async function updateOrderStatus(
     const wpApiUrl =
       runtimeConfig.WORDPRESS_API_URL ||
       process.env.WORDPRESS_API_URL ||
-      "https://leaderfitness.admin-panels.com/wp-json/wc/v3";
+      "https://admin.leaderfitness.net/wp-json/wc/v3";
     const consumerKey =
       runtimeConfig.WC_CONSUMER_KEY || process.env.WC_CONSUMER_KEY;
     const consumerSecret =

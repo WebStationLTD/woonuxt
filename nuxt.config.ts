@@ -47,7 +47,7 @@ export default defineNuxtConfig({
     WC_CONSUMER_SECRET: process.env.WC_CONSUMER_SECRET,
 
     public: {
-      GQL_HOST: "https://leaderfitness.admin-panels.com/graphql",
+      GQL_HOST: "https://admin.leaderfitness.net/graphql",
       // GQL_HOST: "http://leaderfitness.local/graphql",
       FRONT_END_URL: "https://woonuxt-ten.vercel.app",
       PRODUCT_CATEGORY_PERMALINK: "/produkt-kategoriya/",
@@ -76,8 +76,8 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
-        { rel: "preconnect", href: "https://leaderfitness.admin-panels.com" },
-        { rel: "dns-prefetch", href: "https://leaderfitness.admin-panels.com" },
+        { rel: "preconnect", href: "https://admin.leaderfitness.net" },
+        { rel: "dns-prefetch", href: "https://admin.leaderfitness.net" },
       ],
     },
   },
@@ -105,7 +105,7 @@ export default defineNuxtConfig({
   "graphql-client": {
     clients: {
       default: {
-        host: "https://leaderfitness.admin-panels.com/graphql",
+        host: "https://admin.leaderfitness.net/graphql",
         // host: "http://leaderfitness.local/graphql",
         retainQuery: true,
         tokenStorage: {

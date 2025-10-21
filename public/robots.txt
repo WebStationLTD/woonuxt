@@ -7,4 +7,4 @@ Disallow: /order-summary/
 Disallow: /checkout/order-received/
 
 # Указваме пътя до sitemap файла
-Sitemap: https://leaderfitness.admin-panels.com/sitemap.xml 
+Sitemap: https://admin.leaderfitness.net/sitemap.xml 
