@@ -25,7 +25,6 @@ const attrValues = ref();
 const isSimpleProduct = computed<boolean>(() => product.value?.type === ProductTypesEnum.SIMPLE);
 const isVariableProduct = computed<boolean>(() => product.value?.type === ProductTypesEnum.VARIABLE);
 const isExternalProduct = computed<boolean>(() => product.value?.type === ProductTypesEnum.EXTERNAL);
-
 const relatedProducts = computed(() => {
   return (product.value.related?.nodes?.slice(0, 4) || []) as Product[];
 });
@@ -55,18 +54,19 @@ onMounted(async () => {
 const updateSelectedVariations = (variations: VariationAttribute[]): void => {
   if (!product.value.variations) return;
 
-  attrValues.value = variations.map((el) => ({ attributeName: el.name, attributeValue: el.value }));
   const clonedVariations = JSON.parse(JSON.stringify(variations));
+  attrValues.value = variations.map((el) => ({ attributeName: el.name, attributeValue: el.value }));
+
   const getActiveVariation = product.value.variations?.nodes.filter((variation: any) => {
+    // console.log(variation.attributes.nodes);
     // If there is any variation of type ANY set the value to ''
     if (variation.attributes) {
       // Set the value of the variation of type ANY to ''
-      indexOfTypeAny.value.forEach((index) => (clonedVariations[index].value = ''));
+      // indexOfTypeAny.value.forEach((index) => (clonedVariations[index].value = ''));
 
       return arraysEqual(formatArray(variation.attributes.nodes), formatArray(clonedVariations));
     }
   });
-
   // Set variation to the selected variation if it exists
   activeVariation.value = getActiveVariation?.[0] || null;
 

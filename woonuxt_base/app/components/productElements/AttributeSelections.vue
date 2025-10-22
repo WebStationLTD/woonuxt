@@ -21,12 +21,16 @@ const getSelectedName = (attr: any, activeVariation?: VariationAttribute) => {
 
 const updateAttrs = () => {
   const selectedVariations = attributes.map((row): VariationAttribute => {
+    if(!row.variation) {
+      return { name: '', value: '' };
+    }
+
     const radioValue = document.querySelector(`.name-${row.name.toLowerCase()}:checked`) as HTMLInputElement;
     const dropdownValue = document.querySelector(`#${row.name}`) as HTMLSelectElement;
     const name = row.name.charAt(0).toLowerCase() + row.name.slice(1);
     const value = radioValue?.value ?? dropdownValue?.value ?? '';
     return { name, value };
-  });
+  }).filter(x => x.name !== '');
 
   activeVariations.value = selectedVariations;
   emit('attrs-changed', selectedVariations);
