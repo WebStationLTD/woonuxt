@@ -1,5 +1,9 @@
 <script setup lang="ts">
 const { cart, toggleCart, isUpdatingCart } = useCart();
+const { formatDualPrice } = usePriceFormatter();
+
+// Computed property за форматиран total (използваме raw полето)
+const formattedTotal = computed(() => formatDualPrice(cart.value?.rawTotal, true));
 </script>
 
 <template>
@@ -25,7 +29,7 @@ const { cart, toggleCart, isUpdatingCart } = useCart();
             to="/checkout"
             @click.prevent="toggleCart()">
             <span class="mx-2">{{ $t('messages.shop.checkout') }}</span>
-            <span v-html="cart.total" />
+            <span>{{ formattedTotal }}</span>
           </NuxtLink>
         </div>
       </template>

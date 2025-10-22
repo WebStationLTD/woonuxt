@@ -1,5 +1,11 @@
 <script setup>
 const { cart, isUpdatingCart } = useCart();
+const { formatDualPrice } = usePriceFormatter();
+
+// Computed properties за форматирани цени (използваме raw полетата)
+const formattedSubtotal = computed(() => formatDualPrice(cart.value?.rawSubtotal, true));
+const formattedShipping = computed(() => formatDualPrice(cart.value?.rawShippingTotal, true));
+const formattedTotal = computed(() => formatDualPrice(cart.value?.rawTotal, true));
 </script>
 
 <template>
@@ -16,11 +22,11 @@ const { cart, isUpdatingCart } = useCart();
     <div class="grid gap-1 text-sm font-semibold text-gray-500">
       <div class="flex justify-between">
         <span>{{ $t('messages.shop.subtotal') }}</span>
-        <span class="text-gray-700 tabular-nums" v-html="cart.subtotal" />
+        <span class="text-gray-700 tabular-nums">{{ formattedSubtotal }}</span>
       </div>
       <div class="flex justify-between">
         <span>{{ $t('messages.general.shipping') }}</span>
-        <span class="text-gray-700 tabular-nums"> {{ parseFloat(cart.shippingTotal) > 0 ? '+' : '' }} <span v-html="cart.shippingTotal" /> </span>
+        <span class="text-gray-700 tabular-nums"> {{ parseFloat(cart.shippingTotal) > 0 ? '+' : '' }} {{ formattedShipping }} </span>
       </div>
       <!-- СКРИТО: Показване на прилагани отстъпки закоментирано по искане на клиента -->
       <!-- <Transition name="scale-y" mode="out-in">
@@ -31,7 +37,7 @@ const { cart, isUpdatingCart } = useCart();
       </Transition> -->
       <div class="flex justify-between mt-4">
         <span>{{ $t('messages.shop.total') }}</span>
-        <span class="text-lg font-bold text-gray-700 tabular-nums" v-html="cart.total" />
+        <span class="text-lg font-bold text-gray-700 tabular-nums">{{ formattedTotal }}</span>
       </div>
     </div>
 

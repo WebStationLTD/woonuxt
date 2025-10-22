@@ -1,4 +1,5 @@
 import pkg from '../../../woonuxt_base/package.json';
+import { formatDualPrice as formatDualPriceUtil } from './usePriceFormatter';
 
 // A collection of helper functions.
 export function useHelpers() {
@@ -150,11 +151,13 @@ export function useHelpers() {
   };
 
   /**
-   * Formats a price string.
+   * Formats a price string in dual format: BGN / EUR
    * @param {string} price - The price string to format.
    * @returns {string} The formatted price string.
    */
-  const formatPrice = (price: string): string => parseFloat(price).toLocaleString('en-US', { style: 'currency', currency: 'EUR' });
+  const formatPrice = (price: string): string => {
+    return formatDualPriceUtil(price, true);
+  };
 
   /**
    * Scrolls to the top of the page.

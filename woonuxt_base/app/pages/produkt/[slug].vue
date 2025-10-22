@@ -170,7 +170,7 @@ const showProductFeatures = computed(() => {
 
             <!-- Цена на отделен ред -->
             <div class="mb-3">
-              <ProductPrice class="text-3xl font-bold text-[#dc2626]" :sale-price="type.salePrice" :regular-price="type.regularPrice" />
+              <ProductPrice class="text-3xl font-bold text-[#dc2626]" :sale-price="type.rawSalePrice" :regular-price="type.rawRegularPrice" />
             </div>
 
             <StarRating :rating="product.averageRating || 0" :count="product.reviewCount || 0" v-if="storeSettings.showReviews" />

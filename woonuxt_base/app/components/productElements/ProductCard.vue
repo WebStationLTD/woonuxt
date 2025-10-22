@@ -231,7 +231,7 @@ const availableVariationsText = computed(() => {
 
       <!-- Показваме цената и вариациите на един ред -->
       <div class="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between mb-3 min-h-[26px]">
-        <ProductPrice class="text-sm" :sale-price="node.salePrice" :regular-price="node.regularPrice" />
+        <ProductPrice class="text-sm" :sale-price="node.rawSalePrice" :regular-price="node.rawRegularPrice" />
 
         <!-- Селект за вариации (само за вариационни продукти) -->
         <div v-if="hasVariations" class="flex w-full mt-2 sm:mt-0 sm:justify-end sm:w-[100px]">

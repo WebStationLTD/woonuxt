@@ -2,6 +2,7 @@
 const router = useRouter();
 const { formatDate, scrollToTop } = useHelpers();
 const { getOrders, orders } = useAuth();
+const { formatDualPrice } = usePriceFormatter();
 
 if (orders.value === null) getOrders();
 
@@ -14,6 +15,9 @@ const refresh = () => {
 const goToOrder = (orderNumber: string): void => {
   router.push(`/order-summary/${orderNumber}`);
 };
+
+// Алиас за форматиране на цени в order контекст
+const formatOrderPrice = (price: string | null | undefined): string => formatDualPrice(price, true);
 </script>
 
 <template>
@@ -33,7 +37,7 @@ const goToOrder = (orderNumber: string): void => {
             <td class="rounded-l-lg">{{ order.orderNumber }}</td>
             <td>{{ formatDate(order.date) }}</td>
             <td><OrderStatusLabel v-if="order.status" :order="order" /></td>
-            <td class="text-right rounded-r-lg">{{ order.total }}</td>
+            <td class="text-right rounded-r-lg">{{ formatOrderPrice(order.rawTotal) }}</td>
           </tr>
         </tbody>
       </table>

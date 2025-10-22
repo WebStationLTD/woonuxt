@@ -95,7 +95,7 @@ const moveToWishList = () => {
         <div v-if="variationAttributes" class="text-xs text-gray-500 mt-1">
           {{ variationAttributes }}
         </div>
-        <ProductPrice class="mt-1 text-xs" :sale-price="productType.salePrice" :regular-price="productType.regularPrice" />
+        <ProductPrice class="mt-1 text-xs" :sale-price="productType.rawSalePrice" :regular-price="productType.rawRegularPrice" />
       </div>
       <div class="inline-flex gap-2 flex-col items-end shrink-0">
         <QuantityInput :item />

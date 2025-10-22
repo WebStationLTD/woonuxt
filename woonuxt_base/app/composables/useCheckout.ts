@@ -110,7 +110,7 @@ export function useCheckout() {
             JSON.stringify({
               id: orderId,
               key: orderKey,
-              total: checkout.order.total,
+              total: checkout.order.rawTotal,
               status: checkout.order.status,
               date: checkout.order.date,
               paymentMethod: checkout.order.paymentMethod,

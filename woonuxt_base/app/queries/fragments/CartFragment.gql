@@ -2,10 +2,13 @@ fragment Cart on Cart {
   total
   rawTotal: total(format: RAW)
   subtotal
+  rawSubtotal: subtotal(format: RAW)
   totalTax
+  rawTotalTax: totalTax(format: RAW)
   discountTotal
   rawDiscountTotal: discountTotal(format: RAW)
   shippingTotal
+  rawShippingTotal: shippingTotal(format: RAW)
   chosenShippingMethods
   availableShippingMethods {
     rates {

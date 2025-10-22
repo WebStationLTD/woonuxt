@@ -4,6 +4,7 @@ import { OrderStatusEnum } from '#woo';
 const { query, params, name } = useRoute();
 const { customer } = useAuth();
 const { formatDate, formatPrice } = useHelpers();
+const { formatDualPrice } = usePriceFormatter();
 const { t } = useI18n();
 
 const order = ref<Order | null>(null);
@@ -18,6 +19,9 @@ const isCheckoutPage = computed<boolean>(() => name === 'order-received');
 const orderIsNotCompleted = computed<boolean>(() => order.value?.status !== OrderStatusEnum.COMPLETED);
 const hasDiscount = computed<boolean>(() => !!parseFloat(order.value?.rawDiscountTotal || '0'));
 const downloadableItems = computed(() => order.value?.downloadableItems?.nodes || []);
+
+// Алиас за форматиране на цени в order контекст
+const formatOrderPrice = (price: string | null | undefined): string => formatDualPrice(price, true);
 
 onBeforeMount(() => {
   /**
@@ -159,25 +163,25 @@ useSeoMeta({
         <div>
           <div class="flex justify-between">
             <span>{{ $t('messages.shop.subtotal') }}</span>
-            <span>{{ order.subtotal }}</span>
+            <span>{{ formatOrderPrice(order.rawSubtotal) }}</span>
           </div>
           <div class="flex justify-between">
             <span>{{ $t('messages.general.tax') }}</span>
-            <span>{{ order.totalTax }}</span>
+            <span>{{ formatOrderPrice(order.rawTotalTax) }}</span>
           </div>
           <div class="flex justify-between">
             <span>{{ $t('messages.general.shipping') }}</span>
-            <span>{{ order.shippingTotal }}</span>
+            <span>{{ formatOrderPrice(order.rawShippingTotal) }}</span>
           </div>
           <!-- СКРИТО: Показване на отстъпки скрито по искане на клиента -->
           <!-- <div v-if="hasDiscount" class="flex justify-between text-primary">
             <span>{{ $t('messages.shop.discount') }}</span>
-            <span>- {{ order.discountTotal }}</span>
+            <span>- {{ formatOrderPrice(order.rawDiscountTotal) }}</span>
           </div> -->
           <hr class="my-8" />
           <div class="flex justify-between">
             <span class>{{ $t('messages.shop.total') }}</span>
-            <span class="font-semibold">{{ order.total }}</span>
+            <span class="font-semibold">{{ formatOrderPrice(order.rawTotal) }}</span>
           </div>
         </div>
       </div>

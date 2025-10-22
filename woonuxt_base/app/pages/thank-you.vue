@@ -3,6 +3,7 @@
 const order = ref<any>(null);
 const { emptyCart } = useCart();
 const { formatDate } = useHelpers();
+const { formatDualPrice } = usePriceFormatter();
 const { t } = useI18n();
 
 onMounted(() => {
@@ -23,8 +24,11 @@ onMounted(() => {
     if (savedOrder) {
       order.value = JSON.parse(savedOrder);
     }
-  } 
+  }
 });
+
+// Алиас за форматиране на цени в order контекст
+const formatOrderPrice = (price: string | null | undefined): string => formatDualPrice(price, true);
 </script>
 
 <template>
@@ -56,7 +60,7 @@ onMounted(() => {
       <div class="border-t pt-4">
         <div class="flex justify-between items-center mb-2">
           <div class="font-semibold">{{ $t('messages.shop.total') }}</div>
-          <div class="font-bold text-xl">{{ order.total }}</div>
+          <div class="font-bold text-xl">{{ formatOrderPrice(order.total) }}</div>
         </div>
       </div>
     </div>

@@ -18,7 +18,7 @@ const { product } = defineProps<{ product: Product }>();
     </NuxtLink>
     <div>
       <NuxtLink v-if="product.slug" class="text-lg leading-tight" :to="`/produkt/${decodeURIComponent(product.slug)}`">{{ product.name }}</NuxtLink>
-      <ProductPrice :sale-price="product.salePrice" :regular-price="product.regularPrice" class="ml-auto" />
+      <ProductPrice :sale-price="product.rawSalePrice" :regular-price="product.rawRegularPrice" class="ml-auto" />
     </div>
     <div class="ml-auto">
       <button v-if="product.databaseId" title="Remove Item" @click="removeFromWishlist(product.databaseId)">

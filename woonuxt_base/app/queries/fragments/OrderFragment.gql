@@ -7,11 +7,15 @@ fragment OrderFragment on Order {
   databaseId
   orderKey
   total
+  rawTotal: total(format: RAW)
   subtotal
+  rawSubtotal: subtotal(format: RAW)
   discountTotal
   rawDiscountTotal: discountTotal(format: RAW)
   totalTax
+  rawTotalTax: totalTax(format: RAW)
   shippingTotal
+  rawShippingTotal: shippingTotal(format: RAW)
   paymentMethodTitle
   paymentMethod
   customer {
