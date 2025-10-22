@@ -20,10 +20,6 @@ const stripe: Stripe | null = stripeKey ? await loadStripe(stripeKey) : null;
 const elements = ref();
 const isPaid = ref<boolean>(false);
 
-// Debug състояние за Borica
-const debugMode = ref<boolean>(true); // Включен debug режим
-const debugInfo = ref<any>(null);
-
 onBeforeMount(async () => {
   if (query.cancel_order) window.close();
 
@@ -171,7 +167,7 @@ const handleBoricaPayment = async (): Promise<void> => {
     const { checkout } = await GqlCheckout(checkoutPayload);
 
     console.log('DEBUG: Checkout response:', checkout);
-    
+
     if (!checkout?.order?.databaseId) {
       console.error('Checkout failed:', checkout);
       throw new Error('Не може да се създаде поръчката. Моля, проверете данните си.');
@@ -220,71 +216,21 @@ const handleBoricaPayment = async (): Promise<void> => {
 
     buttonText.value = 'Пренасочване към Борика...';
 
-    // Записваме debug информация преди заявката
-    console.log('🔄 DEBUG: About to call initiatePayment with data:', paymentData);
-
     // Инициализираме плащането
     const result = await initiatePayment(paymentData);
 
-    console.log('🔄 DEBUG: initiatePayment returned:', result);
-
     if (result.success && result.formData) {
-      // Debug информация
-      debugInfo.value = {
-        step: 'payment_ready',
-        timestamp: new Date().toISOString(),
-        paymentData,
-        apiDebugInfo: result.debugInfo, // Debug информация от API заявката
-        boricaResult: {
-          success: result.success,
-          gatewayUrl: result.gatewayUrl,
-          hasFormData: !!result.formData,
-          formDataPreview: result.formData?.substring(0, 200) + '...',
-          formData: result.formData, // Пълната форма за последваща употреба
-        },
-        nextStep: 'redirect_to_borica',
-        message: 'Готов за пренасочване към Борика. Провери данните по-долу.',
-      };
-
-      buttonText.value = 'DEBUG: Готов за Борика - виж данните по-долу';
-
-      if (!debugMode.value) {
-        // Пренасочваме към Borica gateway
-        console.log('🚀 REDIRECTING TO BORICA GATEWAY NOW!');
-        redirectToGateway(result.formData);
-        // ВАЖНО: След redirect функцията трябва да спре изпълнението
-        return;
-      } else {
-        console.log('DEBUG MODE: Спряно пренасочване към Борика');
-      }
+      // Пренасочваме към Borica gateway
+      console.log('🚀 REDIRECTING TO BORICA GATEWAY NOW!');
+      redirectToGateway(result.formData);
+      // ВАЖНО: След redirect функцията трябва да спре изпълнението
+      return;
     } else {
-      debugInfo.value = {
-        step: 'payment_failed',
-        timestamp: new Date().toISOString(),
-        paymentData,
-        apiDebugInfo: result.debugInfo, // Debug информация от API заявката
-        error: result.error,
-        message: 'Грешка при инициализиране на плащането',
-      };
       throw new Error(result.error || 'Грешка при инициализиране на плащането');
     }
   } catch (error: any) {
     console.error('Borica payment error:', error);
     buttonText.value = t('messages.shop.placeOrder');
-
-    // Debug информация за грешката
-    debugInfo.value = {
-      step: 'payment_error',
-      timestamp: new Date().toISOString(),
-      error: {
-        name: error?.name,
-        message: error?.message,
-        gqlErrors: error?.gqlErrors,
-        stack: error?.stack?.substring(0, 500),
-        fullError: error,
-      },
-      message: 'Възникна грешка при обработка на плащането',
-    };
 
     // Показваме грешка на потребителя
     const { showError } = useNotifications();
@@ -301,15 +247,6 @@ const handleBoricaPayment = async (): Promise<void> => {
   }
 
   console.log('🔚 handleBoricaPayment() function COMPLETED - SHOULD NOT CONTINUE TO processCheckout()');
-};
-
-// Функция за продължаване към Борика след debug преглед
-const proceedToBorica = () => {
-  if (debugInfo.value?.boricaResult?.formData) {
-    console.log('Proceeding to Borica gateway after debug review');
-    const { redirectToGateway } = useBorica();
-    redirectToGateway(debugInfo.value.boricaResult.formData);
-  }
 };
 
 useSeoMeta({
@@ -391,76 +328,10 @@ useSeoMeta({
             :disabled="isCheckoutDisabled">
             {{ buttonText }}<LoadingIcon v-if="isProcessingOrder" color="#fff" size="18" />
           </button>
-
-          <!-- Debug Control Panel -->
-          <div v-if="debugMode" class="mt-6 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-lg font-bold text-yellow-800">🐛 DEBUG MODE</h3>
-              <button @click="debugMode = false" class="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700">Изключи Debug</button>
-            </div>
-            <p class="text-sm text-yellow-700 mb-3">Debug режимът е включен. Няма да се пренасочваш към Борика докато не го изключиш.</p>
-
-            <div v-if="debugInfo && orderInput.paymentMethod?.id === 'borica_emv'" class="space-y-2">
-              <button
-                v-if="debugInfo.step === 'payment_ready'"
-                @click="proceedToBorica()"
-                class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                ✅ Продължи към Борика
-              </button>
-            </div>
-          </div>
         </OrderSummary>
       </form>
     </template>
     <LoadingIcon v-else class="m-auto" />
-
-    <!-- Debug Information Panel -->
-    <div v-if="debugMode && debugInfo" class="fixed bottom-4 right-4 max-w-2xl bg-white border-2 border-blue-500 rounded-lg shadow-2xl z-50">
-      <div class="bg-blue-500 text-white p-3 rounded-t-lg flex justify-between items-center">
-        <h3 class="font-bold">🔍 DEBUG INFO</h3>
-        <button @click="debugInfo = null" class="text-white hover:text-gray-200">✕</button>
-      </div>
-      <div class="p-4 max-h-96 overflow-y-auto">
-        <div class="mb-3">
-          <span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-semibold">
-            {{ debugInfo.step }}
-          </span>
-          <span class="ml-2 text-sm text-gray-500">{{ debugInfo.timestamp }}</span>
-        </div>
-
-        <div class="mb-3 p-3 bg-gray-50 rounded"><strong>Съобщение:</strong> {{ debugInfo.message }}</div>
-
-        <!-- API Debug информация -->
-        <div v-if="debugInfo.apiDebugInfo" class="mb-3">
-          <div class="bg-blue-50 border border-blue-200 rounded p-3">
-            <h4 class="font-semibold text-blue-800 mb-2">🔗 API Заявка информация</h4>
-            <div class="text-sm space-y-1">
-              <div>
-                <strong>Статус:</strong>
-                <span :class="debugInfo.apiDebugInfo.step === 'request_completed' ? 'text-green-600' : 'text-red-600'">
-                  {{ debugInfo.apiDebugInfo.step }}
-                </span>
-              </div>
-              <div v-if="debugInfo.apiDebugInfo.responseTime"><strong>Време за отговор:</strong> {{ debugInfo.apiDebugInfo.responseTime }}</div>
-              <div v-if="debugInfo.apiDebugInfo.response">
-                <strong>Отговор:</strong>
-                <ul class="ml-4 list-disc">
-                  <li>Успешен: {{ debugInfo.apiDebugInfo.response.success ? 'Да' : 'Не' }}</li>
-                  <li>Има форма: {{ debugInfo.apiDebugInfo.response.hasFormData ? 'Да' : 'Не' }}</li>
-                  <li>Дължина на формата: {{ debugInfo.apiDebugInfo.response.formDataLength || 'N/A' }}</li>
-                  <li>Брой параметри: {{ debugInfo.apiDebugInfo.response.parametersCount || 0 }}</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <details class="mb-3">
-          <summary class="cursor-pointer font-semibold text-blue-600 hover:text-blue-800">📊 Пълни подробности (кликни за разгъване)</summary>
-          <pre class="mt-2 p-3 bg-gray-100 rounded text-xs overflow-x-auto">{{ JSON.stringify(debugInfo, null, 2) }}</pre>
-        </details>
-      </div>
-    </div>
   </div>
 </template>
 
