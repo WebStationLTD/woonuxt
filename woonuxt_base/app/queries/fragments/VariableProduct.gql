@@ -37,6 +37,7 @@ fragment VariableProduct on VariableProduct {
       databaseId
       price
       regularPrice
+      rawRegularPrice: regularPrice(format: RAW)
       salePrice
       rawSalePrice: salePrice(format: RAW)
       slug
@@ -95,7 +96,9 @@ fragment VariableProductGrid on VariableProduct {
       databaseId
       price
       regularPrice
+      rawRegularPrice: regularPrice(format: RAW)
       salePrice
+      rawSalePrice: salePrice(format: RAW)
       slug
       stockStatus
       image {
