@@ -307,7 +307,7 @@ const { frontEndUrl } = useHelpers();
 const pageTitle = 'За нас - Лидерфитнес ЕООД | 12 години опит във фитнес и бойни спортове';
 const pageDescription =
   'Лидерфитнес е водещ вносител на спортно оборудване в България. 12 години опит, световни марки като VENUM, Body Solid, Adidas. Експертен екип и качествено обслужване.';
-const canonicalUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/за-нас/`;
+const canonicalUrl = `${frontEndUrl || 'https://leaderfitness.net'}/за-нас/`;
 
 useSeoMeta({
   title: pageTitle,

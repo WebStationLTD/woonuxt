@@ -16,7 +16,7 @@ export function useHelpers() {
       return configUrl.replace(/\/$/, '');
     }
     // Fallback за development и production
-    return 'https://woonuxt-ten.vercel.app';
+    return 'https://leaderfitness.net';
   })();
   const isDev: boolean = process.env.NODE_ENV === 'development';
   const FALLBACK_IMG = '/images/placeholder.jpg';

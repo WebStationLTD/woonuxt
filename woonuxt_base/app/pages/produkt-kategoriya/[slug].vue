@@ -230,8 +230,8 @@ const generateCategorySeoMeta = () => {
 
   const canonicalUrl =
     pageNumber === 1
-      ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
-      : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${pageNumber}`;
+      ? `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${slug}`
+      : `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${slug}/page/${pageNumber}`;
 
   return {
     title: finalTitle,
@@ -308,8 +308,8 @@ const updateCategoryNextPrevLinks = () => {
   if (currentSeoMeta.pageNumber > 1) {
     const prevUrl =
       currentSeoMeta.pageNumber === 2
-        ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}`
-        : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${currentSeoMeta.pageNumber - 1}`;
+        ? `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${slug}`
+        : `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${slug}/page/${currentSeoMeta.pageNumber - 1}`;
 
     updatedCategoryLinks.push({ rel: 'prev', href: prevUrl });
   }
@@ -340,7 +340,7 @@ const updateCategoryNextPrevLinks = () => {
   }
 
   if (hasNextPage) {
-    const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${slug}/page/${currentSeoMeta.pageNumber + 1}`;
+    const nextUrl = `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${slug}/page/${currentSeoMeta.pageNumber + 1}`;
     updatedCategoryLinks.push({ rel: 'next', href: nextUrl });
     if (process.client && (window as any).debugPagination) {
       console.log('✅ Adding rel=next:', nextUrl);

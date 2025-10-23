@@ -212,7 +212,7 @@ const { frontEndUrl } = useHelpers();
 const pageTitle = 'Доставка - Условия, цени и срокове | Лидерфитнес ЕООД';
 const pageDescription =
   'Информация за доставка на спортно оборудване от Лидерфитнес. Безплатна доставка над 150 лв. Цени, срокове и условия за получаване на поръчки.';
-const canonicalUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/доставка/`;
+const canonicalUrl = `${frontEndUrl || 'https://leaderfitness.net'}/доставка/`;
 
 useSeoMeta({
   title: pageTitle,

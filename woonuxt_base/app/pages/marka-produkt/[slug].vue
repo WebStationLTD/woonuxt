@@ -186,8 +186,8 @@ const generateBrandSeoMeta = () => {
 
   const canonicalUrl =
     pageNumber === 1
-      ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/marka-produkt/${slug}`
-      : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/marka-produkt/${slug}/page/${pageNumber}`;
+      ? `${frontEndUrl || 'https://leaderfitness.net'}/marka-produkt/${slug}`
+      : `${frontEndUrl || 'https://leaderfitness.net'}/marka-produkt/${slug}/page/${pageNumber}`;
 
   return {
     title: finalTitle,
@@ -236,8 +236,8 @@ const updateBrandNextPrevLinks = () => {
   if (currentSeoMeta.pageNumber > 1) {
     const prevUrl =
       currentSeoMeta.pageNumber === 2
-        ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/marka-produkt/${slug}`
-        : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/marka-produkt/${slug}/page/${currentSeoMeta.pageNumber - 1}`;
+        ? `${frontEndUrl || 'https://leaderfitness.net'}/marka-produkt/${slug}`
+        : `${frontEndUrl || 'https://leaderfitness.net'}/marka-produkt/${slug}/page/${currentSeoMeta.pageNumber - 1}`;
 
     updatedBrandLinks.push({ rel: 'prev', href: prevUrl });
   }
@@ -255,7 +255,7 @@ const updateBrandNextPrevLinks = () => {
   }
 
   if (hasNextPage) {
-    const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/marka-produkt/${slug}/page/${currentSeoMeta.pageNumber + 1}`;
+    const nextUrl = `${frontEndUrl || 'https://leaderfitness.net'}/marka-produkt/${slug}/page/${currentSeoMeta.pageNumber + 1}`;
     updatedBrandLinks.push({ rel: 'next', href: nextUrl });
   }
 

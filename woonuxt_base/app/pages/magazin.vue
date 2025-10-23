@@ -135,9 +135,7 @@ const generateSeoMeta = () => {
   }
 
   const canonicalUrl =
-    pageNumber === 1
-      ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin`
-      : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${pageNumber}`;
+    pageNumber === 1 ? `${frontEndUrl || 'https://leaderfitness.net'}/magazin` : `${frontEndUrl || 'https://leaderfitness.net'}/magazin/page/${pageNumber}`;
 
   return {
     title: finalTitle,
@@ -193,14 +191,14 @@ if (shopSeo?.schema?.raw) {
 // if (seoMeta.pageNumber > 1) {
 //   const prevUrl =
 //     seoMeta.pageNumber === 2
-//       ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin`
-//       : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber - 1}`;
+//       ? `${frontEndUrl || 'https://leaderfitness.net'}/magazin`
+//       : `${frontEndUrl || 'https://leaderfitness.net'}/magazin/page/${seoMeta.pageNumber - 1}`;
 
 //   initialPrevNextLinks.push({ rel: 'prev', href: prevUrl });
 // }
 
 // // Добавяме next link изначално като placeholder - ще се обновява динамично
-// const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber + 1}`;
+// const nextUrl = `${frontEndUrl || 'https://leaderfitness.net'}/magazin/page/${seoMeta.pageNumber + 1}`;
 // initialPrevNextLinks.push({ rel: 'next', href: nextUrl });
 
 // useHead({
@@ -214,8 +212,8 @@ const updateNextPrevLinks = () => {
   if (seoMeta.pageNumber > 1) {
     const prevUrl =
       seoMeta.pageNumber === 2
-        ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin`
-        : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber - 1}`;
+        ? `${frontEndUrl || 'https://leaderfitness.net'}/magazin`
+        : `${frontEndUrl || 'https://leaderfitness.net'}/magazin/page/${seoMeta.pageNumber - 1}`;
 
     updatedLinks.push({ rel: 'prev', href: prevUrl });
   }
@@ -232,7 +230,7 @@ const updateNextPrevLinks = () => {
   }
 
   if (hasNextPage) {
-    const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/magazin/page/${seoMeta.pageNumber + 1}`;
+    const nextUrl = `${frontEndUrl || 'https://leaderfitness.net'}/magazin/page/${seoMeta.pageNumber + 1}`;
     updatedLinks.push({ rel: 'next', href: nextUrl });
   }
 

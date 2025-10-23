@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import fs from 'fs';
+import fs from "fs";
 
 interface BoricaInitiateRequest {
   orderId: string;
@@ -61,10 +61,10 @@ export default defineEventHandler(async (event) => {
       passphrase: process.env.BORICA_PASSPHRASE || "",
       merchantName: process.env.BORICA_MERCHANT_NAME || "LIDERFITNES EOOD",
       merchantUrl:
-        process.env.BORICA_MERCHANT_URL || "https://woonuxt-ten.vercel.app/",
+        process.env.BORICA_MERCHANT_URL || "https://leaderfitness.net/",
       backrefUrl:
         process.env.BORICA_BACKREF_URL ||
-        "https://woonuxt-ten.vercel.app/api/borica/callback",
+        "https://leaderfitness.net/api/borica/callback",
       gatewayUrl:
         process.env.BORICA_GATEWAY_URL ||
         "https://3dsgate-dev.borica.bg/cgi-bin/cgi_link",
@@ -84,7 +84,11 @@ export default defineEventHandler(async (event) => {
 
     // Генериране на уникални стойности
     const timestamp = generateTimestamp();
-    const nonce = crypto.randomBytes(16).toString("hex").toUpperCase().substring(0, 32);
+    const nonce = crypto
+      .randomBytes(16)
+      .toString("hex")
+      .toUpperCase()
+      .substring(0, 32);
 
     // Форматиране на сумата (в стотинки)
     const amountInCents = Math.round(amount * 100).toString();
@@ -102,7 +106,7 @@ export default defineEventHandler(async (event) => {
       AMOUNT: amount.toFixed(2),
       CURRENCY: currency,
       ORDER: formattedOrderId,
-      COUNTRY: 'BG',
+      COUNTRY: "BG",
       DESC: description,
       MERCH_NAME: config.merchantName,
       MERCH_URL: config.merchantUrl,
@@ -113,26 +117,32 @@ export default defineEventHandler(async (event) => {
       BACKREF: config.backrefUrl,
       "AD.CUST_BOR_ORDER_ID": `${formattedOrderId}@${formattedOrderId}`,
       ADDENDUM: "AD,TD",
-      M_INFO: btoa(JSON.stringify({
-        email: customerEmail,
-        cardholderName: customerName
-      }))
+      M_INFO: btoa(
+        JSON.stringify({
+          email: customerEmail,
+          cardholderName: customerName,
+        })
+      ),
     };
 
     // Генериране на подпис
     const signatureData: string[] = [
-      params.TERMINAL || '',
-      params.TRTYPE || '',
-      params.AMOUNT || '',
-      params.CURRENCY || '',
-      params.ORDER || '',
-      params.MERCHANT || '',
-      params.TIMESTAMP || '',
-      params.NONCE || '',
+      params.TERMINAL || "",
+      params.TRTYPE || "",
+      params.AMOUNT || "",
+      params.CURRENCY || "",
+      params.ORDER || "",
+      params.MERCHANT || "",
+      params.TIMESTAMP || "",
+      params.NONCE || "",
     ];
 
     // Създаване на подпис с private key
-    const signature = generateMacSignature(signatureData, config.privateKey, config.passphrase);
+    const signature = generateMacSignature(
+      signatureData,
+      config.privateKey,
+      config.passphrase
+    );
     params.P_SIGN = signature;
 
     console.log("Borica payment initiated:", {
@@ -167,9 +177,13 @@ export default defineEventHandler(async (event) => {
   }
 });
 
-function generateMacSignature(data: string[], privateKeyPem: string, passphrase: string): string {
+function generateMacSignature(
+  data: string[],
+  privateKeyPem: string,
+  passphrase: string
+): string {
   try {
-    let signData = '';
+    let signData = "";
 
     for (const token of data) {
       signData += token.length + token;
@@ -177,10 +191,7 @@ function generateMacSignature(data: string[], privateKeyPem: string, passphrase:
 
     // signData = signData + '-';
 
-    console.log(
-      "Generating signature for data:",
-      signData
-    );
+    console.log("Generating signature for data:", signData);
 
     // Проверяваме дали ключът има PEM headers
     let formattedKey = atob(privateKeyPem);
@@ -192,16 +203,21 @@ function generateMacSignature(data: string[], privateKeyPem: string, passphrase:
     sign.update(signData, "utf8");
     sign.end();
 
-    const hexSignature = sign.sign({
-      key: formattedKey,
-      passphrase: passphrase,
-    }, 'hex').toUpperCase();
+    const hexSignature = sign
+      .sign(
+        {
+          key: formattedKey,
+          passphrase: passphrase,
+        },
+        "hex"
+      )
+      .toUpperCase();
 
     return hexSignature;
   } catch (error: any) {
     console.log(error);
 
-    return '';
+    return "";
   }
 }
 
@@ -227,13 +243,13 @@ function createFormHTML(
 
 function generateTimestamp() {
   const d = new Date(); // current UTC timestamp in ms
-  
+
   const YYYY = d.getUTCFullYear().toString();
-  const MM   = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const DD   = String(d.getUTCDate()).padStart(2, "0");
-  const HH   = String(d.getUTCHours()).padStart(2, "0");
-  const mm   = String(d.getUTCMinutes()).padStart(2, "0");
-  const SS   = String(d.getUTCSeconds()).padStart(2, "0");
+  const MM = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const DD = String(d.getUTCDate()).padStart(2, "0");
+  const HH = String(d.getUTCHours()).padStart(2, "0");
+  const mm = String(d.getUTCMinutes()).padStart(2, "0");
+  const SS = String(d.getUTCSeconds()).padStart(2, "0");
 
   return YYYY + MM + DD + HH + mm + SS; // always 14 chars, in UTC
 }

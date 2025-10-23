@@ -119,7 +119,7 @@ useHead({
     { property: 'og:title', content: brandsTitle },
     { property: 'og:description', content: brandsDescription },
   ],
-  link: [{ rel: 'canonical', href: `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/marki-produkti` }],
+  link: [{ rel: 'canonical', href: `${frontEndUrl || 'https://leaderfitness.net'}/marki-produkti` }],
 });
 </script>
 

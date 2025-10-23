@@ -17,7 +17,7 @@ useHead({
     { property: 'og:title', content: tagsTitle },
     { property: 'og:description', content: tagsDescription },
   ],
-  link: [{ rel: 'canonical', href: `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/etiketi` }],
+  link: [{ rel: 'canonical', href: `${frontEndUrl || 'https://leaderfitness.net'}/etiketi` }],
 });
 </script>
 

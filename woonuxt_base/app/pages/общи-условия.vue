@@ -173,7 +173,7 @@ const { frontEndUrl } = useHelpers();
 const pageTitle = 'Общи условия - Лидерфитнес ЕООД';
 const pageDescription =
   'Прочетете общите условия за ползване на онлайн магазин Лидерфитнес. Правила за поръчки, доставка, връщане на стоки и защита на потребителите.';
-const canonicalUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/общи-условия/`;
+const canonicalUrl = `${frontEndUrl || 'https://leaderfitness.net'}/общи-условия/`;
 
 useSeoMeta({
   title: pageTitle,

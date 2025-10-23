@@ -344,7 +344,7 @@ const { frontEndUrl } = useHelpers();
 const pageTitle = 'Политика за поверителност и защита на личните данни (GDPR) - Лидерфитнес ЕООД';
 const pageDescription =
   'Политика за защита на личните данни и поверителност на онлайн магазин Лидерфитнес в съответствие с GDPR изискванията. Как защитаваме Вашите лични данни.';
-const canonicalUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/политика-за-поверителност-и-защита-на/`;
+const canonicalUrl = `${frontEndUrl || 'https://leaderfitness.net'}/политика-за-поверителност-и-защита-на/`;
 
 useSeoMeta({
   title: pageTitle,

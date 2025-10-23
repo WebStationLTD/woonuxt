@@ -25,7 +25,7 @@ const seoDescription =
   homeSeo?.metaDesc ||
   description ||
   'Открийте висококачествено спортно оборудване, фитнес уреди и аксесоари в нашия онлайн магазин. Бързи доставки, конкурентни цени и професионално обслужване.';
-const canonicalUrl = frontEndUrl || 'https://woonuxt-ten.vercel.app';
+const canonicalUrl = frontEndUrl || 'https://leaderfitness.net';
 
 useSeoMeta({
   title: seoTitle,

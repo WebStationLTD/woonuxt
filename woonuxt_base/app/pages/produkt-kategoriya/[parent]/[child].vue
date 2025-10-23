@@ -145,8 +145,8 @@ const generateChildCategorySeoMeta = () => {
 
   const canonicalUrl =
     pageNumber === 1
-      ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}`
-      : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${pageNumber}`;
+      ? `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${parentSlug}/${childSlug}`
+      : `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${pageNumber}`;
 
   return {
     title: finalTitle,
@@ -210,8 +210,8 @@ const updateChildCategoryNextPrevLinks = () => {
   if (currentSeoMeta.pageNumber > 1) {
     const prevUrl =
       currentSeoMeta.pageNumber === 2
-        ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}`
-        : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${currentSeoMeta.pageNumber - 1}`;
+        ? `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${parentSlug}/${childSlug}`
+        : `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${currentSeoMeta.pageNumber - 1}`;
 
     updatedChildLinks.push({ rel: 'prev', href: prevUrl });
   }
@@ -231,7 +231,7 @@ const updateChildCategoryNextPrevLinks = () => {
   }
 
   if (hasNextPage) {
-    const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${currentSeoMeta.pageNumber + 1}`;
+    const nextUrl = `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${currentSeoMeta.pageNumber + 1}`;
     updatedChildLinks.push({ rel: 'next', href: nextUrl });
   }
 

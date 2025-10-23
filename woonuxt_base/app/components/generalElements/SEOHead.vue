@@ -7,7 +7,7 @@ const { info } = defineProps({ info: { type: Object as PropType<Product>, requir
 const title = info.seo?.title || info.name;
 const metaDescription =
   info.seo?.metaDesc || (info.shortDescription || info.description ? stripHtml(info.shortDescription || '') : stripHtml(info.description || ''));
-const canonical = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}${path}`;
+const canonical = `${frontEndUrl || 'https://leaderfitness.net'}${path}`;
 const siteName = process.env.SITE_TITLE ?? 'WooNuxt';
 
 // Prioritize Yoast SEO OpenGraph image
@@ -25,7 +25,7 @@ const twitterImageSrc = info.seo?.twitterImage?.sourceUrl ? info.seo.twitterImag
 const getFullImageURL = (url?: string) => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  return `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}${url}`;
+  return `${frontEndUrl || 'https://leaderfitness.net'}${url}`;
 };
 
 const defaultImage = getFullImageURL(defaultImageSrc);

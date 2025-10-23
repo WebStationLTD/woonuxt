@@ -199,8 +199,8 @@ const generateTagSeoMeta = () => {
 
   const canonicalUrl =
     pageNumber === 1
-      ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-etiket/${slug}`
-      : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-etiket/${slug}/page/${pageNumber}`;
+      ? `${frontEndUrl || 'https://leaderfitness.net'}/produkt-etiket/${slug}`
+      : `${frontEndUrl || 'https://leaderfitness.net'}/produkt-etiket/${slug}/page/${pageNumber}`;
 
   return {
     title: finalTitle,
@@ -249,8 +249,8 @@ const updateTagNextPrevLinks = () => {
   if (currentSeoMeta.pageNumber > 1) {
     const prevUrl =
       currentSeoMeta.pageNumber === 2
-        ? `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-etiket/${slug}`
-        : `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-etiket/${slug}/page/${currentSeoMeta.pageNumber - 1}`;
+        ? `${frontEndUrl || 'https://leaderfitness.net'}/produkt-etiket/${slug}`
+        : `${frontEndUrl || 'https://leaderfitness.net'}/produkt-etiket/${slug}/page/${currentSeoMeta.pageNumber - 1}`;
 
     updatedTagLinks.push({ rel: 'prev', href: prevUrl });
   }
@@ -268,7 +268,7 @@ const updateTagNextPrevLinks = () => {
   }
 
   if (hasNextPage) {
-    const nextUrl = `${frontEndUrl || 'https://woonuxt-ten.vercel.app'}/produkt-etiket/${slug}/page/${currentSeoMeta.pageNumber + 1}`;
+    const nextUrl = `${frontEndUrl || 'https://leaderfitness.net'}/produkt-etiket/${slug}/page/${currentSeoMeta.pageNumber + 1}`;
     updatedTagLinks.push({ rel: 'next', href: nextUrl });
   }
 
