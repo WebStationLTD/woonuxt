@@ -1,3 +1,76 @@
+// Зареждане на .env файл ПРЕДИ defineNuxtConfig
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+import { readFileSync, existsSync } from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Път до .env файла
+const envPath = resolve(__dirname, ".env");
+
+if (existsSync(envPath)) {
+  try {
+    // Прочети файла
+    const envContent = readFileSync(envPath, "utf8");
+
+    // CUSTOM PARSER (защото dotenv има проблем с multiline)
+    const lines = envContent.split(/\r?\n/);
+    let currentKey = "";
+    let currentValue = "";
+    let inQuotedValue = false;
+
+    lines.forEach((line) => {
+      // Ако сме в quoted value, събираме редове
+      if (inQuotedValue) {
+        currentValue += "\n" + line;
+        if (line.trim().endsWith('"')) {
+          // Край на quoted value
+          inQuotedValue = false;
+          // Премахни кавичките и setни променливата
+          process.env[currentKey] = currentValue.substring(
+            1,
+            currentValue.length - 1
+          );
+          currentKey = "";
+          currentValue = "";
+        }
+        return;
+      }
+
+      // Игнорирай коментари и празни редове
+      if (line.trim().startsWith("#") || line.trim() === "") return;
+
+      // Намери KEY=VALUE
+      const match = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/i);
+      if (match) {
+        const key = match[1];
+        let value = match[2];
+
+        // Ако стойността започва с ", проверяваме дали завършва с "
+        if (value.startsWith('"')) {
+          if (value.endsWith('"') && value.length > 1) {
+            // Single line quoted value
+            process.env[key] = value.substring(1, value.length - 1);
+          } else {
+            // Multiline quoted value
+            inQuotedValue = true;
+            currentKey = key;
+            currentValue = value;
+          }
+        } else {
+          // Обикновена стойност
+          process.env[key] = value;
+        }
+      }
+    });
+
+    console.log("✅ Environment variables loaded successfully");
+  } catch (error: any) {
+    console.error("❌ Error loading .env:", error.message);
+  }
+}
+
 export default defineNuxtConfig({
   extends: ["./woonuxt_base"],
 
@@ -46,6 +119,10 @@ export default defineNuxtConfig({
     WC_CONSUMER_KEY: process.env.WC_CONSUMER_KEY,
     WC_CONSUMER_SECRET: process.env.WC_CONSUMER_SECRET,
 
+    // Tracking API Keys (server-side за Conversion APIs)
+    META_CONVERSION_API_TOKEN: process.env.META_CONVERSION_API_TOKEN,
+    GOOGLE_ANALYTICS_API_SECRET: process.env.GOOGLE_ANALYTICS_API_SECRET,
+
     public: {
       GQL_HOST: "https://admin.leaderfitness.net/graphql",
       // GQL_HOST: "http://leaderfitness.local/graphql",
@@ -70,6 +147,18 @@ export default defineNuxtConfig({
           openByDefault: false,
         },
       ],
+
+      // Tracking Configuration (public за client-side)
+      TRACKING_ENABLED: process.env.TRACKING_ENABLED === "true",
+      TRACKING_DEBUG: process.env.TRACKING_DEBUG === "true",
+      TRACKING_GDPR_MODE: process.env.TRACKING_GDPR_MODE === "true",
+      META_PIXEL_ID: process.env.META_PIXEL_ID || "",
+      GOOGLE_ANALYTICS_ID: process.env.GOOGLE_ANALYTICS_ID || "",
+      GOOGLE_ADS_ID: process.env.GOOGLE_ADS_ID || "",
+      GOOGLE_ADS_ENHANCED_CONVERSIONS:
+        process.env.GOOGLE_ADS_ENHANCED_CONVERSIONS === "true",
+      GTM_ID: process.env.GTM_ID || "",
+      GTM_DATA_LAYER_ONLY: process.env.GTM_DATA_LAYER_ONLY === "true",
     },
   },
 

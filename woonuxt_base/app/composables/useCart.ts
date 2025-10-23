@@ -78,6 +78,24 @@ export function useCart() {
         const quantity = input.quantity || 1;
 
         showCartSuccess(productName, quantity);
+
+        // 🎯 TRACKING: AddToCart Event
+        if (addedItem && process.client) {
+          const { trackAddToCart } = useTracking();
+          const product = addedItem.product?.node || addedItem.variation?.node;
+
+          if (product) {
+            trackAddToCart({
+              id: product.databaseId,
+              name: product.name || productName,
+              price: parseFloat(product.price?.replace(/[^\d.]/g, '') || '0'),
+              quantity: quantity,
+              category: product.productCategories?.nodes?.[0]?.name,
+              brand: product.attributes?.nodes?.find((attr: any) => attr.name === 'pa_brands')?.options?.[0],
+              sku: product.sku,
+            });
+          }
+        }
       }
 
       // Auto open the cart when an item is added to the cart if the setting is enabled
@@ -94,6 +112,29 @@ export function useCart() {
   // remove an item from the cart
   async function removeItem(key: string) {
     isUpdatingCart.value = true;
+
+    // 🎯 TRACKING: RemoveFromCart Event - вземаме данните ПРЕДИ премахване
+    if (process.client && cart.value?.contents?.nodes) {
+      const itemToRemove = cart.value.contents.nodes.find((item: any) => item.key === key);
+
+      if (itemToRemove) {
+        const { trackRemoveFromCart } = useTracking();
+        const product = itemToRemove.product?.node || itemToRemove.variation?.node;
+
+        if (product) {
+          trackRemoveFromCart({
+            id: product.databaseId,
+            name: product.name || 'Продукт',
+            price: parseFloat(product.price?.replace(/[^\d.]/g, '') || '0'),
+            quantity: itemToRemove.quantity || 1,
+            category: product.productCategories?.nodes?.[0]?.name,
+            brand: product.attributes?.nodes?.find((attr: any) => attr.name === 'pa_brands')?.options?.[0],
+            sku: product.sku,
+          });
+        }
+      }
+    }
+
     const { updateItemQuantities } = await GqlUpDateCartQuantity({ key, quantity: 0 });
     updateCart(updateItemQuantities?.cart);
   }

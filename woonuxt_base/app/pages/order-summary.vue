@@ -52,6 +52,47 @@ async function getOrder() {
     const data = await GqlGetOrder({ id: params.orderId as string });
     if (data.order) {
       order.value = data.order;
+
+      // 🎯 TRACKING: Purchase event само ако сме на checkout страницата (не на order summary)
+      // и само ако поръчката е успешна
+      if (process.client && isCheckoutPage.value && order.value) {
+        // Проверяваме дали вече сме tracking-нали тази поръчка (за да не го правим многократно)
+        const trackedOrders = sessionStorage.getItem('tracked_orders');
+        const trackedOrderIds = trackedOrders ? JSON.parse(trackedOrders) : [];
+
+        if (!trackedOrderIds.includes(order.value.databaseId)) {
+          const { trackPurchase } = useTracking();
+
+          // Подготвяме продуктите
+          const products = (order.value.lineItems?.nodes || []).map((item: any) => {
+            const product = item.product?.node || item.variation?.node;
+            return {
+              id: product?.databaseId || item.productId || '',
+              name: product?.name || item.name || '',
+              price: parseFloat(item.total || '0') / (item.quantity || 1), // Цена за единица
+              quantity: item.quantity || 1,
+              category: product?.productCategories?.nodes?.[0]?.name,
+              brand: product?.attributes?.nodes?.find((attr: any) => attr.name === 'pa_brands')?.options?.[0],
+              sku: product?.sku,
+            };
+          });
+
+          // Изпращаме Purchase tracking
+          trackPurchase({
+            orderId: order.value.databaseId?.toString() || '',
+            total: parseFloat(order.value.total?.replace(/[^\d.]/g, '') || '0'),
+            tax: parseFloat(order.value.totalTax?.replace(/[^\d.]/g, '') || '0'),
+            shipping: parseFloat(order.value.shippingTotal?.replace(/[^\d.]/g, '') || '0'),
+            currency: 'BGN',
+            products: products,
+            coupon: order.value.couponLines?.nodes?.[0]?.code,
+          });
+
+          // Запазваме че сме tracking-нали тази поръчка
+          trackedOrderIds.push(order.value.databaseId);
+          sessionStorage.setItem('tracked_orders', JSON.stringify(trackedOrderIds));
+        }
+      }
     } else {
       errorMessage.value = 'Could not find order';
     }

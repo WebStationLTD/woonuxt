@@ -32,6 +32,32 @@ onBeforeMount(async () => {
   }
 });
 
+// 🎯 TRACKING: InitiateCheckout при влизане в checkout страница
+onMounted(() => {
+  if (process.client && cart.value && !cart.value.isEmpty) {
+    const { trackInitiateCheckout } = useTracking();
+
+    // Изчисляваме общата стойност
+    const cartTotal = parseFloat(cart.value.total?.replace(/[^\d.]/g, '') || '0');
+
+    // Подготвяме продуктите
+    const products = (cart.value.contents?.nodes || []).map((item: any) => {
+      const product = item.product?.node || item.variation?.node;
+      return {
+        id: product?.databaseId || '',
+        name: product?.name || '',
+        price: parseFloat(product?.price?.replace(/[^\d.]/g, '') || '0'),
+        quantity: item.quantity || 1,
+        category: product?.productCategories?.nodes?.[0]?.name,
+        brand: product?.attributes?.nodes?.find((attr: any) => attr.name === 'pa_brands')?.options?.[0],
+        sku: product?.sku,
+      };
+    });
+
+    trackInitiateCheckout(cartTotal, products);
+  }
+});
+
 function getPaymentErrorMessage(errorType: string): string {
   switch (errorType) {
     case 'borica':

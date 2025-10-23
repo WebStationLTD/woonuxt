@@ -44,10 +44,34 @@ const mergeLiveStockStatus = (payload: Product): void => {
 
 onMounted(async () => {
   try {
-    const { product } = await GqlGetStockStatus({ slug });
-    if (product) mergeLiveStockStatus(product as Product);
+    const { product: stockProduct } = await GqlGetStockStatus({ slug });
+    if (stockProduct) mergeLiveStockStatus(stockProduct as Product);
   } catch (error: any) {
     // Error loading stock status
+  }
+
+  // 🎯 TRACKING: ViewContent event за продуктова страница
+  if (process.client && product.value) {
+    const { trackViewContent } = useTracking();
+
+    const price = parseFloat(
+      (
+        activeVariation.value?.rawSalePrice ||
+        activeVariation.value?.rawRegularPrice ||
+        product.value.rawSalePrice ||
+        product.value.rawRegularPrice ||
+        '0'
+      ).replace(/[^\d.]/g, ''),
+    );
+
+    trackViewContent({
+      id: product.value.databaseId || '',
+      name: product.value.name || '',
+      price: price,
+      category: product.value.productCategories?.nodes?.[0]?.name,
+      brand: product.value.attributes?.nodes?.find((attr: any) => attr.name === 'pa_brands')?.options?.[0],
+      sku: product.value.sku,
+    });
   }
 });
 
