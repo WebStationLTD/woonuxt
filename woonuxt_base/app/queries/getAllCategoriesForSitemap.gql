@@ -1,0 +1,16 @@
+query getAllCategoriesForSitemap($after: String, $first: Int = 100) {
+  productCategories(first: $first, after: $after, where: { hideEmpty: true }) {
+    nodes {
+      slug
+      parent {
+        node {
+          slug
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

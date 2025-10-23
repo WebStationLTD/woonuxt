@@ -1,0 +1,17 @@
+query getAllProductsForSitemap($after: String, $first: Int = 100) {
+  products(where: { status: "publish" }, first: $first, after: $after) {
+    nodes {
+      slug
+      modified
+      image {
+        sourceUrl
+        altText
+        title
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

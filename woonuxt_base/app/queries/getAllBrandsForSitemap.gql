@@ -1,0 +1,11 @@
+query getAllBrandsForSitemap($after: String, $first: Int = 100) {
+  terms(where: { taxonomies: [PABRANDS], hideEmpty: true }, first: $first, after: $after) {
+    nodes {
+      slug
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

@@ -82,24 +82,10 @@ export default defineNuxtConfig({
     },
   },
 
+  // Sitemap генерирането е изнесено в scripts/generate-sitemap.js
+  // защото Headless WP блокира server-side GraphQL заявки без Origin header
   sitemap: {
-    siteUrl: "https://leaderfitness.net",
-    excludes: [
-      "/checkout/order-received/**",
-      "/order-summary/**",
-      "/my-account/**",
-      "/oauth/**",
-    ],
-    cacheTime: 1000 * 60 * 15,
-    routes: [
-      "/",
-      "/magazin",
-      "/categories",
-      "/etiketi",
-      "/marki",
-      "/contact",
-      "/wishlist",
-    ],
+    enabled: false,
   },
 
   "graphql-client": {

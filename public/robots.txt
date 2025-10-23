@@ -6,5 +6,5 @@ Disallow: /oauth/
 Disallow: /order-summary/
 Disallow: /checkout/order-received/
 
-# Указваме пътя до sitemap файла
-Sitemap: https://admin.leaderfitness.net/sitemap.xml 
+# Указваме пътя до sitemap файла (генериран от scripts/generate-sitemap.js)
+Sitemap: https://leaderfitness.net/sitemap.xml 

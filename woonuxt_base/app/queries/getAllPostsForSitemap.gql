@@ -1,0 +1,19 @@
+query getAllPostsForSitemap($after: String, $first: Int = 100) {
+  posts(where: { status: PUBLISH }, first: $first, after: $after) {
+    nodes {
+      slug
+      modified
+      featuredImage {
+        node {
+          sourceUrl
+          altText
+          title
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

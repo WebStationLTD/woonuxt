@@ -1,0 +1,11 @@
+query getAllTagsForSitemap($after: String, $first: Int = 100) {
+  productTags(first: $first, after: $after, where: { hideEmpty: true }) {
+    nodes {
+      slug
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

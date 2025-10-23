@@ -5,11 +5,13 @@
     "node": ">=18.0.0"
   },
   "scripts": {
+    "generate:sitemap": "node scripts/generate-sitemap.js",
+    "prebuild": "npm run generate:sitemap",
     "build": "NITRO_PRESET=vercel nuxt build",
-    "vercel-build": "cross-env NITRO_PRESET=vercel nuxt build",
+    "vercel-build": "npm run generate:sitemap && cross-env NITRO_PRESET=vercel nuxt build",
     "dev": "nuxt dev --host",
     "dev:ssl": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 nuxt dev --https --ssl-cert localhost.pem --ssl-key localhost-key.pem",
-    "generate": "nuxt generate",
+    "generate": "npm run generate:sitemap && nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "node -e \"try { require('nuxt').postinstall() } catch (e) { console.log('Error during nuxt prepare:', e) }\"",
     "serve": "nuxi generate && npx serve .output/public -l 8080"
