@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { toggleMobileMenu, wooNuxtVersionInfo } = useHelpers();
+const { toggleMobileMenu } = useHelpers();
 </script>
 
 <template>
@@ -8,7 +8,7 @@ const { toggleMobileMenu, wooNuxtVersionInfo } = useHelpers();
     <div class="mt-8 text-center">{{ $t('messages.general.menu') }}</div>
     <MainMenu class="m-4 grid text-gray-500 gap-6" />
     <div class="mt-auto text-center p-8 text-[10px] text-gray-400">
-      <a href="/" :title="wooNuxtVersionInfo">WooNuxt v{{ wooNuxtVersionInfo }}</a>
+      <a href="/">Leaderfitness</a>
     </div>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <template>
-  <Popover v-slot="{ open, close }" class="static lg:relative isolate z-50">
+  <Popover v-slot="{ open, close }" class="relative isolate z-50">
     <PopoverButton class="inline-flex items-center gap-x-1 text-base font-semibold text-gray-500 hover:text-primary focus:outline-none">
       Категории
       <ChevronDownIcon :class="['h-6 w-6 transition-transform duration-300', open ? 'rotate-180 transform' : '']" aria-hidden="true" />
@@ -117,8 +117,8 @@
                 <!-- Подкатегории -->
                 <div
                   :class="[
-                    'overflow-hidden transition-all duration-300 bg-white',
-                    expandedMobileCategories[index] ? 'max-h-[500px]' : 'max-h-0'
+                    'overflow-y-auto transition-all duration-300 bg-white',
+                    expandedMobileCategories[index] ? 'max-h-[300px]' : 'max-h-0'
                   ]">
                   <div class="p-2 space-y-0.5">
                     <NuxtLink
@@ -225,11 +225,18 @@ const toggleMobileCategory = (index) => {
   z-index: 40;
   background-color: white;
   box-shadow: 0 20px 25px -3px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  display: block;
-  position: relative;
+  
+  /* На мобилно - използваме max-height за анимация */
+  @media (max-width: 1023px) {
+    position: relative;
+    width: 100%;
+    max-height: 2000px;
+    transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+  }
 
   /* Десктоп стилове */
   @media (min-width: 1024px) {
+    display: block;
     position: fixed;
     top: 110px;
     left: 0;
@@ -244,12 +251,23 @@ const toggleMobileCategory = (index) => {
 
 /* Скриваме визуално, но запазваме в DOM за SEO */
 .panel-hidden {
-  opacity: 0;
-  pointer-events: none;
-  visibility: hidden;
+  /* На мобилно скриваме с height за да не заема място */
+  @media (max-width: 1023px) {
+    max-height: 0 !important;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  /* На десктоп използваме visibility */
+  @media (min-width: 1024px) {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
 }
 
-/* Скролбар стилове за hover панела */
+/* Скролбар стилове за hover панела и мобилни подкатегории */
 .overflow-y-auto::-webkit-scrollbar {
   width: 6px;
 }
@@ -266,6 +284,14 @@ const toggleMobileCategory = (index) => {
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background: #7a0100;
+}
+
+/* Добавяме плавен scroll за мобилните категории */
+@media (max-width: 1023px) {
+  .overflow-y-auto {
+    scrollbar-width: thin;
+    scrollbar-color: #9c0100 #f1f1f1;
+  }
 }
 </style>
 
