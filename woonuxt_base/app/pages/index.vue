@@ -57,9 +57,9 @@ useHead({
       ? [
           {
             rel: 'preload',
-            as: 'image',
+            as: 'image' as const,
             href: preloadImageUrl,
-            fetchpriority: 'high',
+            fetchpriority: 'high' as const,
           },
         ]
       : []),
@@ -106,13 +106,68 @@ if (homeSeo?.schema?.raw) {
 
     <CtaBullets />
 
-    <div class="container flex flex-wrap items-center justify-center my-16 text-center gap-x-8 gap-y-4 brand lg:justify-between">
-      <img src="/images/logoipsum-211.svg" alt="Brand 1" width="132" height="35" />
-      <img src="/images/logoipsum-221.svg" alt="Brand 2" width="119" height="30" />
-      <img src="/images/logoipsum-225.svg" alt="Brand 3" width="49" height="48" />
-      <img src="/images/logoipsum-280.svg" alt="Brand 4" width="78" height="30" />
-      <img src="/images/logoipsum-284.svg" alt="Brand 5" width="70" height="44" />
-      <img src="/images/logoipsum-215.svg" alt="Brand 6" width="132" height="40" />
+    <!-- Секция с лога на марки -->
+    <div class="bg-white py-12 md:py-16">
+      <div class="container px-4">
+        <!-- Заглавие -->
+        <h2 class="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-8 md:mb-12">Топ марки</h2>
+        
+        <!-- Лога -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 items-center justify-items-center max-w-6xl mx-auto">
+          <NuxtLink to="/marka-produkt/venum" class="flex items-center justify-center w-full h-32 md:h-40 rounded-xl overflow-hidden bg-white/50 grayscale hover:grayscale-0 hover:scale-105 hover:shadow-lg transition-all duration-300">
+            <NuxtImg
+              src="https://admin.leaderfitness.net/wp-content/uploads/2022/03/brand-VENUM-logo.png"
+              alt="Venum - Професионални боксови продукти"
+              class="brand-logo h-28 md:h-36 w-auto max-w-full object-contain"
+              loading="lazy"
+              width="280"
+              height="200" />
+          </NuxtLink>
+          <NuxtLink to="/marka-produkt/amila" class="flex items-center justify-center w-full h-32 md:h-40 rounded-xl overflow-hidden bg-white/50 grayscale hover:grayscale-0 hover:scale-105 hover:shadow-lg transition-all duration-300">
+            <NuxtImg
+              src="https://admin.leaderfitness.net/wp-content/uploads/2022/03/brand-AMILA-LOGO.jpg"
+              alt="Amila - Спортно оборудване и аксесоари"
+              class="brand-logo h-28 md:h-36 w-auto max-w-full object-contain"
+              loading="lazy"
+              width="280"
+              height="200" />
+          </NuxtLink>
+          <NuxtLink to="/marka-produkt/body-solid" class="flex items-center justify-center w-full h-32 md:h-40 rounded-xl overflow-hidden bg-white/50 grayscale hover:grayscale-0 hover:scale-105 hover:shadow-lg transition-all duration-300">
+            <NuxtImg
+              src="https://admin.leaderfitness.net/wp-content/uploads/2022/03/Brand-BODY-SOLID-LOGO.jpg"
+              alt="Body Solid - Фитнес оборудване"
+              class="brand-logo h-28 md:h-36 w-auto max-w-full object-contain"
+              loading="lazy"
+              width="280"
+              height="200" />
+          </NuxtLink>
+          <NuxtLink to="/marka-produkt/orion-fitness" class="flex items-center justify-center w-full h-32 md:h-40 rounded-xl overflow-hidden bg-white/50 grayscale hover:grayscale-0 hover:scale-105 hover:shadow-lg transition-all duration-300">
+            <NuxtImg
+              src="https://admin.leaderfitness.net/wp-content/uploads/2022/03/brand-ORION-FITNESS-logo-1.jpg"
+              alt="Orion Fitness - Професионални фитнес уреди"
+              class="brand-logo h-28 md:h-36 w-auto max-w-full object-contain"
+              loading="lazy"
+              width="280"
+              height="200" />
+          </NuxtLink>
+        </div>
+        
+        <!-- Бутони -->
+        <div class="flex flex-wrap justify-center gap-3 mt-8 md:mt-10">
+          <NuxtLink
+            to="/marki-produkti"
+            class="inline-flex items-center gap-2 bg-[#9c0100] text-white px-5 py-2.5 rounded-lg hover:bg-[#7a0100] transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5">
+            Виж всички марки
+            <Icon name="ion:arrow-forward" size="16" />
+          </NuxtLink>
+          <NuxtLink
+            to="/нови-продукти"
+            class="inline-flex items-center gap-2 bg-white text-[#9c0100] border-2 border-[#9c0100] px-5 py-2.5 rounded-lg hover:bg-[#9c0100] hover:text-white transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5">
+            Нови попълнения
+            <Icon name="ion:sparkles" size="16" />
+          </NuxtLink>
+        </div>
+      </div>
     </div>
 
     <CtaQuality />
@@ -132,10 +187,3 @@ if (homeSeo?.schema?.raw) {
   <SpeedInsights />
 </template>
 
-<style scoped>
-.brand img {
-  max-height: min(8vw, 120px);
-  object-fit: contain;
-  object-position: center;
-}
-</style>

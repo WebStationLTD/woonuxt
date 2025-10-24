@@ -7,10 +7,8 @@ import CategoriesMegaMenu from './CategoriesMegaMenu.vue';
 <template>
   <nav>
     <NuxtLink class="text-base" to="/">{{ $t('messages.general.home') }}</NuxtLink>
-    <NuxtLink class="text-base" to="/magazin">{{ $t('messages.general.allProducts') }}</NuxtLink>
-    <CategoriesMegaMenu />
-    <NuxtLink class="text-base" to="/blog">Блог</NuxtLink>
     <MegaMenu />
+    <NuxtLink class="text-base" to="/blog">Блог</NuxtLink>
     <NuxtLink class="text-base" to="/contact">{{ $t('messages.general.contact') }}</NuxtLink>
   </nav>
 </template>

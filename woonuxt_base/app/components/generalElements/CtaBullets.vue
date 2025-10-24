@@ -48,15 +48,16 @@ const getCategoryAltText = (slug) => {
       <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div
           class="mx-auto flex max-w-2xl flex-col gap-16 bg-white/5 px-6 py-12 ring-1 ring-white/10 sm:rounded-3xl sm:p-8 lg:mx-0 lg:max-w-none lg:flex-row lg:items-center lg:py-12 xl:gap-x-20 xl:px-20">
-          <div class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm">
+          <NuxtLink to="/produkt-kategoriya/бокс" class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm group">
             <NuxtImg
-              :alt="getCategoryAltText('бокс')"
-              :src="getCategoryImage('бокс')"
-              class="absolute inset-0 w-full h-full object-cover rounded-2xl"
+              alt="Бокс категория - Професионални боксови продукти"
+              src="https://admin.leaderfitness.net/wp-content/uploads/2025/10/категория-бокс-информация.jpg"
+              class="absolute inset-0 w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
               sizes="sm:100vw lg:384px"
               width="384"
               height="384" />
-          </div>
+          </NuxtLink>
           <div class="w-full flex-auto">
             <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">Бокс</h2>
             <p class="mt-6 text-lg/8 text-pretty text-gray-300">
@@ -120,15 +121,16 @@ const getCategoryAltText = (slug) => {
       <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div
           class="mx-auto flex max-w-2xl flex-col gap-16 bg-white px-6 py-12 ring-1 ring-gray-200 sm:rounded-3xl sm:p-8 lg:mx-0 lg:max-w-none lg:flex-row lg:items-center lg:py-12 xl:gap-x-20 xl:px-20 shadow-xl">
-          <div class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm">
+          <NuxtLink to="/produkt-kategoriya/фитнес-оборудване-и-аксесоари" class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm group">
             <NuxtImg
-              :alt="getCategoryAltText('фитнес-оборудване-и-аксесоари')"
-              :src="getCategoryImage('фитнес-оборудване-и-аксесоари')"
-              class="absolute inset-0 w-full h-full object-cover rounded-2xl"
+              alt="Фитнес Оборудване и Аксесоари - Професионално оборудване за тренировки"
+              src="https://admin.leaderfitness.net/wp-content/uploads/2025/10/категория-фитнес-оборудване-и-аксесоари-информация.jpg"
+              class="absolute inset-0 w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
               sizes="sm:100vw lg:384px"
               width="384"
               height="384" />
-          </div>
+          </NuxtLink>
           <div class="w-full flex-auto">
             <h2 class="text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">Фитнес Оборудване и Аксесоари</h2>
             <p class="mt-6 text-lg/8 text-pretty text-gray-600">
@@ -192,15 +194,16 @@ const getCategoryAltText = (slug) => {
       <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div
           class="mx-auto flex max-w-2xl flex-col gap-16 bg-white/5 px-6 py-12 ring-1 ring-white/10 sm:rounded-3xl sm:p-8 lg:mx-0 lg:max-w-none lg:flex-row lg:items-center lg:py-12 xl:gap-x-20 xl:px-20">
-          <div class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm">
+          <NuxtLink to="/produkt-kategoriya/дрехи" class="relative h-96 w-full flex-none rounded-2xl shadow-xl lg:aspect-square lg:h-auto lg:max-w-sm group">
             <NuxtImg
-              :alt="getCategoryAltText('дрехи')"
-              :src="getCategoryImage('дрехи')"
-              class="absolute inset-0 w-full h-full object-cover rounded-2xl"
+              alt="Дрехи - Спортни дрехи и облекла за тренировки"
+              src="https://admin.leaderfitness.net/wp-content/uploads/2025/10/категория-дрехи-информация.jpg"
+              class="absolute inset-0 w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
               sizes="sm:100vw lg:384px"
               width="384"
               height="384" />
-          </div>
+          </NuxtLink>
           <div class="w-full flex-auto">
             <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">Дрехи</h2>
             <p class="mt-6 text-lg/8 text-pretty text-gray-300">
