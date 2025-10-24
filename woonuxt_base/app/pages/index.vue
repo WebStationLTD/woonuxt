@@ -42,9 +42,28 @@ useSeoMeta({
   robots: homeSeo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
 });
 
-// Canonical URL
+// Preload на първото (LCP) изображение за по-бързо зареждане
+const firstCategoryImage = productCategories?.[0]?.image?.sourceUrl;
+const img = useImage();
+const preloadImageUrl = firstCategoryImage
+  ? img.getSizes(firstCategoryImage, { width: 1536, quality: 95 }).src
+  : null;
+
+// Canonical URL + Preload на LCP изображението
 useHead({
-  link: [{ rel: 'canonical', href: canonicalUrl }],
+  link: [
+    { rel: 'canonical', href: canonicalUrl },
+    ...(preloadImageUrl
+      ? [
+          {
+            rel: 'preload',
+            as: 'image',
+            href: preloadImageUrl,
+            fetchpriority: 'high',
+          },
+        ]
+      : []),
+  ],
 });
 
 // Добавяне на структурирани данни (schema.org) ако са налични в Yoast
