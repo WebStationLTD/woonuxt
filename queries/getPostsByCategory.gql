@@ -1,11 +1,5 @@
-query GetBlogPosts($first: Int, $after: String) {
-  posts(first: $first, after: $after) {
-    pageInfo {
-      hasNextPage
-      hasPreviousPage
-      startCursor
-      endCursor
-    }
+query GetPostsByCategory($categoryId: Int!, $first: Int) {
+  posts(first: $first, where: { categoryId: $categoryId }) {
     nodes {
       id
       databaseId
@@ -36,3 +30,4 @@ query GetBlogPosts($first: Int, $after: String) {
     }
   }
 }
+

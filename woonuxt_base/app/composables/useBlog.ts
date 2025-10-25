@@ -38,7 +38,7 @@ export const useBlog = () => {
 
     try {
       // @ts-ignore
-      const { data } = await useAsyncGql('getPosts', {
+      const { data } = await useAsyncGql('GetBlogPosts', {
         first: 12,
         after: pageInfo.endCursor,
       });

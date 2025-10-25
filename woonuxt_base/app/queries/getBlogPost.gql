@@ -1,0 +1,20 @@
+# import "../woonuxt_base/app/queries/fragments/PostSeoFragment.gql"
+
+query GetBlogPostWithSeo($id: ID!) {
+  post(id: $id) {
+    id
+    databaseId
+    title
+    slug
+    date
+    excerpt
+    content
+    featuredImage {
+      node {
+        sourceUrl
+        altText
+      }
+    }
+    ...PostSeoFragment
+  }
+}

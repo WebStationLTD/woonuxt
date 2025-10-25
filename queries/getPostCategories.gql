@@ -1,0 +1,12 @@
+query GetPostCategories {
+  categories(first: 100, where: { hideEmpty: true }) {
+    nodes {
+      id
+      name
+      slug
+      count
+      description
+    }
+  }
+}
+
