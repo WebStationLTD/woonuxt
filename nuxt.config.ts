@@ -105,6 +105,14 @@ export default defineNuxtConfig({
   experimental: {
     payloadExtraction: true,
     inlineSSRStyles: false, // Намалява размера на инлайн CSS
+    defaults: {
+      nuxtLink: {
+        prefetch: true, // Viewport prefetch (когато линкът е видим)
+        prefetchOn: {
+          interaction: true, // Hover/focus prefetch (по-бързо!)
+        },
+      },
+    },
   },
 
   runtimeConfig: {

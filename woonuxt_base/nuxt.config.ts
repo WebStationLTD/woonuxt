@@ -30,7 +30,10 @@ export default defineNuxtConfig({
     buildCache: true,
     defaults: {
       nuxtLink: {
-        prefetch: true,
+        prefetch: true, // Viewport prefetch (когато линкът е видим)
+        prefetchOn: {
+          interaction: true, // Hover/focus prefetch (по-бързо!)
+        },
       },
     },
   },

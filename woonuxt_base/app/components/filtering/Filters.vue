@@ -145,19 +145,17 @@ const loadTerms = async () => {
   }
 };
 
-// SSR: Зареждаме само ако има categorySlug (контекстуални филтри)
-if (categorySlug && categorySlug.trim().length > 0) {
-  await loadTerms();
-}
-
-// Client: Lazy loading за глобални филтри
+// ⚡ LAZY LOADING: Зареждаме асинхронно след mount (не блокираме SSR!)
 onMounted(() => {
-  if (!categorySlug || categorySlug.trim().length === 0) {
-    // За /magazin - зареждаме асинхронно след mount
-    setTimeout(() => {
-      loadTerms();
-    }, 100);
-  }
+  // Забавяме с малко timeout за да не блокираме initial render
+  setTimeout(async () => {
+    try {
+      await loadTerms();
+    } catch (error) {
+      console.error('⚠️ Грешка при lazy load на филтри:', error);
+      // Не спираме рендерирането при грешка във филтрите
+    }
+  }, 50); // Много кратко забавяне за smooth UX
 });
 
 // Filter out the product category terms and the global product attributes with their terms

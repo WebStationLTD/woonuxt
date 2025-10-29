@@ -626,7 +626,8 @@ onMounted(async () => {
   updateCategoryNextPrevLinks();
 });
 
-// За SSR зареждане при извикване на страницата - ПРЕМАХНАТО за по-бърза SSR!
+// ⚠️ ВАЖНО: Зареждаме САМО в onMounted за да избегнем двойно зареждане
+// SSR вече зарежда category data, продуктите се зареждат client-side
 // if (process.server) {
 //   loadCategoryProducts();
 // }

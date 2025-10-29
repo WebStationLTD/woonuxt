@@ -82,9 +82,9 @@ fragment VariableProductGrid on VariableProduct {
   reviewCount
   onSale
   regularPrice
-  rawRegularPrice: regularPrice(format: RAW)
+  rawRegularPrice: regularPrice(format: RAW) # ✅ Използва се в ProductPrice
   salePrice
-  rawSalePrice: salePrice(format: RAW)
+  rawSalePrice: salePrice(format: RAW) # ✅ Използва се в ProductPrice
   stockStatus
   image {
     ...Image
@@ -94,11 +94,7 @@ fragment VariableProductGrid on VariableProduct {
     nodes {
       name
       databaseId
-      price
-      regularPrice
-      rawRegularPrice: regularPrice(format: RAW)
-      salePrice
-      rawSalePrice: salePrice(format: RAW)
+      # ⚡ price полета са премахнати - не се използват в grid dropdown
       slug
       stockStatus
       image {
