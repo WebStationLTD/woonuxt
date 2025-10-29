@@ -43,9 +43,9 @@ if (existsSync(envPath)) {
 
       // Намери KEY=VALUE
       const match = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/i);
-      if (match) {
+      if (match && match[1] && match[2] !== undefined) {
         const key = match[1];
-        let value = match[2];
+        const value = match[2];
 
         // Ако стойността започва с ", проверяваме дали завършва с "
         if (value.startsWith('"')) {
@@ -165,7 +165,11 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
-        { rel: "preconnect", href: "https://admin.leaderfitness.net" },
+        {
+          rel: "preconnect",
+          href: "https://admin.leaderfitness.net",
+          crossorigin: "",
+        },
         { rel: "dns-prefetch", href: "https://admin.leaderfitness.net" },
       ],
     },
@@ -192,7 +196,7 @@ export default defineNuxtConfig({
           },
         },
         cacheOptions: {
-          maxAge: 1000 * 60 * 5, // 5 минути кеш за GraphQL заявки
+          maxAge: 1000 * 60 * 15, // 15 минути кеш за GraphQL заявки (беше 5)
         },
       },
     },
@@ -202,88 +206,164 @@ export default defineNuxtConfig({
     prerender: {
       routes: [
         "/",
-        "/magazin",
+        // "/magazin", // ПРЕМАХНАТО - твърде тежка страница за build (1800+ продукта)
         "/categories",
         "/etiketi",
         "/marki",
         "/contact",
         "/blog",
       ],
-      concurrency: 10,
-      interval: 1000,
+      concurrency: 15, // Увеличено от 10 на 15 (по-бързи builds)
+      interval: 500, // Намалено от 1000 на 500ms (по-бързо)
       failOnError: false,
+      crawlLinks: false, // Не crawl-вай автоматично други страници
     },
     minify: true,
-    compressPublicAssets: true,
+    compressPublicAssets: {
+      brotli: true, // Добавена Brotli компресия
+      gzip: true,
+    },
     routeRules: {
-      // Генерирани по време на билд
-      "/": { static: true },
-      "/magazin": {
-        // isr: {
-        //   expiration: 300, // 5 минути за продукти
-        // },
+      // ========================================
+      // СТАТИЧНИ СТРАНИЦИ (генерират се при build)
+      // ========================================
+      "/": {
+        prerender: true,
         headers: {
-          "Cache-Control": "s-maxage=300",
+          "Cache-Control":
+            "public, max-age=1800, s-maxage=3600, stale-while-revalidate=7200",
         },
       },
-      "/categories": { static: true },
-      "/etiketi": { static: true },
-      "/contact": { static: true },
-      "/blog": { static: true },
+      "/categories": {
+        prerender: true,
+        headers: {
+          "Cache-Control":
+            "public, max-age=3600, s-maxage=86400, stale-while-revalidate=172800",
+        },
+      },
+      "/etiketi": {
+        prerender: true,
+        headers: {
+          "Cache-Control":
+            "public, max-age=3600, s-maxage=86400, stale-while-revalidate=172800",
+        },
+      },
+      "/marki": {
+        prerender: true,
+        headers: {
+          "Cache-Control":
+            "public, max-age=3600, s-maxage=86400, stale-while-revalidate=172800",
+        },
+      },
+      "/contact": {
+        prerender: true,
+        headers: {
+          "Cache-Control": "public, max-age=3600, s-maxage=86400",
+        },
+      },
 
-      // Частично кеширани с ISR (Incremental Static Regeneration)
+      // ========================================
+      // /magazin - SSR + АГРЕСИВЕН EDGE CACHE
+      // (НЕ СЕ ГЕНЕРИРА ПРИ BUILD - твърде тежка)
+      // ========================================
+      "/magazin": {
+        ssr: true, // SSR при първо посещение
+        headers: {
+          // Edge кешира 2 часа, браузър 5 мин, stale 4 часа
+          "Cache-Control":
+            "public, s-maxage=7200, max-age=300, stale-while-revalidate=14400",
+        },
+      },
+
+      // ========================================
+      // ISR СТРАНИЦИ - 30 минути (беше 5-10 мин)
+      // ========================================
       "/produkt/**": {
         isr: {
-          expiration: 600, // 10 минути
+          expiration: 1800, // 30 минути (беше 10)
         },
         headers: {
-          "Cache-Control": "s-maxage=600",
+          "Cache-Control":
+            "public, s-maxage=1800, max-age=600, stale-while-revalidate=3600",
         },
       },
       "/produkt-kategoriya/**": {
         isr: {
-          expiration: 300, // 5 минути за категории
+          expiration: 1800, // 30 минути (беше 5)
         },
         headers: {
-          "Cache-Control": "s-maxage=300",
+          "Cache-Control":
+            "public, s-maxage=1800, max-age=300, stale-while-revalidate=3600",
         },
       },
       "/produkt-etiket/**": {
         isr: {
-          expiration: 300, // 5 минути за етикети
+          expiration: 1800, // 30 минути (беше 5)
         },
         headers: {
-          "Cache-Control": "s-maxage=300",
+          "Cache-Control":
+            "public, s-maxage=1800, max-age=300, stale-while-revalidate=3600",
         },
       },
       "/marka-produkt/**": {
         isr: {
-          expiration: 300, // 5 минути за марки
+          expiration: 1800, // 30 минути (беше 5)
         },
         headers: {
-          "Cache-Control": "s-maxage=300",
+          "Cache-Control":
+            "public, s-maxage=1800, max-age=300, stale-while-revalidate=3600",
         },
       },
 
-      // Блог постове с ISR
+      // ========================================
+      // БЛОГ - ISR 1 час (беше 30 мин)
+      // ========================================
       "/blog/**": {
         isr: {
-          expiration: 1800, // 30 минути за блог постове
+          expiration: 3600, // 1 час
         },
         headers: {
-          "Cache-Control": "s-maxage=1800",
+          "Cache-Control":
+            "public, s-maxage=3600, max-age=900, stale-while-revalidate=7200",
         },
       },
 
-      // Странци с SSR, без кеш
-      "/checkout/**": { ssr: true, cache: false },
-      "/cart": { ssr: true, cache: false },
-      "/my-account/**": { ssr: true, cache: false },
+      // ========================================
+      // ДИНАМИЧНИ СТРАНИЦИ - БЕЗ КЕШ
+      // ========================================
+      "/checkout/**": {
+        ssr: true,
+        cache: false,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      },
+      "/cart": {
+        ssr: true,
+        cache: false,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      },
+      "/my-account/**": {
+        ssr: true,
+        cache: false,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      },
 
-      // Статични файлове с дълъг кеш
+      // ========================================
+      // СТАТИЧНИ РЕСУРСИ - IMMUTABLE
+      // ========================================
+      "/_nuxt/**": {
+        headers: {
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      },
       "/images/**": {
         headers: {
-          "Cache-Control": "max-age=31536000",
+          "Cache-Control": "public, max-age=31536000, immutable",
         },
       },
     },
