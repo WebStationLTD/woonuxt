@@ -37,7 +37,7 @@ const categoryUrl = computed(() => {
 </script>
 
 <template>
-  <NuxtLink v-if="node" :to="categoryUrl" class="relative flex justify-center overflow-hidden border border-white rounded-xl item snap-mandatory snap-x">
+  <NuxtLink v-if="node" :to="categoryUrl" class="relative flex justify-center overflow-hidden border border-white rounded-xl item snap-mandatory snap-x" prefetchOn="interaction">
     <NuxtImg
       :width="imgWidth"
       :height="imgHeight"
@@ -46,6 +46,7 @@ const categoryUrl = computed(() => {
       :alt="node.image?.altText || node.name || ''"
       :title="node.image?.title || node.name || ''"
       :loading="imageLoading"
+      :fetchpriority="imageLoading === 'eager' ? 'high' : 'auto'"
       :sizes="`sm:${imgWidth / 2}px md:${imgWidth}px`"
       placeholder
       placeholder-class="blur-xl" />
