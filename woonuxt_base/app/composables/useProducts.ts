@@ -73,10 +73,10 @@ export function useProducts() {
         }
       }, 10000); // 10 секунди timeout
 
-      // За cursor-based pagination трябва да заредим до желаната страница + 1 за проверка
-      const totalProductsNeeded = page * productsPerPage.value + 1;
+      // ⚡ ОПТИМИЗАЦИЯ: Зареждаме САМО продуктите за текущата страница (24)
+      // Вместо да зареждаме page * productsPerPage (което е ОГРОМНО на по-късни страници)
       const variables: any = {
-        first: totalProductsNeeded,
+        first: productsPerPage.value, // САМО 24 продукта за тази страница
         orderby: orderBy || 'DATE',
       };
 
@@ -121,11 +121,8 @@ export function useProducts() {
       const result = data.value?.products;
 
       if (result && result.pageInfo) {
-        // Взимаме продуктите за конкретната страница от всички заредени
-        const allLoadedProducts = result.nodes || [];
-        const startIndex = (page - 1) * productsPerPage.value;
-        const endIndex = startIndex + productsPerPage.value;
-        let productsToShow = allLoadedProducts.slice(startIndex, endIndex);
+        // ⚡ ОПТИМИЗАЦИЯ: Вече зареждаме само нужните продукти, не трябва да правим slice
+        let productsToShow = result.nodes || [];
 
         // ВАЖНО: Използваме данните от GraphQL сървъра, не локална логика
         // GraphQL сървърът знае най-добре дали има още продукти
