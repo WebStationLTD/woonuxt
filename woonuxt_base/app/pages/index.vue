@@ -66,6 +66,19 @@ useHead({
   ],
 });
 
+// Зареждане на tiny-slider САМО на началната страница
+useHead({
+  link: [
+    { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/tiny-slider.css' },
+  ],
+  script: [
+    {
+      src: 'https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/min/tiny-slider.js',
+      defer: true,
+    },
+  ],
+});
+
 // Добавяне на структурирани данни (schema.org) ако са налични в Yoast
 if (homeSeo?.schema?.raw) {
   useHead({

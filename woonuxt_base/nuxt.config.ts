@@ -13,13 +13,6 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'bg' },
       link: [
         { rel: 'icon', href: '/LeadFitnesLogoRed.svg', type: 'image/png' },
-        { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/tiny-slider.css' },
-      ],
-      script: [
-        {
-          src: 'https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/min/tiny-slider.js',
-          defer: true,
-        },
       ],
     },
     pageTransition: { name: 'page', mode: 'default' },
