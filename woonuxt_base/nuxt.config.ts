@@ -110,8 +110,6 @@ export default defineNuxtConfig({
     build: {
       // CSS код splitting за по-малки файлове
       cssCodeSplit: true,
-      // Минимизация с cssnano
-      cssMinify: 'lightningcss',
       rollupOptions: {
         output: {
           // JS код splitting - разделяме vendor библиотеките
