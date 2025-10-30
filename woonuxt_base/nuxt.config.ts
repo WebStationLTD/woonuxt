@@ -100,6 +100,46 @@ export default defineNuxtConfig({
       '/product/**': { redirect: { to: '/produkt/**', statusCode: 301 } },
       '/products/**': { redirect: { to: '/magazin/**', statusCode: 301 } },
     },
+    compressPublicAssets: {
+      brotli: true,
+      gzip: true,
+    },
+  },
+
+  vite: {
+    build: {
+      // CSS код splitting за по-малки файлове
+      cssCodeSplit: true,
+      // Минимизация с cssnano
+      cssMinify: 'lightningcss',
+      rollupOptions: {
+        output: {
+          // JS код splitting - разделяме vendor библиотеките
+          manualChunks: (id) => {
+            // Vendor chunks за по-добър кеш
+            if (id.includes('node_modules')) {
+              if (id.includes('vue') || id.includes('@vue')) {
+                return 'vendor-vue';
+              }
+              if (id.includes('nuxt') || id.includes('@nuxt')) {
+                return 'vendor-nuxt';
+              }
+              if (id.includes('graphql') || id.includes('apollo')) {
+                return 'vendor-graphql';
+              }
+              // Останалите vendor библиотеки
+              return 'vendor-other';
+            }
+          },
+          // Оптимизиране на chunk размерите
+          chunkFileNames: 'chunks/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash].[ext]',
+        },
+      },
+    },
+    optimizeDeps: {
+      include: ['vue', '@vue/runtime-dom', '@vue/runtime-core'],
+    },
   },
 
   // Multilingual support
