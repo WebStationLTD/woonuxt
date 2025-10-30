@@ -12,3 +12,12 @@ fragment PwbBrands on Product {
     }
   }
 }
+
+# ⚡ ОПТИМИЗИРАН за Grid - само ID, име и slug
+fragment PwbBrandsGrid on Product {
+  pwbBrands {
+    databaseId
+    name
+    slug
+  }
+}

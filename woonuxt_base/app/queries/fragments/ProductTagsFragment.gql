@@ -8,3 +8,13 @@ fragment ProductTags on Product {
     }
   }
 }
+
+# ⚡ ОПТИМИЗИРАН за Grid - само slug и име
+fragment ProductTagsGrid on Product {
+  productTags {
+    nodes {
+      slug
+      name
+    }
+  }
+}

@@ -31,7 +31,7 @@ fragment VariableProduct on VariableProduct {
       ...VariationAttribute
     }
   }
-  variations(first: 100) {
+  variations(first: 20) {
     nodes {
       name
       databaseId
@@ -56,7 +56,7 @@ fragment VariableProduct on VariableProduct {
       }
     }
   }
-  galleryImages(first: 20) {
+  galleryImages(first: 10) {
     nodes {
       ...Image
       databaseId
@@ -90,11 +90,10 @@ fragment VariableProductGrid on VariableProduct {
     ...Image
     producCardSourceUrl: sourceUrl(size: WOOCOMMERCE_THUMBNAIL)
   }
-  variations(first: 10) {
+  variations(first: 8) {
     nodes {
       name
       databaseId
-      # ⚡ price полета са премахнати - не се използват в grid dropdown
       slug
       stockStatus
       image {

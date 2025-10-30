@@ -8,3 +8,14 @@ fragment Terms on Product {
     }
   }
 }
+
+# ⚡ ОПТИМИЗИРАН за Grid - само 10 terms
+fragment TermsGrid on Product {
+  terms(first: 10) {
+    nodes {
+      taxonomyName
+      slug
+      name
+    }
+  }
+}

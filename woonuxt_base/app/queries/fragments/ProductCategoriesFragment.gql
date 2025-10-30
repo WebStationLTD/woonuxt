@@ -13,3 +13,13 @@ fragment ProductCategories on Product {
     }
   }
 }
+
+# ⚡ ОПТИМИЗИРАН за Grid - само slug и име
+fragment ProductCategoriesGrid on Product {
+  productCategories {
+    nodes {
+      slug
+      name
+    }
+  }
+}
