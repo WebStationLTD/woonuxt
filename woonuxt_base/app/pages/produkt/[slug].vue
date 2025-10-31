@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import { StockStatusEnum, ProductTypesEnum, type AddToCartInput } from '#woo';
 
+// Зареждаме gutenberg.css за продуктови описания с WordPress блокове
+import '@/assets/css/gutenberg.css';
+
 const route = useRoute();
 const { storeSettings } = useAppConfig();
 const { arraysEqual, formatArray, checkForVariationTypeOfAny } = useHelpers();

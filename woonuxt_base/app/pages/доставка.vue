@@ -233,16 +233,5 @@ useHead({
 });
 </script>
 
-<style scoped>
-.transition-colors {
-  transition: background-color 0.3s ease;
-}
-
-.hover\:bg-primary-dark:hover {
-  background-color: #dc2626;
-}
-
-.hover\:bg-blue-700:hover {
-  background-color: #1d4ed8;
-}
-</style>
+<!-- Стиловете са премахнати поради Vite/Windows Unicode проблем с <style scoped> в кирилски файлове -->
+<!-- Всички стилове са налични глобално чрез Tailwind CSS -->

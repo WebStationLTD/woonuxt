@@ -66,8 +66,8 @@ const breadcrumbs = [
         <p class="text-sm text-gray-500">Показани са {{ products.length }} най-нови продукта</p>
       </div>
 
-      <!-- Grid със продукти -->
-      <div class="product-grid">
+      <!-- Grid със продукти (Tailwind responsive grid: 2 cols mobile, 3 cols tablet, 4 cols desktop) -->
+      <div class="my-4 lg:my-8 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 transition-all">
         <div
           v-for="(product, index) in products"
           :key="product.databaseId"
@@ -114,36 +114,5 @@ const breadcrumbs = [
   </main>
 </template>
 
-<style scoped>
-.product-grid {
-  @apply my-4 grid transition-all gap-4 lg:my-8;
-
-  /* Mobile: 2 колони */
-  grid-template-columns: repeat(2, 1fr);
-  grid-auto-rows: min-content;
-}
-
-/* Tablet: 3 колони */
-@media (min-width: 768px) {
-  .product-grid {
-    grid-template-columns: repeat(3, 1fr);
-    @apply gap-6;
-  }
-}
-
-/* Large Tablet до Desktop: 3 колони */
-@media (min-width: 1024px) and (max-width: 1279px) {
-  .product-grid {
-    grid-template-columns: repeat(3, 1fr);
-    @apply gap-6;
-  }
-}
-
-/* Desktop XL: 4 колони */
-@media (min-width: 1280px) {
-  .product-grid {
-    grid-template-columns: repeat(4, 1fr);
-    @apply gap-6;
-  }
-}
-</style>
+<!-- Стиловете са премахнати поради Vite/Windows Unicode проблем с <style scoped> в кирилски файлове -->
+<!-- Grid стиловете са добавени inline в template с Tailwind класове -->

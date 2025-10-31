@@ -194,27 +194,5 @@ useHead({
 });
 </script>
 
-<style scoped>
-.prose {
-  color: #374151;
-  line-height: 1.75;
-}
-
-.prose h2 {
-  border-bottom: 2px solid #e5e7eb;
-  padding-bottom: 0.5rem;
-}
-
-.prose p {
-  margin-bottom: 1rem;
-}
-
-.prose ul {
-  list-style-type: disc;
-  margin-left: 1.5rem;
-}
-
-.prose li {
-  margin-bottom: 0.5rem;
-}
-</style>
+<!-- Стиловете са премахнати поради Vite/Windows Unicode проблем с <style scoped> в кирилски файлове -->
+<!-- Всички стилове са налични глобално чрез Tailwind CSS и @tailwindcss/typography -->

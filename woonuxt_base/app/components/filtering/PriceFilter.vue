@@ -59,4 +59,4 @@ watch(isFiltersActive, () => {
   </div>
 </template>
 
-<style src="@vueform/slider/themes/default.css"></style>
+<!-- CSS се зарежда на ниво страница, не глобално -->

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+// Зареждаме @vueform/slider CSS САМО на страници с филтри
+import '@vueform/slider/themes/default.css';
+
 const {
   loadProductsPage,
   loadProductsWithFilters,

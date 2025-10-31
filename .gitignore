@@ -26,4 +26,7 @@ logs
 # Local Netlify folder
 .netlify
 
+# Local Vercel folder
+.vercel
+
 *.pem

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, nextTick } from 'vue';
 
+// Зареждаме @vueform/slider CSS САМО на страници с филтри
+import '@vueform/slider/themes/default.css';
+
 const {
   loadProductsPage,
   loadProductsWithFilters,

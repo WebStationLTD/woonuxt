@@ -66,10 +66,15 @@ useHead({
   ],
 });
 
-// Зареждане на tiny-slider САМО на началната страница
+// Зареждане на tiny-slider САМО на началната страница (non-blocking CSS!)
 useHead({
   link: [
-    { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/tiny-slider.css' },
+    { 
+      rel: 'stylesheet', 
+      href: 'https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/tiny-slider.css',
+      media: 'print',
+      onload: "this.media='all'; this.onload=null;",
+    },
   ],
   script: [
     {

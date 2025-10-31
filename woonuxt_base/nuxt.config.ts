@@ -81,8 +81,12 @@ export default defineNuxtConfig({
       // Нови маршрути за produkt вместо product
       addPage('produkt-page', '/produkt/:slug', 'produkt/[slug].vue');
 
-      // Explicit route за нови продукти за да има приоритет над [slug].vue
+      // Explicit routes за страници с кирилични имена (fix за Vite/Windows Unicode проблем)
       addPage('novi-produkti', '/нови-продукти', 'нови-продукти.vue');
+      addPage('za-nas', '/за-нас', 'за-нас.vue');
+      addPage('dostavka', '/доставка', 'доставка.vue');
+      addPage('obshti-usloviq', '/общи-условия', 'общи-условия.vue');
+      addPage('politika-poveritelnost', '/политика-за-поверителност-и-защита-на', 'политика-за-поверителност-и-защита-на.vue');
     },
   },
 

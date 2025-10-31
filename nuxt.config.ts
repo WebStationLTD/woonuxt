@@ -76,7 +76,12 @@ export default defineNuxtConfig({
 
   components: [{ path: "./components", pathPrefix: false }],
 
-  modules: ["nuxt-graphql-client", "@nuxtjs/sitemap", "@nuxt/image"],
+  modules: [
+    "nuxt-graphql-client",
+    "@nuxtjs/sitemap",
+    "@nuxt/image",
+    "@nuxtjs/critters", // Critical CSS extraction - инлайнва само критичния CSS
+  ],
 
   // Оптимизации за изображения
   image: {
@@ -104,7 +109,7 @@ export default defineNuxtConfig({
 
   experimental: {
     payloadExtraction: true,
-    inlineSSRStyles: false, // Намалява размера на инлайн CSS
+    inlineSSRStyles: false, // FALSE - @nuxtjs/critters се грижи за critical CSS extraction
     defaults: {
       nuxtLink: {
         prefetch: true, // Viewport prefetch (когато линкът е видим)
@@ -112,6 +117,16 @@ export default defineNuxtConfig({
           interaction: true, // Hover/focus prefetch (по-бързо!)
         },
       },
+    },
+  },
+
+  // Critical CSS конфигурация (автоматично екстрактва само critical CSS)
+  critters: {
+    config: {
+      preload: "swap", // Preload non-critical CSS асинхронно
+      pruneSource: false, // Запазва оригиналния CSS файл за browser cache
+      reduceInlineStyles: true, // Минимизира инлайн стиловете
+      preloadFonts: true, // Preload критични шрифтове
     },
   },
 
@@ -217,7 +232,7 @@ export default defineNuxtConfig({
         // "/magazin", // ПРЕМАХНАТО - твърде тежка страница за build (1800+ продукта)
         "/categories",
         "/etiketi",
-        "/marki",
+        "/marki-produkti",
         "/contact",
         "/blog",
       ],
@@ -256,7 +271,7 @@ export default defineNuxtConfig({
             "public, max-age=3600, s-maxage=86400, stale-while-revalidate=172800",
         },
       },
-      "/marki": {
+      "/marki-produkti": {
         prerender: true,
         headers: {
           "Cache-Control":

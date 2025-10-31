@@ -1,4 +1,7 @@
 <script setup lang="ts">
+// Зареждаме gutenberg.css САМО за blog post страници (WordPress блокове)
+import '@/assets/css/gutenberg.css';
+
 const route = useRoute();
 const slug = route.params.slug as string;
 const post = ref<any>(null);
