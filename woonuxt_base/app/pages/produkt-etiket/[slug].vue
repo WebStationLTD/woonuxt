@@ -495,15 +495,24 @@ onMounted(async () => {
     filter: (route.query.filter as string | null) || null,
   };
 
-  // ⚡ ОПТИМИЗАЦИЯ 6: Proactive cache warming за по-бързи последващи заявки
-  if (process.client) {
-    warmUpCache();
+  // ⚡ ОПТИМИЗАЦИЯ НИВО 1.3: Cache warming в requestIdleCallback (не блокира main thread)
+  if (process.client && 'requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      warmUpCache();
+    }, { timeout: 2000 });
+  } else if (process.client) {
+    setTimeout(() => warmUpCache(), 100);
   }
 
   await nextTick();
+  
+  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
   await loadTagProducts();
-  await nextTick();
-  updateTagNextPrevLinks();
+  
+  // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
+  nextTick(() => {
+    updateTagNextPrevLinks();
+  });
 });
 
 // За SSR зареждане - ПРЕМАХНАТО за по-бърза SSR!
@@ -511,82 +520,97 @@ onMounted(async () => {
 //   loadTagProducts();
 // }
 
-// Следене на промени в route
+// ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
+// Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher
+let tagNavigationDebounceTimer: NodeJS.Timeout | null = null;
+let isTagNavigating = false;
+
 watch(
-  () => route.fullPath,
-  async (newPath, oldPath) => {
-    if (newPath !== oldPath && process.client) {
-      await nextTick();
-      loadTagProducts();
-      updateTagSeoMeta();
+  () => ({
+    path: route.path,
+    query: route.query,
+    fullPath: route.fullPath,
+  }),
+  async (newRoute, oldRoute) => {
+    if (!process.client) return;
+    if (newRoute.fullPath === oldRoute.fullPath) return;
+
+    if (isTagNavigating) {
+      if (tagNavigationDebounceTimer) clearTimeout(tagNavigationDebounceTimer);
+      tagNavigationDebounceTimer = null;
     }
-  },
-);
 
-// Допълнителен watcher за промени в path
-watch(
-  () => route.path,
-  (newPath, oldPath) => {
-    if (newPath !== oldPath && process.client) {
-      // Reset loading състоянието при навигация за да се покаже skeleton
-      hasEverLoaded.value = false;
-      loadTagProducts();
-      updateTagSeoMeta();
+    if (tagNavigationDebounceTimer) {
+      clearTimeout(tagNavigationDebounceTimer);
     }
-  },
-);
 
-// Watcher за промени в query параметрите (филтри и сортиране)
-watch(
-  () => route.query,
-  async (newQuery, oldQuery) => {
-    if (process.client && JSON.stringify(newQuery) !== JSON.stringify(oldQuery)) {
-      // Проверяваме дали са се променили sorting/filtering параметрите
-      const newOrderBy = newQuery.orderby as string | null;
-      const newOrder = newQuery.order as string | null;
-      const newFilter = newQuery.filter as string | null;
+    tagNavigationDebounceTimer = setTimeout(async () => {
+      if (isTagNavigating) return;
+      isTagNavigating = true;
 
-      const sortingOrFilteringChanged =
-        newOrderBy !== previousQuery.value.orderby || newOrder !== previousQuery.value.order || newFilter !== previousQuery.value.filter;
+      try {
+        // СЛУЧАЙ 1: Промяна в пътя (различен tag или страница)
+        const pathChanged = newRoute.path !== oldRoute.path;
 
-      // Ако са се променили sorting/filtering параметрите И сме на страница > 1
-      if (sortingOrFilteringChanged && route.params.pageNumber) {
-        const currentPageNumber = parseInt(String(route.params.pageNumber) || '1');
+        if (pathChanged) {
+          hasEverLoaded.value = false;
+          await loadTagProducts();
+          updateTagSeoMeta();
+          return;
+        }
 
-        if (currentPageNumber > 1) {
-          // Изграждаме URL за страница 1 с новите sorting/filtering параметри
-          const queryParams = new URLSearchParams();
-          if (newOrderBy) queryParams.set('orderby', newOrderBy);
-          if (newOrder) queryParams.set('order', newOrder);
-          if (newFilter) queryParams.set('filter', newFilter);
+        // СЛУЧАЙ 2: Промяна само в query параметрите (филтри/сортиране)
+        const queryChanged = JSON.stringify(newRoute.query) !== JSON.stringify(oldRoute.query);
 
-          const queryString = queryParams.toString();
-          const newUrl = `/produkt-etiket/${slug}${queryString ? `?${queryString}` : ''}`;
+        if (queryChanged) {
+          const newOrderBy = newRoute.query.orderby as string | null;
+          const newOrder = newRoute.query.order as string | null;
+          const newFilter = newRoute.query.filter as string | null;
 
-          // Обновяваме предишните стойности преди redirect
+          const sortingOrFilteringChanged =
+            newOrderBy !== previousQuery.value.orderby || 
+            newOrder !== previousQuery.value.order || 
+            newFilter !== previousQuery.value.filter;
+
+          if (sortingOrFilteringChanged && route.params.pageNumber) {
+            const currentPageNumber = parseInt(String(route.params.pageNumber) || '1');
+
+            if (currentPageNumber > 1) {
+              const queryParams = new URLSearchParams();
+              if (newOrderBy) queryParams.set('orderby', newOrderBy);
+              if (newOrder) queryParams.set('order', newOrder);
+              if (newFilter) queryParams.set('filter', newFilter);
+
+              const queryString = queryParams.toString();
+              const newUrl = `/produkt-etiket/${slug}${queryString ? `?${queryString}` : ''}`;
+
+              previousQuery.value = {
+                orderby: newOrderBy,
+                order: newOrder,
+                filter: newFilter,
+              };
+
+              await navigateTo(newUrl, { replace: true });
+              return;
+            }
+          }
+
           previousQuery.value = {
             orderby: newOrderBy,
             order: newOrder,
             filter: newFilter,
           };
 
-          await navigateTo(newUrl, { replace: true });
-          return;
+          hasEverLoaded.value = false;
+          await loadTagProducts();
         }
+      } finally {
+        isTagNavigating = false;
+        tagNavigationDebounceTimer = null;
       }
-
-      // Обновяваме предишните стойности
-      previousQuery.value = {
-        orderby: newOrderBy,
-        order: newOrder,
-        filter: newFilter,
-      };
-
-      // Reset loading състоянието при промяна на филтри
-      hasEverLoaded.value = false;
-      loadTagProducts();
-    }
+    }, 50);
   },
+  { deep: true }
 );
 
 // Watcher за промени в pageInfo за динамично обновяване на next/prev links

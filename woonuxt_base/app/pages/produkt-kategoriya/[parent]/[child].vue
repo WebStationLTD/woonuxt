@@ -492,9 +492,9 @@ const updateChildCategorySeoMeta = () => {
   updateChildCategoryNextPrevLinks();
 };
 
-// Зареждаме при mount
+// ⚡ ОПТИМИЗАЦИЯ НИВО 1.3: ПАРАЛЕЛИЗИРАН onMounted (като в родителските категории)
 onMounted(async () => {
-  // Инициализираме предишните query стойности
+  // Инициализираме предишните query стойности (синхронно - бързо)
   previousQuery.value = {
     orderby: (route.query.orderby as string | null) || null,
     order: (route.query.order as string | null) || null,
@@ -502,10 +502,14 @@ onMounted(async () => {
   };
 
   await nextTick();
+  
+  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
   await loadCategoryProducts();
-  // Задаваме началните rel=prev/next links (точно като в родителските категории)
-  await nextTick();
-  updateChildCategoryNextPrevLinks();
+  
+  // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
+  nextTick(() => {
+    updateChildCategoryNextPrevLinks();
+  });
 });
 
 // За SSR зареждане при извикване на страницата (точно като в родителските категории)
@@ -513,85 +517,101 @@ if (process.server) {
   loadCategoryProducts();
 }
 
-// Следене на промени в route
+// ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE (като в родителските категории)
+// Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher
+let childNavigationDebounceTimer: NodeJS.Timeout | null = null;
+let isChildNavigating = false;
+
 watch(
-  () => route.fullPath,
-  async (newPath, oldPath) => {
-    if (newPath !== oldPath && process.client) {
-      await nextTick();
-      loadCategoryProducts();
-      // Обновяваме и SEO данните при навигация
-      updateChildCategorySeoMeta();
+  () => ({
+    path: route.path,
+    query: route.query,
+    fullPath: route.fullPath,
+  }),
+  async (newRoute, oldRoute) => {
+    if (!process.client) return;
+    if (newRoute.fullPath === oldRoute.fullPath) return;
+
+    // Предотвратяваме multiple concurrent navigation handlers
+    if (isChildNavigating) {
+      if (childNavigationDebounceTimer) clearTimeout(childNavigationDebounceTimer);
+      childNavigationDebounceTimer = null;
     }
-  },
-);
 
-// Допълнителен watcher за промени в path за да се улавя навигацията между страници (точно като в родителските категории)
-watch(
-  () => route.path,
-  (newPath, oldPath) => {
-    if (newPath !== oldPath && process.client) {
-      // Reset loading състоянието при навигация за да се покаже skeleton
-      hasEverLoaded.value = false;
-      loadCategoryProducts();
-      // Обновяваме и SEO данните при навигация
-      updateChildCategorySeoMeta();
+    if (childNavigationDebounceTimer) {
+      clearTimeout(childNavigationDebounceTimer);
     }
-  },
-);
 
-// Watcher за промени в query параметрите (филтри и сортиране) - с умно redirect управление
-watch(
-  () => route.query,
-  async (newQuery, oldQuery) => {
-    if (process.client && JSON.stringify(newQuery) !== JSON.stringify(oldQuery)) {
-      // Проверяваме дали са се променили sorting/filtering параметрите (не page)
-      const newOrderBy = newQuery.orderby as string | null;
-      const newOrder = newQuery.order as string | null;
-      const newFilter = newQuery.filter as string | null;
+    childNavigationDebounceTimer = setTimeout(async () => {
+      if (isChildNavigating) return;
+      isChildNavigating = true;
 
-      const sortingOrFilteringChanged =
-        newOrderBy !== previousQuery.value.orderby || newOrder !== previousQuery.value.order || newFilter !== previousQuery.value.filter;
+      try {
+        // СЛУЧАЙ 1: Промяна в пътя (различна категория или страница)
+        const pathChanged = newRoute.path !== oldRoute.path;
 
-      // Ако са се променили sorting/filtering параметрите И сме на страница > 1
-      if (sortingOrFilteringChanged && (newQuery.page || route.params.pageNumber)) {
-        const currentPageNumber = newQuery.page ? parseInt(String(newQuery.page)) : parseInt(String(route.params.pageNumber) || '1');
+        if (pathChanged) {
+          hasEverLoaded.value = false;
+          await loadCategoryProducts();
+          updateChildCategorySeoMeta();
+          return;
+        }
 
-        if (currentPageNumber > 1) {
-          // Изграждаме URL за страница 1 с новите sorting/filtering параметри
-          const queryParams = new URLSearchParams();
-          if (newOrderBy) queryParams.set('orderby', newOrderBy);
-          if (newOrder) queryParams.set('order', newOrder);
-          if (newFilter) queryParams.set('filter', newFilter);
+        // СЛУЧАЙ 2: Промяна само в query параметрите (филтри/сортиране)
+        const queryChanged = JSON.stringify(newRoute.query) !== JSON.stringify(oldRoute.query);
 
-          const queryString = queryParams.toString();
-          const { parentSlug, childSlug } = extractRouteParams();
-          const newUrl = `/produkt-kategoriya/${parentSlug}/${childSlug}${queryString ? `?${queryString}` : ''}`;
+        if (queryChanged) {
+          const newOrderBy = newRoute.query.orderby as string | null;
+          const newOrder = newRoute.query.order as string | null;
+          const newFilter = newRoute.query.filter as string | null;
 
-          // Обновяваме предишните стойности преди redirect
+          const sortingOrFilteringChanged =
+            newOrderBy !== previousQuery.value.orderby || 
+            newOrder !== previousQuery.value.order || 
+            newFilter !== previousQuery.value.filter;
+
+          if (sortingOrFilteringChanged && (newRoute.query.page || route.params.pageNumber)) {
+            const currentPageNumber = newRoute.query.page ? 
+              parseInt(String(newRoute.query.page)) : 
+              parseInt(String(route.params.pageNumber) || '1');
+
+            if (currentPageNumber > 1) {
+              const queryParams = new URLSearchParams();
+              if (newOrderBy) queryParams.set('orderby', newOrderBy);
+              if (newOrder) queryParams.set('order', newOrder);
+              if (newFilter) queryParams.set('filter', newFilter);
+
+              const queryString = queryParams.toString();
+              const { parentSlug, childSlug } = extractRouteParams();
+              const newUrl = `/produkt-kategoriya/${parentSlug}/${childSlug}${queryString ? `?${queryString}` : ''}`;
+
+              previousQuery.value = {
+                orderby: newOrderBy,
+                order: newOrder,
+                filter: newFilter,
+              };
+
+              await navigateTo(newUrl, { replace: true });
+              return;
+            }
+          }
+
           previousQuery.value = {
             orderby: newOrderBy,
             order: newOrder,
             filter: newFilter,
           };
 
-          await navigateTo(newUrl, { replace: true });
-          return; // Излизаме рано - navigateTo ще предизвика нов loadCategoryProducts
+          hasEverLoaded.value = false;
+          await loadCategoryProducts();
         }
+      } finally {
+        isChildNavigating = false;
+        childNavigationDebounceTimer = null;
       }
-
-      // Обновяваме предишните стойности
-      previousQuery.value = {
-        orderby: newOrderBy,
-        order: newOrder,
-        filter: newFilter,
-      };
-
-      // Reset loading състоянието при промяна на филтри
-      hasEverLoaded.value = false;
-      loadCategoryProducts();
-    }
+    }, 50);
   },
+  { deep: true }
 );
 
 // Watcher за pageInfo промени (точно като в /magazin)

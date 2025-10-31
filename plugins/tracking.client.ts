@@ -137,38 +137,51 @@ export default defineNuxtPlugin((nuxtApp) => {
   }
 
   // ============================================
-  // ROUTE CHANGE TRACKING
+  // ROUTE CHANGE TRACKING - ⚡ ОПТИМИЗАЦИЯ НИВО 1.2
   // ============================================
   // Проследяване на page views при промяна на маршрута
+  // ⚡ LAZY TRACKING с requestIdleCallback - не блокира UI
   nuxtApp.hook("page:finish", () => {
     const route = useRoute();
     const url = window.location.href;
     const path = route.path;
 
-    if (config.public.TRACKING_DEBUG) {
-      console.log("📄 Page View:", path);
-    }
+    // ⚡ КРИТИЧНА ОПТИМИЗАЦИЯ: Отлагаме tracking до idle време
+    // Това позволява UI да се рендира първи, tracking не блокира
+    const sendTrackingEvents = () => {
+      if (config.public.TRACKING_DEBUG) {
+        console.log("📄 Page View:", path);
+      }
 
-    // Meta Pixel PageView
-    if (window.fbq) {
-      window.fbq("track", "PageView");
-    }
+      // Meta Pixel PageView
+      if (window.fbq) {
+        window.fbq("track", "PageView");
+      }
 
-    // Google Analytics PageView
-    if (window.gtag && config.public.GOOGLE_ANALYTICS_ID) {
-      window.gtag("config", config.public.GOOGLE_ANALYTICS_ID, {
-        page_path: path,
-        page_location: url,
-      });
-    }
+      // Google Analytics PageView
+      if (window.gtag && config.public.GOOGLE_ANALYTICS_ID) {
+        window.gtag("config", config.public.GOOGLE_ANALYTICS_ID, {
+          page_path: path,
+          page_location: url,
+        });
+      }
 
-    // GTM PageView
-    if (window.dataLayer && config.public.GTM_ID) {
-      window.dataLayer.push({
-        event: "page_view",
-        page_path: path,
-        page_location: url,
-      });
+      // GTM PageView
+      if (window.dataLayer && config.public.GTM_ID) {
+        window.dataLayer.push({
+          event: "page_view",
+          page_path: path,
+          page_location: url,
+        });
+      }
+    };
+
+    // Използваме requestIdleCallback за да не блокираме UI
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(sendTrackingEvents, { timeout: 1000 });
+    } else {
+      // Fallback за браузъри без requestIdleCallback
+      setTimeout(sendTrackingEvents, 50);
     }
   });
 });

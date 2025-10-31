@@ -607,26 +607,36 @@ const loadCategoryProducts = async () => {
   }
 };
 
-// Зареждаме при mount
+// ⚡ ОПТИМИЗАЦИЯ НИВО 1.3: ПАРАЛЕЛИЗИРАН onMounted
+// Вместо последователно изпълнение - паралелни операции където е възможно
 onMounted(async () => {
-  // Инициализираме предишните query стойности
+  // Инициализираме предишните query стойности (синхронно - бързо)
   previousQuery.value = {
     orderby: (route.query.orderby as string | null) || null,
     order: (route.query.order as string | null) || null,
     filter: (route.query.filter as string | null) || null,
   };
 
-  // ⚡ ОПТИМИЗАЦИЯ 6: Proactive cache warming за по-бързи последващи заявки
-  if (process.client) {
-    warmUpCache();
+  // ⚡ ОПТИМИЗАЦИЯ: Cache warming в requestIdleCallback (не блокира main thread)
+  if (process.client && 'requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      warmUpCache();
+    }, { timeout: 2000 });
+  } else if (process.client) {
+    // Fallback за браузъри без requestIdleCallback
+    setTimeout(() => warmUpCache(), 100);
   }
 
-  // Изчакваме един tick за да се установи правилно route състоянието (точно като в /magazin)
+  // Изчакваме един tick за да се установи правилно route състоянието
   await nextTick();
+  
+  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
   await loadCategoryProducts();
-  // Задаваме началните rel=prev/next links
-  await nextTick();
-  updateCategoryNextPrevLinks();
+  
+  // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
+  nextTick(() => {
+    updateCategoryNextPrevLinks();
+  });
 });
 
 // ⚠️ ВАЖНО: Зареждаме САМО в onMounted за да избегнем двойно зареждане
@@ -635,85 +645,107 @@ onMounted(async () => {
 //   loadCategoryProducts();
 // }
 
-// Следене на промени в route
+// ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
+// Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher
+// Намалява броя на re-renders и елиминира race conditions
+
+let navigationDebounceTimer: NodeJS.Timeout | null = null;
+// isNavigating вече е дефиниран по-горе (ред 428) и се използва и от loadCategoryProducts
+
+// Unified watcher който обработва всички route промени
 watch(
-  () => route.fullPath,
-  (newPath, oldPath) => {
-    if (newPath !== oldPath && process.client) {
-      loadCategoryProducts();
-      // Обновяваме и SEO данните при навигация
-      updateCategorySeoMeta();
+  () => ({
+    path: route.path,
+    query: route.query,
+    fullPath: route.fullPath,
+  }),
+  async (newRoute, oldRoute) => {
+    if (!process.client) return;
+
+    // Проверяваме дали наистина има промяна
+    if (newRoute.fullPath === oldRoute.fullPath) return;
+
+    // Предотвратяваме multiple concurrent navigation handlers
+    if (isNavigating) {
+      if (navigationDebounceTimer) clearTimeout(navigationDebounceTimer);
+      navigationDebounceTimer = null;
     }
-  },
-);
 
-// Допълнителен watcher за промени в path за да се улавя навигацията между страници (точно като в /magazin)
-watch(
-  () => route.path,
-  (newPath, oldPath) => {
-    if (newPath !== oldPath && process.client) {
-      // Reset loading състоянието при навигация за да се покаже skeleton
-      hasEverLoaded.value = false;
-      loadCategoryProducts();
-      // Обновяваме и SEO данните при навигация
-      updateCategorySeoMeta();
+    // Debounce за да избегнем множество едновременни заявки
+    if (navigationDebounceTimer) {
+      clearTimeout(navigationDebounceTimer);
     }
-  },
-);
 
-// Watcher за промени в query параметрите (филтри и сортиране) - с умно redirect управление
-watch(
-  () => route.query,
-  async (newQuery, oldQuery) => {
-    if (process.client && JSON.stringify(newQuery) !== JSON.stringify(oldQuery)) {
-      // Проверяваме дали са се променили sorting/filtering параметрите (не page)
-      const newOrderBy = newQuery.orderby as string | null;
-      const newOrder = newQuery.order as string | null;
-      const newFilter = newQuery.filter as string | null;
+    navigationDebounceTimer = setTimeout(async () => {
+      if (isNavigating) return;
+      isNavigating = true;
 
-      const sortingOrFilteringChanged =
-        newOrderBy !== previousQuery.value.orderby || newOrder !== previousQuery.value.order || newFilter !== previousQuery.value.filter;
+      try {
+        // СЛУЧАЙ 1: Промяна в пътя (различна категория или страница)
+        const pathChanged = newRoute.path !== oldRoute.path;
 
-      // ПОПРАВКА: Използваме същата логика като в категориите
-      // Ако са се променили sorting/filtering параметрите И сме на страница > 1
-      // ВАЖНО: За категории използваме route.params.pageNumber, не newQuery.page!
-      if (sortingOrFilteringChanged && route.params.pageNumber) {
-        const currentPageNumber = parseInt(String(route.params.pageNumber) || '1');
+        if (pathChanged) {
+          hasEverLoaded.value = false; // Показваме skeleton при навигация
+          await loadCategoryProducts();
+          updateCategorySeoMeta();
+          return;
+        }
 
-        if (currentPageNumber > 1) {
-          // Изграждаме URL за страница 1 с новите sorting/filtering параметри
-          const queryParams = new URLSearchParams();
-          if (newOrderBy) queryParams.set('orderby', newOrderBy);
-          if (newOrder) queryParams.set('order', newOrder);
-          if (newFilter) queryParams.set('filter', newFilter);
+        // СЛУЧАЙ 2: Промяна само в query параметрите (филтри/сортиране)
+        const queryChanged = JSON.stringify(newRoute.query) !== JSON.stringify(oldRoute.query);
 
-          const queryString = queryParams.toString();
-          const newUrl = `/produkt-kategoriya/${slug}${queryString ? `?${queryString}` : ''}`;
+        if (queryChanged) {
+          const newOrderBy = newRoute.query.orderby as string | null;
+          const newOrder = newRoute.query.order as string | null;
+          const newFilter = newRoute.query.filter as string | null;
 
-          // Обновяваме предишните стойности преди redirect
+          const sortingOrFilteringChanged =
+            newOrderBy !== previousQuery.value.orderby || 
+            newOrder !== previousQuery.value.order || 
+            newFilter !== previousQuery.value.filter;
+
+          // Redirect към страница 1 ако променяме филтри/сортиране на страница > 1
+          if (sortingOrFilteringChanged && route.params.pageNumber) {
+            const currentPageNumber = parseInt(String(route.params.pageNumber) || '1');
+
+            if (currentPageNumber > 1) {
+              const queryParams = new URLSearchParams();
+              if (newOrderBy) queryParams.set('orderby', newOrderBy);
+              if (newOrder) queryParams.set('order', newOrder);
+              if (newFilter) queryParams.set('filter', newFilter);
+
+              const queryString = queryParams.toString();
+              const newUrl = `/produkt-kategoriya/${slug}${queryString ? `?${queryString}` : ''}`;
+
+              previousQuery.value = {
+                orderby: newOrderBy,
+                order: newOrder,
+                filter: newFilter,
+              };
+
+              await navigateTo(newUrl, { replace: true });
+              return;
+            }
+          }
+
+          // Обновяваме предишните стойности
           previousQuery.value = {
             orderby: newOrderBy,
             order: newOrder,
             filter: newFilter,
           };
 
-          await navigateTo(newUrl, { replace: true });
-          return; // Излизаме рано - navigateTo ще предизвика нов loadCategoryProducts
+          // Зареждаме продуктите с новите филтри
+          hasEverLoaded.value = false;
+          await loadCategoryProducts();
         }
+      } finally {
+        isNavigating = false;
+        navigationDebounceTimer = null;
       }
-
-      // Обновяваме предишните стойности
-      previousQuery.value = {
-        orderby: newOrderBy,
-        order: newOrder,
-        filter: newFilter,
-      };
-
-      // Reset loading състоянието при промяна на филтри
-      hasEverLoaded.value = false;
-      loadCategoryProducts();
-    }
+    }, 50); // 50ms debounce - баланс между бързина и предотвратяване на race conditions
   },
+  { deep: true }
 );
 
 // Watcher за промени в pageInfo за динамично обновяване на next/prev links
