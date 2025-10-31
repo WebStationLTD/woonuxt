@@ -112,9 +112,13 @@ export default defineNuxtConfig({
     inlineSSRStyles: false, // FALSE - @nuxtjs/critters се грижи за critical CSS extraction
     defaults: {
       nuxtLink: {
-        prefetch: true, // Viewport prefetch (когато линкът е видим)
+        // ⚡ ОПТИМИЗАЦИЯ НИВО 1.4: SMART PREFETCH
+        // Само при interaction (hover/focus) - НЕ viewport
+        // Това предотвратява агресивен prefetch който може да забавя навигацията
+        prefetch: false, // ИЗКЛЮЧЕН viewport prefetch (беше true)
         prefetchOn: {
-          interaction: true, // Hover/focus prefetch (по-бързо!)
+          interaction: true, // ✅ ЗАПАЗЕН hover/focus prefetch
+          visibility: false, // ❌ ИЗКЛЮЧЕН visibility prefetch
         },
       },
     },
