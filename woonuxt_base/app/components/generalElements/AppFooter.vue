@@ -68,7 +68,7 @@ useHead({
                   >
                 </li>
                 <li><NuxtLink to="/за-нас/" class="text-gray-300 hover:text-white transition-colors">За нас</NuxtLink></li>
-                <li><a href="/example/facilities" class="text-gray-300 hover:text-white transition-colors">Оборудвани обекти</a></li>
+                <li><NuxtLink to="/category/оборудвани-обекти/" class="text-gray-300 hover:text-white transition-colors">Оборудвани обекти</NuxtLink></li>
                 <li><NuxtLink to="/contact" class="text-gray-300 hover:text-white transition-colors">Контакти</NuxtLink></li>
                 <li><a href="/example/articles" class="text-gray-300 hover:text-white transition-colors">Статии</a></li>
               </ul>

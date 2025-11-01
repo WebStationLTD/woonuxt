@@ -12,7 +12,23 @@ const { initiatePayment, redirectToGateway, validatePaymentData, generateOrderDe
 const runtimeConfig = useRuntimeConfig();
 const stripeKey = runtimeConfig.public?.STRIPE_PUBLISHABLE_KEY as string | null;
 
-const buttonText = ref<string>(isProcessingOrder.value ? t('messages.general.processing') : t('messages.shop.checkoutButton'));
+// Динамичен текст на бутона според метода на плащане
+const buttonText = computed<string>(() => {
+  if (isProcessingOrder.value) {
+    return t('messages.general.processing');
+  }
+  
+  const paymentMethodId = orderInput.value.paymentMethod?.id;
+  
+  // Ако е наложен платеж или банков превод -> "Поръчване"
+  if (paymentMethodId === 'cod' || paymentMethodId === 'bacs') {
+    return 'Поръчване';
+  }
+  
+  // За всички останали (картови плащания) -> "Към плащане"
+  return t('messages.shop.checkoutButton');
+});
+
 const isCheckoutDisabled = computed<boolean>(() => isProcessingOrder.value || isUpdatingCart.value || !orderInput.value.paymentMethod);
 
 const isInvalidEmail = ref<boolean>(false);

@@ -35,9 +35,15 @@ const paginatedPosts = computed(() => {
   return allPosts.value.slice(start, end);
 });
 
-// SEO
+// SEO - използваме текстова версия без HTML за meta описанието
+const stripHtml = (html: string) => {
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+};
+
 const pageTitle = `${category.value.name} - Статии и новини | Leaderfitness`;
-const pageDescription = category.value.description || `Всички статии от категория ${category.value.name}. Следете нашите новини, както и страницата ни във Facebook | Leaderfitness.com`;
+const pageDescription = category.value.description 
+  ? stripHtml(category.value.description).substring(0, 160) 
+  : `Всички статии от категория ${category.value.name}. Следете нашите новини, както и страницата ни във Facebook | Leaderfitness.com`;
 
 useHead({
   title: pageTitle,
@@ -66,10 +72,6 @@ useHead({
       <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3">
         {{ category?.name }}
       </h1>
-      
-      <p v-if="category?.description" class="text-base md:text-lg text-gray-600 max-w-3xl mx-auto">
-        {{ category.description }}
-      </p>
       
       <div class="mt-6 flex items-center justify-center gap-2 text-sm text-gray-500">
         <Icon name="ion:documents-outline" size="18" class="text-[#9c0100]" />

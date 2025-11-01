@@ -8,6 +8,52 @@ const post = ref<any>(null);
 const loading = ref(true);
 const error = ref<any>(null);
 
+// Lightbox за gallery снимки
+const lightboxOpen = ref(false);
+const lightboxImage = ref('');
+const lightboxAlt = ref('');
+
+const openLightbox = (src: string, alt: string) => {
+  lightboxImage.value = src;
+  lightboxAlt.value = alt;
+  lightboxOpen.value = true;
+  document.body.style.overflow = 'hidden';
+};
+
+const closeLightbox = () => {
+  lightboxOpen.value = false;
+  document.body.style.overflow = '';
+};
+
+// Добавяме click handlers към gallery снимките след рендериране
+onMounted(() => {
+  nextTick(() => {
+    initializeGalleries();
+  });
+});
+
+// Функция за инициализация на galleries
+const initializeGalleries = () => {
+  const galleries = document.querySelectorAll('.wp-block-gallery, .blocks-gallery-grid');
+  
+  galleries.forEach((gallery: any) => {
+    const images = gallery.querySelectorAll('img');
+    
+    images.forEach((img: any) => {
+      img.style.cursor = 'pointer';
+      
+      img.addEventListener('click', () => {
+        openLightbox(img.src, img.alt || '');
+      });
+    });
+  });
+};
+
+// Почистваме при unmount
+onUnmounted(() => {
+  document.body.style.overflow = '';
+});
+
 // Списък с резервирани страници, които не са блог постове
 const reservedRoutes = [
   'categories',
@@ -202,6 +248,18 @@ const formatDate = (dateString: string) => {
       <!-- Съдържание -->
       <div class="prose prose-lg max-w-none" v-html="post.content"></div>
     </div>
+
+    <!-- Lightbox за gallery снимки -->
+    <Teleport to="body">
+      <Transition name="lightbox">
+        <div v-if="lightboxOpen" class="fixed inset-0 z-[100000] flex items-center justify-center bg-black bg-opacity-90" @click="closeLightbox">
+          <button @click="closeLightbox" class="absolute top-4 right-4 z-[100001] text-white hover:text-gray-300 transition-colors p-2">
+            <Icon name="ion:close" size="32" />
+          </button>
+          <img :src="lightboxImage" :alt="lightboxAlt" class="max-w-[90vw] max-h-[90vh] object-contain" @click.stop />
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -224,5 +282,70 @@ const formatDate = (dateString: string) => {
 
 .prose p {
   @apply mb-4;
+}
+
+/* Lightbox transitions */
+.lightbox-enter-active,
+.lightbox-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.lightbox-enter-from,
+.lightbox-leave-to {
+  opacity: 0;
+}
+</style>
+
+<style>
+/* Чиста и елегантна gallery */
+.wp-block-gallery,
+.blocks-gallery-grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  margin: 2rem 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.wp-block-gallery figure,
+.blocks-gallery-item {
+  flex: 1 1 auto !important;
+  margin: 0 !important;
+  min-width: 200px !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.3s ease !important;
+}
+
+.wp-block-gallery figure:hover,
+.blocks-gallery-item:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+.wp-block-gallery img,
+.blocks-gallery-grid img {
+  width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  object-fit: cover !important;
+  cursor: pointer !important;
+  transition: opacity 0.3s ease !important;
+}
+
+.wp-block-gallery img:hover,
+.blocks-gallery-grid img:hover {
+  opacity: 0.95 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .wp-block-gallery figure,
+  .blocks-gallery-item {
+    min-width: 100% !important;
+  }
 }
 </style>

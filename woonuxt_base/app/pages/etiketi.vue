@@ -48,9 +48,6 @@ useHead({
               {{ tag.name }}
             </h3>
             <p v-if="tag.count" class="text-sm text-gray-500 mt-1">{{ tag.count }} {{ tag.count === 1 ? 'продукт' : 'продукта' }}</p>
-            <div v-if="tag.description" class="text-xs text-gray-400 mt-2 line-clamp-2">
-              {{ tag.description }}
-            </div>
           </div>
         </NuxtLink>
       </div>
