@@ -1,7 +1,7 @@
 <script setup>
 const { updateShippingMethod } = useCart();
-const runtimeConfig = useRuntimeConfig();
-const currencySymbol = runtimeConfig?.public?.CURRENCY_SYMBOL || ' лв.';
+const { formatDualPrice } = usePriceFormatter();
+
 const props = defineProps({
   options: { type: Array, required: true },
   activeOption: { type: String, required: true },
@@ -9,6 +9,16 @@ const props = defineProps({
 
 const setActiveOption = async (id) => {
   await updateShippingMethod(id);
+};
+
+// Форматираме цената на доставката в двоен формат (лв. / €)
+const formatShippingCost = (cost) => {
+  if (!cost) return formatDualPrice(0, true);
+  
+  // Парсваме цената (може да е string или number)
+  const costNum = typeof cost === 'string' ? parseFloat(cost.replace(/[^\d.]/g, '')) : cost;
+  
+  return formatDualPrice(costNum, true);
 };
 </script>
 
@@ -22,7 +32,7 @@ const setActiveOption = async (id) => {
       @click="setActiveOption(option.id)">
       <div>
         <div class="text-sm leading-tight text-gray-500" v-html="option.label"></div>
-        <div class="font-semibold text-gray-600">{{ currencySymbol }}{{ option.cost }}</div>
+        <div class="font-semibold text-gray-600">{{ formatShippingCost(option.cost) }}</div>
       </div>
 
       <icon name="ion:checkmark-circle" size="20" class="ml-auto text-primary checkmark opacity-0" />

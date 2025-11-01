@@ -32,6 +32,7 @@ mutation Checkout(
       orderKey
       subtotal
       total
+      rawTotal: total(format: RAW)
       subtotal
       totalTax
       shippingTotal
