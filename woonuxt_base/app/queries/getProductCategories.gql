@@ -10,6 +10,7 @@ query getProductCategories($first: Int, $after: String, $slug: [String], $hideEm
       databaseId
       id
       description
+      seconddesc
       count
       uri
       image {
@@ -26,6 +27,7 @@ query getProductCategories($first: Int, $after: String, $slug: [String], $hideEm
           name
           databaseId
           description
+          seconddesc
           count
           uri
           image {

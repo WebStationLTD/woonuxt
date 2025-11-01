@@ -10,6 +10,7 @@ query getProductTags($first: Int, $after: String, $slug: [String], $hideEmpty: B
       databaseId
       id
       description
+      seconddesc
       count
       uri
     }

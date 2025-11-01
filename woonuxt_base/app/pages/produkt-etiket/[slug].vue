@@ -28,6 +28,7 @@ interface Tag {
   slug?: string | null;
   name?: string | null;
   description?: string | null;
+  seconddesc?: string | null;
   count?: number | null;
   databaseId?: number | null;
   uri?: string | null;
@@ -782,6 +783,18 @@ const loadTagCount = async (filters: any) => {
 
         <!-- Заредено съдържание -->
         <div v-else-if="products?.length" class="space-y-8">
+          <!-- H1 Заглавие за SEO -->
+          <h1 v-if="matchingTagRef?.name && currentPageNumber === 1" class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+            {{ matchingTagRef.name }}
+          </h1>
+
+          <!-- Първо описание над продуктите (под H1) -->
+          <TopTaxonomyDescription
+            v-if="matchingTagRef?.description && currentPageNumber === 1"
+            :description="matchingTagRef.description"
+            :name="matchingTagRef.name"
+            :max-height="120" />
+
           <!-- Header с контроли -->
           <div class="flex items-center justify-between w-full gap-4 mb-2 sm:mb-8">
             <ProductResultCount />
@@ -800,8 +813,12 @@ const loadTagCount = async (filters: any) => {
           <!-- Пагинация -->
           <PaginationServer :category-count="tagCount" />
 
-          <!-- Описание на етикета -->
-          <TaxonomyDescription v-if="matchingTagRef?.description" :description="matchingTagRef.description" :name="matchingTagRef.name" :max-height="200" />
+          <!-- Второ описание под продуктите -->
+          <SecondTaxonomyDescription
+            v-if="matchingTagRef?.seconddesc"
+            :description="matchingTagRef.seconddesc"
+            :name="matchingTagRef.name"
+            :max-height="200" />
         </div>
 
         <!-- No products found - показва се само когато сме сигурни че няма продукти -->

@@ -28,6 +28,7 @@ interface Category {
   slug?: string | null;
   name?: string | null;
   description?: string | null;
+  seconddesc?: string | null;
   count?: number | null;
   databaseId?: number | null;
   image?: {
@@ -949,6 +950,18 @@ const loadCategoryCount = async (filters: any) => {
 
         <!-- Заредено съдържание -->
         <div v-else-if="products?.length" class="space-y-8">
+          <!-- H1 Заглавие за SEO -->
+          <h1 v-if="matchingCategoryRef?.name && currentPageNumber === 1" class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+            {{ matchingCategoryRef.name }}
+          </h1>
+
+          <!-- Първо описание над продуктите (под H1) -->
+          <TopTaxonomyDescription
+            v-if="matchingCategoryRef?.description && currentPageNumber === 1"
+            :description="matchingCategoryRef.description"
+            :name="matchingCategoryRef.name"
+            :max-height="120" />
+
           <!-- Header с контроли -->
           <div class="flex items-center justify-between w-full gap-4 mb-2 sm:mb-8">
             <ProductResultCount />
@@ -972,10 +985,10 @@ const loadCategoryCount = async (filters: any) => {
           <!-- Пагинация -->
           <PaginationServer :category-count="categoryCount" />
 
-          <!-- Описание на категорията -->
-          <TaxonomyDescription
-            v-if="matchingCategoryRef?.description"
-            :description="matchingCategoryRef.description"
+          <!-- Второ описание под продуктите -->
+          <SecondTaxonomyDescription
+            v-if="matchingCategoryRef?.seconddesc"
+            :description="matchingCategoryRef.seconddesc"
             :name="matchingCategoryRef.name"
             :max-height="200" />
         </div>
