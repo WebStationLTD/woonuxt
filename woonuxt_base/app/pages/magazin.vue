@@ -489,9 +489,11 @@ onMounted(async () => {
 
 // ⚡ ОПТИМИЗАЦИЯ: Зареждаме продуктите и на SSR за instant navigation
 // Използваме useAsyncData за да работи правилно на SSR
+const hasEverLoaded = useState<boolean>('products-ever-loaded', () => false);
 await useAsyncData('magazin-products', async () => {
   if (process.server) {
     await loadProductsFromRoute();
+    hasEverLoaded.value = true; // Маркираме че SSR е заредил
   }
   return null;
 });

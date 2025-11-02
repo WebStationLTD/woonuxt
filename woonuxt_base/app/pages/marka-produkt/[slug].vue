@@ -22,7 +22,7 @@ const { frontEndUrl } = useHelpers();
 const route = useRoute();
 
 // Проследяваме дали някога сме зареждали данни
-const hasEverLoaded = ref(false);
+const hasEverLoaded = useState<boolean>(`brand-loaded-${slug}`, () => false);
 
 interface Brand {
   slug?: string | null;
@@ -543,6 +543,7 @@ onMounted(async () => {
 await useAsyncData(`brand-products-${slug}`, async () => {
   if (process.server) {
     await loadBrandProducts();
+    hasEverLoaded.value = true; // Маркираме че SSR е заредил
   }
   return null;
 });

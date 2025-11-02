@@ -22,7 +22,7 @@ const { frontEndUrl } = useHelpers();
 const route = useRoute();
 
 // Проследяваме дали някога сме зареждали данни
-const hasEverLoaded = ref(false);
+const hasEverLoaded = useState<boolean>(`tag-loaded-${slug}`, () => false);
 
 interface Tag {
   slug?: string | null;
@@ -523,6 +523,7 @@ onMounted(async () => {
 await useAsyncData(`tag-products-${slug}`, async () => {
   if (process.server) {
     await loadTagProducts();
+    hasEverLoaded.value = true; // Маркираме че SSR е заредил
   }
   return null;
 });

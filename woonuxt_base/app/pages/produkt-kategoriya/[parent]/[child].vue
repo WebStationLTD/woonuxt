@@ -22,7 +22,7 @@ const { frontEndUrl } = useHelpers();
 const route = useRoute();
 
 // Проследяваме дали някога сме зареждали данни
-const hasEverLoaded = ref(false);
+const hasEverLoaded = useState<boolean>(`child-category-loaded-${parentSlug}-${childSlug}`, () => false);
 
 interface Category {
   slug?: string | null;
@@ -520,6 +520,7 @@ onMounted(async () => {
 await useAsyncData(`child-category-products-${parentSlug}-${childSlug}`, async () => {
   if (process.server) {
     await loadCategoryProducts();
+    hasEverLoaded.value = true; // Маркираме че SSR е заредил
   }
   return null;
 });
