@@ -519,9 +519,13 @@ onMounted(async () => {
 });
 
 // ⚡ ОПТИМИЗАЦИЯ: Зареждаме продуктите и на SSR за instant navigation
-if (process.server) {
-  await loadTagProducts();
-}
+// Използваме useAsyncData за да работи правилно на SSR
+await useAsyncData(`tag-products-${slug}`, async () => {
+  if (process.server) {
+    await loadTagProducts();
+  }
+  return null;
+});
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher

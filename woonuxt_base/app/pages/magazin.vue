@@ -488,9 +488,13 @@ onMounted(async () => {
 });
 
 // ⚡ ОПТИМИЗАЦИЯ: Зареждаме продуктите и на SSR за instant navigation
-if (process.server) {
-  await loadProductsFromRoute();
-}
+// Използваме useAsyncData за да работи правилно на SSR
+await useAsyncData('magazin-products', async () => {
+  if (process.server) {
+    await loadProductsFromRoute();
+  }
+  return null;
+});
 
 // Слушаме за промени в route-а
 watch(
