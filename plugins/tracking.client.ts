@@ -55,10 +55,12 @@ export default defineNuxtPlugin((nuxtApp) => {
       gtmScript.src = `https://www.googletagmanager.com/gtm.js?id=${config.public.GTM_ID}`;
       document.head.appendChild(gtmScript);
 
-      // Добавяме GTM noscript iframe за fallback
-      const gtmIframe = document.createElement("noscript");
-      gtmIframe.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=${config.public.GTM_ID}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
-      document.body.insertBefore(gtmIframe, document.body.firstChild);
+      // Добавяме GTM noscript iframe за fallback (само ако body вече съществува)
+      if (document.body) {
+        const gtmIframe = document.createElement("noscript");
+        gtmIframe.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=${config.public.GTM_ID}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
+        document.body.insertBefore(gtmIframe, document.body.firstChild);
+      }
 
       if (config.public.TRACKING_DEBUG) {
         console.log("✅ GTM initialized:", config.public.GTM_ID);

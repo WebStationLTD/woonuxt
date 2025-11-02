@@ -54,24 +54,28 @@ const toggleExpansion = () => {
       <div ref="descriptionRef" :style="descriptionStyle" class="prose prose-sm max-w-none text-gray-700 leading-relaxed" v-html="description"></div>
 
       <!-- Градиент overlay когато е съкратено -->
-      <div
-        v-if="shouldShowButton && !isExpanded"
-        class="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none"></div>
+      <ClientOnly>
+        <div
+          v-if="shouldShowButton && !isExpanded"
+          class="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none"></div>
+      </ClientOnly>
     </div>
 
     <!-- Бутон "Виж повече" / "Виж по-малко" -->
-    <div v-if="shouldShowButton" class="mt-3 flex justify-center">
-      <button
-        @click="toggleExpansion"
-        class="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-medium text-xs sm:text-sm shadow-sm">
-        <span>{{ isExpanded ? 'Виж по-малко' : 'Виж повече' }}</span>
-        <Icon
-          :name="isExpanded ? 'ion:chevron-up' : 'ion:chevron-down'"
-          size="14"
-          class="transition-transform duration-300"
-          :class="{ 'rotate-180': isExpanded && !isExpanded }" />
-      </button>
-    </div>
+    <ClientOnly>
+      <div v-if="shouldShowButton" class="mt-3 flex justify-center">
+        <button
+          @click="toggleExpansion"
+          class="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-medium text-xs sm:text-sm shadow-sm">
+          <span>{{ isExpanded ? 'Виж по-малко' : 'Виж повече' }}</span>
+          <Icon
+            :name="isExpanded ? 'ion:chevron-up' : 'ion:chevron-down'"
+            size="14"
+            class="transition-transform duration-300"
+            :class="{ 'rotate-180': isExpanded && !isExpanded }" />
+        </button>
+      </div>
+    </ClientOnly>
   </div>
 </template>
 
