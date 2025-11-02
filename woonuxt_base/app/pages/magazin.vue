@@ -480,23 +480,13 @@ onMounted(async () => {
 
   // Изчакваме един tick за да се установи правилно route състоянието
   await nextTick();
-  
-  // ⚡ КРИТИЧНО: Зареждаме продуктите САМО на client (SSR вече ги е заредил)
-  if (process.client && !hasEverLoaded.value) {
-    await loadProductsFromRoute();
-  }
+  await loadProductsFromRoute();
 });
 
-// ⚡ ОПТИМИЗАЦИЯ: Зареждаме продуктите и на SSR за instant navigation
-// Използваме useAsyncData за да работи правилно на SSR
-const hasEverLoaded = useState<boolean>('products-ever-loaded', () => false);
-await useAsyncData('magazin-products', async () => {
-  if (process.server) {
-    await loadProductsFromRoute();
-    hasEverLoaded.value = true; // Маркираме че SSR е заредил
-  }
-  return null;
-});
+// За SSR зареждане при извикване на страницата - ВРЕМЕННО ИЗКЛЮЧЕНО заради composables грешки
+// if (process.server) {
+//   loadProductsFromRoute();
+// }
 
 // Слушаме за промени в route-а
 watch(

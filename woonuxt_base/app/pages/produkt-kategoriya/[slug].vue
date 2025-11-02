@@ -22,7 +22,7 @@ const { frontEndUrl } = useHelpers();
 const route = useRoute();
 
 // Проследяваме дали някога сме зареждали данни
-const hasEverLoaded = useState<boolean>(`category-loaded-${slug}`, () => false);
+const hasEverLoaded = ref(false);
 
 interface Category {
   slug?: string | null;
@@ -631,10 +631,8 @@ onMounted(async () => {
   // Изчакваме един tick за да се установи правилно route състоянието
   await nextTick();
   
-  // ⚡ КРИТИЧНО: Зареждаме продуктите САМО на client (SSR вече ги е заредил)
-  if (process.client && !hasEverLoaded.value) {
-    await loadCategoryProducts();
-  }
+  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
+  await loadCategoryProducts();
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {
@@ -642,15 +640,11 @@ onMounted(async () => {
   });
 });
 
-// ⚡ ОПТИМИЗАЦИЯ: Зареждаме продуктите и на SSR за instant navigation
-// Използваме useAsyncData за да работи правилно на SSR
-await useAsyncData(`category-products-${slug}`, async () => {
-  if (process.server) {
-    await loadCategoryProducts();
-    hasEverLoaded.value = true; // Маркираме че SSR е заредил
-  }
-  return null;
-});
+// ⚠️ ВАЖНО: Зареждаме САМО в onMounted за да избегнем двойно зареждане
+// SSR вече зарежда category data, продуктите се зареждат client-side
+// if (process.server) {
+//   loadCategoryProducts();
+// }
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher

@@ -22,7 +22,7 @@ const { frontEndUrl } = useHelpers();
 const route = useRoute();
 
 // Проследяваме дали някога сме зареждали данни
-const hasEverLoaded = useState<boolean>(`brand-loaded-${slug}`, () => false);
+const hasEverLoaded = ref(false);
 
 interface Brand {
   slug?: string | null;
@@ -527,10 +527,8 @@ onMounted(async () => {
 
   await nextTick();
   
-  // ⚡ КРИТИЧНО: Зареждаме продуктите САМО на client (SSR вече ги е заредил)
-  if (process.client && !hasEverLoaded.value) {
-    await loadBrandProducts();
-  }
+  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
+  await loadBrandProducts();
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {
@@ -538,15 +536,10 @@ onMounted(async () => {
   });
 });
 
-// ⚡ ОПТИМИЗАЦИЯ: Зареждаме продуктите и на SSR за instant navigation
-// Използваме useAsyncData за да работи правилно на SSR
-await useAsyncData(`brand-products-${slug}`, async () => {
-  if (process.server) {
-    await loadBrandProducts();
-    hasEverLoaded.value = true; // Маркираме че SSR е заредил
-  }
-  return null;
-});
+// За SSR зареждане - ПРЕМАХНАТО за по-бърза SSR!
+// if (process.server) {
+//   loadBrandProducts();
+// }
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher

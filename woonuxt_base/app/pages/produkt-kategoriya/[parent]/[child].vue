@@ -22,7 +22,7 @@ const { frontEndUrl } = useHelpers();
 const route = useRoute();
 
 // Проследяваме дали някога сме зареждали данни
-const hasEverLoaded = useState<boolean>(`child-category-loaded-${parentSlug}-${childSlug}`, () => false);
+const hasEverLoaded = ref(false);
 
 interface Category {
   slug?: string | null;
@@ -504,10 +504,8 @@ onMounted(async () => {
 
   await nextTick();
   
-  // ⚡ КРИТИЧНО: Зареждаме продуктите САМО на client (SSR вече ги е заредил)
-  if (process.client && !hasEverLoaded.value) {
-    await loadCategoryProducts();
-  }
+  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
+  await loadCategoryProducts();
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {
@@ -515,15 +513,10 @@ onMounted(async () => {
   });
 });
 
-// ⚡ ОПТИМИЗАЦИЯ: Зареждаме продуктите и на SSR за instant navigation
-// Използваме useAsyncData за да работи правилно на SSR
-await useAsyncData(`child-category-products-${parentSlug}-${childSlug}`, async () => {
-  if (process.server) {
-    await loadCategoryProducts();
-    hasEverLoaded.value = true; // Маркираме че SSR е заредил
-  }
-  return null;
-});
+// За SSR зареждане при извикване на страницата (точно като в родителските категории)
+if (process.server) {
+  loadCategoryProducts();
+}
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE (като в родителските категории)
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher
