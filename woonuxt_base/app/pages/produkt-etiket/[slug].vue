@@ -507,8 +507,10 @@ onMounted(async () => {
 
   await nextTick();
   
-  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
-  await loadTagProducts();
+  // ⚡ КРИТИЧНО: Зареждаме продуктите САМО на client (SSR вече ги е заредил)
+  if (process.client && !hasEverLoaded.value) {
+    await loadTagProducts();
+  }
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {
@@ -516,10 +518,10 @@ onMounted(async () => {
   });
 });
 
-// За SSR зареждане - ПРЕМАХНАТО за по-бърза SSR!
-// if (process.server) {
-//   loadTagProducts();
-// }
+// ⚡ ОПТИМИЗАЦИЯ: Зареждаме продуктите и на SSR за instant navigation
+if (process.server) {
+  await loadTagProducts();
+}
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher

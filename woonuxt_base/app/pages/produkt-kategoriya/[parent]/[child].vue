@@ -504,8 +504,10 @@ onMounted(async () => {
 
   await nextTick();
   
-  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
-  await loadCategoryProducts();
+  // ⚡ КРИТИЧНО: Зареждаме продуктите САМО на client (SSR вече ги е заредил)
+  if (process.client && !hasEverLoaded.value) {
+    await loadCategoryProducts();
+  }
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {
@@ -513,9 +515,9 @@ onMounted(async () => {
   });
 });
 
-// За SSR зареждане при извикване на страницата (точно като в родителските категории)
+// ⚡ ОПТИМИЗАЦИЯ: Зареждаме продуктите и на SSR за instant navigation
 if (process.server) {
-  loadCategoryProducts();
+  await loadCategoryProducts();
 }
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE (като в родителските категории)

@@ -480,13 +480,17 @@ onMounted(async () => {
 
   // Изчакваме един tick за да се установи правилно route състоянието
   await nextTick();
-  await loadProductsFromRoute();
+  
+  // ⚡ КРИТИЧНО: Зареждаме продуктите САМО на client (SSR вече ги е заредил)
+  if (process.client && !hasEverLoaded.value) {
+    await loadProductsFromRoute();
+  }
 });
 
-// За SSR зареждане при извикване на страницата - ВРЕМЕННО ИЗКЛЮЧЕНО заради composables грешки
-// if (process.server) {
-//   loadProductsFromRoute();
-// }
+// ⚡ ОПТИМИЗАЦИЯ: Зареждаме продуктите и на SSR за instant navigation
+if (process.server) {
+  await loadProductsFromRoute();
+}
 
 // Слушаме за промени в route-а
 watch(

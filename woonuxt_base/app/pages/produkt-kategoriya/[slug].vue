@@ -631,8 +631,10 @@ onMounted(async () => {
   // Изчакваме един tick за да се установи правилно route състоянието
   await nextTick();
   
-  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
-  await loadCategoryProducts();
+  // ⚡ КРИТИЧНО: Зареждаме продуктите САМО на client (SSR вече ги е заредил)
+  if (process.client && !hasEverLoaded.value) {
+    await loadCategoryProducts();
+  }
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {
@@ -640,11 +642,10 @@ onMounted(async () => {
   });
 });
 
-// ⚠️ ВАЖНО: Зареждаме САМО в onMounted за да избегнем двойно зареждане
-// SSR вече зарежда category data, продуктите се зареждат client-side
-// if (process.server) {
-//   loadCategoryProducts();
-// }
+// ⚡ ОПТИМИЗАЦИЯ: Зареждаме продуктите и на SSR за instant navigation
+if (process.server) {
+  await loadCategoryProducts();
+}
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher
