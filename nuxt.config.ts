@@ -124,13 +124,19 @@ export default defineNuxtConfig({
     },
   },
 
-  // Critical CSS конфигурация (автоматично екстрактва само critical CSS)
+  // ⚡ EMERGENCY FIX 2.3: АГРЕСИВНА CRITICAL CSS КОНФИГУРАЦИЯ
+  // Елиминира render-blocking CSS (спестява ~150ms)
   critters: {
     config: {
       preload: "swap", // Preload non-critical CSS асинхронно
       pruneSource: false, // Запазва оригиналния CSS файл за browser cache
-      reduceInlineStyles: true, // Минимизира инлайн стиловете
+      reduceInlineStyles: false, // ⚡ ПРОМЕНЕНО: false за да инлайнва повече critical CSS
       preloadFonts: true, // Preload критични шрифтове
+      // ⚡ ДОБАВЕНО: Агресивни настройки
+      inlineFonts: true, // Инлайнва critical fonts като data URIs
+      minimumExternalSize: 0, // Инлайнва всички малки CSS файлове
+      compress: true, // Компресира инлайнвания CSS
+      logLevel: "info", // За debugging
     },
   },
 
@@ -198,9 +204,26 @@ export default defineNuxtConfig({
           crossorigin: "",
         },
         { rel: "dns-prefetch", href: "https://admin.leaderfitness.net" },
+        // ⚡ EMERGENCY FIX 2.1: Font Optimization
+        // Preconnect за Google Fonts - спестява ~150ms (Lighthouse препоръка)
+        {
+          rel: "preconnect",
+          href: "https://fonts.googleapis.com",
+          crossorigin: "",
+        },
+        {
+          rel: "preconnect",
+          href: "https://fonts.gstatic.com",
+          crossorigin: "",
+        },
+        { rel: "dns-prefetch", href: "https://fonts.googleapis.com" },
+        { rel: "dns-prefetch", href: "https://fonts.gstatic.com" },
       ],
     },
   },
+
+  // ⚡ EMERGENCY FIX 2.1: Global CSS за font optimization
+  css: ["~/assets/css/fonts.css"],
 
   // Sitemap генерирането е изнесено в scripts/generate-sitemap.js
   // защото Headless WP блокира server-side GraphQL заявки без Origin header

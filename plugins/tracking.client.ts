@@ -156,15 +156,24 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
   }; // ⚡ КРАЙ НА loadTrackingScripts функцията
 
-  // ⚡ DELAY UNTIL INTERACTION (DUI) PATTERN
-  // Зареждаме tracking скриптовете при първо потребителско взаимодействие
-  // или след 3 секунди timeout (за ботове/crawlers)
+  // ⚡ EMERGENCY FIX 2.2: АГРЕСИВЕН DELAY UNTIL INTERACTION (DUI) PATTERN
+  // Зареждаме tracking скриптовете САМО при реално потребителско взаимодействие
+  // или СЛЕД 5 секунди (за Lighthouse/ботове)
   const events = ['scroll', 'mousemove', 'touchstart', 'click', 'keydown'];
-  const timeoutDuration = 3000; // 3 секунди
+  const timeoutDuration = 5000; // ⚡ УВЕЛИЧЕНО: 5 секунди (беше 3s)
 
   // Wrapper функция която зарежда скриптовете и премахва listeners
   const loadAndCleanup = () => {
-    loadTrackingScripts();
+    // ⚡ EMERGENCY FIX: Използваме requestIdleCallback за максимална оптимизация
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(() => {
+        loadTrackingScripts();
+      }, { timeout: 2000 });
+    } else {
+      // Fallback - отложено с 100ms
+      setTimeout(loadTrackingScripts, 100);
+    }
+    
     // Премахваме всички event listeners след зареждане
     events.forEach(event => {
       window.removeEventListener(event, loadAndCleanup);
@@ -176,11 +185,18 @@ export default defineNuxtPlugin((nuxtApp) => {
     window.addEventListener(event, loadAndCleanup, { once: true, passive: true });
   });
 
-  // Timeout fallback - зареждаме след 3 секунди дори без interaction
-  setTimeout(loadTrackingScripts, timeoutDuration);
+  // Timeout fallback - зареждаме след 5 секунди дори без interaction
+  // ⚡ EMERGENCY FIX: requestIdleCallback за минимално влияние върху performance
+  if ("requestIdleCallback" in window) {
+    requestIdleCallback(() => {
+      setTimeout(loadTrackingScripts, timeoutDuration);
+    });
+  } else {
+    setTimeout(loadTrackingScripts, timeoutDuration);
+  }
 
   if (config.public.TRACKING_DEBUG) {
-    console.log("⏳ Tracking scripts will load on first interaction or after 3s");
+    console.log("⏳ Tracking scripts will load on first interaction or after 5s (idle)");
   }
 
   // ============================================

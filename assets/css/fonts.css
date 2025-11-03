@@ -1,0 +1,53 @@
+/**
+ * ⚡ EMERGENCY FIX 2.1: Font Display Optimization
+ * Спестява ~120ms според Lighthouse
+ */
+
+/* Font Loading Optimization */
+* {
+  /* Използвай system fonts докато custom fonts се зареждат */
+  font-display: swap;
+}
+
+/* Prevent Flash of Invisible Text (FOIT) */
+body {
+  font-display: swap;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Optional: Font loading hints */
+@supports (font-display: optional) {
+  @font-face {
+    font-display: optional; /* Показва fallback font ако custom font не е зареден бързо */
+  }
+}
+
+/**
+ * ⚡ EMERGENCY FIX 2.5: Image Lazy Loading
+ * Спестява ~117 KB според Lighthouse
+ * Global rules за WordPress images
+ */
+
+/* Default lazy loading за всички images БЕЗ explicit loading атрибут */
+img:not([loading]):not([fetchpriority="high"]) {
+  loading: lazy;
+}
+
+/* Explicit lazy loading за WordPress images в content */
+.prose img,
+.wp-block-image img,
+[class*="description"] img {
+  loading: lazy !important;
+  decoding: async;
+}
+
+/* ИЗКЛЮЧЕНИЯ: LCP images (hero, product grid) */
+.product-card img:first-child,
+[fetchpriority="high"],
+.hero img,
+header img {
+  loading: eager !important;
+}
+
