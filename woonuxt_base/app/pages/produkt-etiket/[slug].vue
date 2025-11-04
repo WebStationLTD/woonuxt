@@ -214,24 +214,26 @@ const generateTagSeoMeta = () => {
   };
 };
 
-// Генерираме и задаваме първоначалните SEO метаданни
-const initialTagSeoMeta = generateTagSeoMeta();
+// Генерираме SEO метаданните (статични за SSR, реактивни за client)
+// ⚡ КРИТИЧНО: За SSR генерираме ВЕДНЪЖ, за client използваме computed
+const ssrTagSeoMeta = generateTagSeoMeta();
+const initialTagSeoMeta = computed(() => generateTagSeoMeta());
 
 useSeoMeta({
-  title: initialTagSeoMeta.title,
-  description: initialTagSeoMeta.description,
-  ogTitle: initialTagSeoMeta.title,
-  ogDescription: initialTagSeoMeta.description,
+  title: () => initialTagSeoMeta.value.title,
+  description: () => initialTagSeoMeta.value.description,
+  ogTitle: () => initialTagSeoMeta.value.title,
+  ogDescription: () => initialTagSeoMeta.value.description,
   ogType: 'website',
-  ogUrl: initialTagSeoMeta.canonicalUrl,
+  ogUrl: () => initialTagSeoMeta.value.canonicalUrl,
   twitterCard: 'summary_large_image',
-  twitterTitle: initialTagSeoMeta.title,
-  twitterDescription: initialTagSeoMeta.description,
+  twitterTitle: () => initialTagSeoMeta.value.title,
+  twitterDescription: () => initialTagSeoMeta.value.description,
   robots: 'index, follow',
 });
 
-// Reactive refs за SEO links
-const headLinks = ref([{ rel: 'canonical', href: initialTagSeoMeta.canonicalUrl }]);
+// Reactive refs за SEO links (използваме SSR стойност за initial render)
+const headLinks = ref([{ rel: 'canonical', href: ssrTagSeoMeta.canonicalUrl }]);
 
 useHead({
   link: headLinks,

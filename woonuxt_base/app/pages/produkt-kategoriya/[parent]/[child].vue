@@ -140,8 +140,10 @@ const generateChildCategorySeoMeta = () => {
   }
 
   // Използваме категорийните SEO данни като база
-  const baseTitle = matchingCategory?.seo?.title || `${matchingCategory?.name} | ${parentCategory?.name || 'Категории'}` || `${childSlug} | ${parentSlug}`;
-  const baseDescription = matchingCategory?.seo?.metaDesc || matchingCategory?.description || `Продукти в категория ${matchingCategory?.name || childSlug}`;
+  const category = matchingCategoryRef.value || matchingCategory;
+  const parent = parentCategoryRef.value || parentCategory;
+  const baseTitle = category?.seo?.title || `${category?.name} | ${parent?.name || 'Категории'}` || `${childSlug} | ${parentSlug}`;
+  const baseDescription = category?.seo?.metaDesc || category?.description || `Продукти в категория ${category?.name || childSlug}`;
 
   // Генерираме динамичен title и description
   let finalTitle = baseTitle;
@@ -165,27 +167,29 @@ const generateChildCategorySeoMeta = () => {
   };
 };
 
-// Генерираме и задаваме SEO метаданните
-const childCategorySeoMeta = generateChildCategorySeoMeta();
+// Генерираме SEO метаданните (статични за SSR, реактивни за client)
+// ⚡ КРИТИЧНО: За SSR генерираме ВЕДНЪЖ, за client използваме computed
+const initialChildSeoMeta = generateChildCategorySeoMeta();
+const childCategorySeoMeta = computed(() => generateChildCategorySeoMeta());
 
 useSeoMeta({
-  title: childCategorySeoMeta.title,
-  description: childCategorySeoMeta.description,
-  keywords: matchingCategory?.seo?.metaKeywords,
-  ogTitle: matchingCategory?.seo?.opengraphTitle || childCategorySeoMeta.title,
-  ogDescription: matchingCategory?.seo?.opengraphDescription || childCategorySeoMeta.description,
+  title: () => childCategorySeoMeta.value.title,
+  description: () => childCategorySeoMeta.value.description,
+  keywords: () => (matchingCategoryRef.value || matchingCategory)?.seo?.metaKeywords,
+  ogTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphTitle || childCategorySeoMeta.value.title,
+  ogDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphDescription || childCategorySeoMeta.value.description,
   ogType: 'website',
-  ogUrl: childCategorySeoMeta.canonicalUrl,
-  ogImage: matchingCategory?.seo?.opengraphImage?.sourceUrl,
+  ogUrl: () => childCategorySeoMeta.value.canonicalUrl,
+  ogImage: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphImage?.sourceUrl,
   twitterCard: 'summary_large_image',
-  twitterTitle: matchingCategory?.seo?.twitterTitle || childCategorySeoMeta.title,
-  twitterDescription: matchingCategory?.seo?.twitterDescription || childCategorySeoMeta.description,
-  twitterImage: matchingCategory?.seo?.twitterImage?.sourceUrl,
-  robots: matchingCategory?.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
+  twitterTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterTitle || childCategorySeoMeta.value.title,
+  twitterDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterDescription || childCategorySeoMeta.value.description,
+  twitterImage: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterImage?.sourceUrl,
+  robots: () => (matchingCategoryRef.value || matchingCategory)?.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
 });
 
-// Reactive refs за SEO links (точно като в категориите)
-const headLinks = ref([{ rel: 'canonical', href: childCategorySeoMeta.canonicalUrl }]);
+// Reactive refs за SEO links (използваме SSR стойност за initial render)
+const headLinks = ref([{ rel: 'canonical', href: initialChildSeoMeta.canonicalUrl }]);
 
 useHead({
   link: headLinks,
@@ -486,12 +490,12 @@ const updateChildCategorySeoMeta = () => {
   useSeoMeta({
     title: newSeoMeta.title,
     description: newSeoMeta.description,
-    keywords: matchingCategory?.seo?.metaKeywords,
-    ogTitle: matchingCategory?.seo?.opengraphTitle || newSeoMeta.title,
-    ogDescription: matchingCategory?.seo?.opengraphDescription || newSeoMeta.description,
+    keywords: () => (matchingCategoryRef.value || matchingCategory)?.seo?.metaKeywords,
+    ogTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphTitle || newSeoMeta.title,
+    ogDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphDescription || newSeoMeta.description,
     ogUrl: newSeoMeta.canonicalUrl,
-    twitterTitle: matchingCategory?.seo?.twitterTitle || newSeoMeta.title,
-    twitterDescription: matchingCategory?.seo?.twitterDescription || newSeoMeta.description,
+    twitterTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterTitle || newSeoMeta.title,
+    twitterDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterDescription || newSeoMeta.description,
   });
 
   // Обновяваме и rel=prev/next links при навигация (точно като в родителските категории)

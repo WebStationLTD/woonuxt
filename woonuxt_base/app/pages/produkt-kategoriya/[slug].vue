@@ -220,8 +220,9 @@ const generateCategorySeoMeta = () => {
   }
 
   // Използваме категорийните SEO данни като база (вместо Yoast)
-  const baseTitle = matchingCategory?.seo?.title || matchingCategory?.name || 'Категория';
-  const baseDescription = matchingCategory?.seo?.metaDesc || matchingCategory?.description || `Продукти в категория ${matchingCategory?.name}`;
+  const category = matchingCategoryRef.value || matchingCategory;
+  const baseTitle = category?.seo?.title || category?.name || 'Категория';
+  const baseDescription = category?.seo?.metaDesc || category?.description || `Продукти в категория ${category?.name}`;
 
   // Генерираме динамичен title и description точно като в /magazin
   let finalTitle = baseTitle;
@@ -245,26 +246,28 @@ const generateCategorySeoMeta = () => {
   };
 };
 
-// Генерираме и задаваме първоначалните SEO метаданни
-const initialCategorySeoMeta = generateCategorySeoMeta();
+// Генерираме SEO метаданните (статични за SSR, реактивни за client)
+// ⚡ КРИТИЧНО: За SSR генерираме ВЕДНЪЖ, за client използваме computed
+const ssrCategorySeoMeta = generateCategorySeoMeta();
+const initialCategorySeoMeta = computed(() => generateCategorySeoMeta());
 
 useSeoMeta({
-  title: initialCategorySeoMeta.title,
-  description: initialCategorySeoMeta.description,
-  ogTitle: matchingCategory?.seo?.opengraphTitle || initialCategorySeoMeta.title,
-  ogDescription: matchingCategory?.seo?.opengraphDescription || initialCategorySeoMeta.description,
+  title: () => initialCategorySeoMeta.value.title,
+  description: () => initialCategorySeoMeta.value.description,
+  ogTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphTitle || initialCategorySeoMeta.value.title,
+  ogDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphDescription || initialCategorySeoMeta.value.description,
   ogType: 'website',
-  ogUrl: initialCategorySeoMeta.canonicalUrl,
-  ogImage: matchingCategory?.seo?.opengraphImage?.sourceUrl,
+  ogUrl: () => initialCategorySeoMeta.value.canonicalUrl,
+  ogImage: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphImage?.sourceUrl,
   twitterCard: 'summary_large_image',
-  twitterTitle: matchingCategory?.seo?.twitterTitle || initialCategorySeoMeta.title,
-  twitterDescription: matchingCategory?.seo?.twitterDescription || initialCategorySeoMeta.description,
-  twitterImage: matchingCategory?.seo?.twitterImage?.sourceUrl,
-  robots: matchingCategory?.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
+  twitterTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterTitle || initialCategorySeoMeta.value.title,
+  twitterDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterDescription || initialCategorySeoMeta.value.description,
+  twitterImage: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterImage?.sourceUrl,
+  robots: () => (matchingCategoryRef.value || matchingCategory)?.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
 });
 
-// Reactive refs за SEO links
-const headLinks = ref([{ rel: 'canonical', href: initialCategorySeoMeta.canonicalUrl }]);
+// Reactive refs за SEO links (използваме SSR стойност за initial render)
+const headLinks = ref([{ rel: 'canonical', href: ssrCategorySeoMeta.canonicalUrl }]);
 
 useHead({
   link: headLinks,
@@ -413,12 +416,12 @@ const updateCategorySeoMeta = () => {
   useSeoMeta({
     title: newSeoMeta.title,
     description: newSeoMeta.description,
-    keywords: matchingCategory?.seo?.metaKeywords,
-    ogTitle: matchingCategory?.seo?.opengraphTitle || newSeoMeta.title,
-    ogDescription: matchingCategory?.seo?.opengraphDescription || newSeoMeta.description,
+    keywords: () => (matchingCategoryRef.value || matchingCategory)?.seo?.metaKeywords,
+    ogTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphTitle || newSeoMeta.title,
+    ogDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphDescription || newSeoMeta.description,
     ogUrl: newSeoMeta.canonicalUrl,
-    twitterTitle: matchingCategory?.seo?.twitterTitle || newSeoMeta.title,
-    twitterDescription: matchingCategory?.seo?.twitterDescription || newSeoMeta.description,
+    twitterTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterTitle || newSeoMeta.title,
+    twitterDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterDescription || newSeoMeta.description,
   });
 
   // Обновяваме и rel=prev/next links при навигация

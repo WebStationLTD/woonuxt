@@ -201,9 +201,10 @@ const generateBrandSeoMeta = () => {
     }
   }
 
-  // Използваме марката данни като база
-  const baseTitle = matchingBrand?.name ? `Марка: ${matchingBrand.name}` : 'Марка';
-  const baseDescription = matchingBrand?.description || `Продукти от марка ${matchingBrand?.name}`;
+  // Използваме марката данни като база (reactive ref за динамични обновления)
+  const brand = matchingBrandRef.value || matchingBrand;
+  const baseTitle = brand?.name ? `Марка: ${brand.name}` : 'Марка';
+  const baseDescription = brand?.description || `Продукти от марка ${brand?.name}`;
 
   // Генерираме динамичен title и description
   let finalTitle = baseTitle;
@@ -227,24 +228,26 @@ const generateBrandSeoMeta = () => {
   };
 };
 
-// Генерираме и задаваме първоначалните SEO метаданни
-const initialBrandSeoMeta = generateBrandSeoMeta();
+// Генерираме SEO метаданните (статични за SSR, реактивни за client)
+// ⚡ КРИТИЧНО: За SSR генерираме ВЕДНЪЖ, за client използваме computed
+const ssrBrandSeoMeta = generateBrandSeoMeta();
+const initialBrandSeoMeta = computed(() => generateBrandSeoMeta());
 
 useSeoMeta({
-  title: initialBrandSeoMeta.title,
-  description: initialBrandSeoMeta.description,
-  ogTitle: initialBrandSeoMeta.title,
-  ogDescription: initialBrandSeoMeta.description,
+  title: () => initialBrandSeoMeta.value.title,
+  description: () => initialBrandSeoMeta.value.description,
+  ogTitle: () => initialBrandSeoMeta.value.title,
+  ogDescription: () => initialBrandSeoMeta.value.description,
   ogType: 'website',
-  ogUrl: initialBrandSeoMeta.canonicalUrl,
+  ogUrl: () => initialBrandSeoMeta.value.canonicalUrl,
   twitterCard: 'summary_large_image',
-  twitterTitle: initialBrandSeoMeta.title,
-  twitterDescription: initialBrandSeoMeta.description,
+  twitterTitle: () => initialBrandSeoMeta.value.title,
+  twitterDescription: () => initialBrandSeoMeta.value.description,
   robots: 'index, follow',
 });
 
-// Reactive refs за SEO links
-const headLinks = ref([{ rel: 'canonical', href: initialBrandSeoMeta.canonicalUrl }]);
+// Reactive refs за SEO links (използваме SSR стойност за initial render)
+const headLinks = ref([{ rel: 'canonical', href: ssrBrandSeoMeta.canonicalUrl }]);
 
 useHead({
   link: headLinks,

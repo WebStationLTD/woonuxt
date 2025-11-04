@@ -111,11 +111,14 @@ const warmUpCache = async () => {
 };
 
 // Зареждаме Yoast SEO данните за shop страницата
-let shopSeo = null;
+let shopSeoData = null;
 if (process.server) {
   const { data: seoData } = await useAsyncGql('getShopPage');
-  shopSeo = seoData.value?.page?.seo || null;
+  shopSeoData = seoData.value?.page?.seo || null;
 }
+
+// Reactive ref за SEO данни
+const shopSeo = ref(shopSeoData);
 
 // Функция за генериране на SEO данни според страницата
 const generateSeoMeta = () => {
@@ -153,26 +156,28 @@ const generateSeoMeta = () => {
   };
 };
 
-// Генерираме и задаваме SEO метаданните
-const seoMeta = generateSeoMeta();
+// Генерираме SEO метаданните (статични за SSR, реактивни за client)
+// ⚡ КРИТИЧНО: За SSR генерираме ВЕДНЪЖ, за client използваме computed
+const ssrSeoMeta = generateSeoMeta();
+const seoMeta = computed(() => generateSeoMeta());
 
 useSeoMeta({
-  title: seoMeta.title,
-  description: seoMeta.description,
-  ogTitle: shopSeo?.opengraphTitle || seoMeta.title,
-  ogDescription: shopSeo?.opengraphDescription || seoMeta.description,
+  title: () => seoMeta.value.title,
+  description: () => seoMeta.value.description,
+  ogTitle: () => shopSeo.value?.opengraphTitle || seoMeta.value.title,
+  ogDescription: () => shopSeo.value?.opengraphDescription || seoMeta.value.description,
   ogType: 'website',
-  ogUrl: seoMeta.canonicalUrl,
-  ogImage: shopSeo?.opengraphImage?.sourceUrl,
+  ogUrl: () => seoMeta.value.canonicalUrl,
+  ogImage: () => shopSeo.value?.opengraphImage?.sourceUrl,
   twitterCard: 'summary_large_image',
-  twitterTitle: shopSeo?.twitterTitle || seoMeta.title,
-  twitterDescription: shopSeo?.twitterDescription || seoMeta.description,
-  twitterImage: shopSeo?.twitterImage?.sourceUrl,
-  robots: shopSeo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
+  twitterTitle: () => shopSeo.value?.twitterTitle || seoMeta.value.title,
+  twitterDescription: () => shopSeo.value?.twitterDescription || seoMeta.value.description,
+  twitterImage: () => shopSeo.value?.twitterImage?.sourceUrl,
+  robots: () => shopSeo.value?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
 });
 
-// Canonical URL (използваме само frontend URL-а)
-const canonicalUrl = seoMeta.canonicalUrl;
+// Canonical URL (използваме SSR стойност за initial render)
+const canonicalUrl = ssrSeoMeta.canonicalUrl;
 
 // ПОПРАВКА: Използваме reactive ref за линковете, точно както в категориите
 const headLinks = ref([{ rel: 'canonical', href: canonicalUrl }]);

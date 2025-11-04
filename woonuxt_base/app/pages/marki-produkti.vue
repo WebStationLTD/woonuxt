@@ -34,77 +34,70 @@ const sortedLetters = computed(() => {
   return Object.keys(brandsByLetter.value || {}).sort();
 });
 
-// СУПЕР БЪРЗА функция за зареждане на марки (БЕЗ count)
-const loadAllBrands = async () => {
-  const uniqueBrands = new Map();
+// ⚡ КРИТИЧНО: Зареждаме марките при SSR за МГНОВЕНО показване
+let initialBrands: any[] = [];
+
+if (process.server) {
+  console.log('🔥 BRANDS PAGE: Loading brands on SSR...');
 
   try {
-    // СУПЕР БЪРЗА заявка САМО за марки - БЕЗ продуктни данни
-    const { data } = await useAsyncGql('getBrands', {
-      first: 800, // Увеличаваме за да покрием всички марки
+    // ⚡ ULTRA БЪРЗА заявка ДИРЕКТНО от terms таксономия (БЕЗ продукти!)
+    const { data } = await useAsyncGql('getProductBrands', {
+      first: 500, // Достатъчно за всички марки
+      hideEmpty: true, // Само марки с продукти
     });
 
-    const result = data.value?.products;
-    if (result && result.nodes) {
-      const products = result.nodes;
-
-      // Извличаме марки от продуктите
-      for (const product of products) {
-        if (product.pwbBrands && product.pwbBrands.length > 0) {
-          for (const brand of product.pwbBrands) {
-            if (brand && brand.slug && !uniqueBrands.has(brand.slug)) {
-              uniqueBrands.set(brand.slug, {
-                databaseId: brand.databaseId,
-                slug: brand.slug,
-                name: brand.name,
-                // Премахнахме count и description
-              });
-            }
-          }
-        }
-      }
-
-      // Ако имаме по-малко от 40 марки, може да заредим още малко
-      if (uniqueBrands.size < 40 && result.pageInfo?.hasNextPage) {
-        // Зареждаме още един малък batch за да уловим всички марки
-        const { data: additionalData } = await useAsyncGql('getBrands', {
-          first: 400, // По-голям допълнителен batch
-          after: result.pageInfo.endCursor,
-        });
-
-        if (additionalData.value?.products?.nodes) {
-          const additionalProducts = additionalData.value.products.nodes;
-
-          for (const product of additionalProducts) {
-            if (product.pwbBrands && product.pwbBrands.length > 0) {
-              for (const brand of product.pwbBrands) {
-                if (brand && brand.slug && !uniqueBrands.has(brand.slug)) {
-                  uniqueBrands.set(brand.slug, {
-                    databaseId: brand.databaseId,
-                    slug: brand.slug,
-                    name: brand.name,
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Конвертираме в array и сортираме по име
-      const brandsList = Array.from(uniqueBrands.values());
-      brands.value = brandsList.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    if (data.value?.terms?.nodes) {
+      initialBrands = data.value.terms.nodes
+        .filter((brand: any) => brand && brand.slug && brand.name)
+        .map((brand: any) => ({
+          databaseId: brand.databaseId,
+          slug: brand.slug,
+          name: brand.name,
+        }))
+        .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+      
+      console.log('🔥 BRANDS PAGE: SSR loaded', initialBrands.length, 'brands');
     }
   } catch (error) {
-    console.error('Error loading brands:', error);
-  } finally {
-    isLoading.value = false;
+    console.error('❌ BRANDS PAGE: SSR brand loading failed:', error);
   }
-};
+}
 
-// Зареждаме марките при mount
+// Инициализираме със SSR данните
+brands.value = initialBrands;
+isLoading.value = initialBrands.length === 0; // Loading само ако няма SSR данни
+
+// При client-side, ако няма SSR данни, зареждаме async
 onMounted(async () => {
-  await loadAllBrands();
+  if (process.client && brands.value.length === 0) {
+    console.log('🔥 BRANDS PAGE: Loading brands on client (no SSR data)...');
+
+    try {
+      // ⚡ ULTRA БЪРЗА заявка ДИРЕКТНО от terms таксономия
+      const { data } = await useAsyncGql('getProductBrands', {
+        first: 500,
+        hideEmpty: true,
+      });
+
+      if (data.value?.terms?.nodes) {
+        brands.value = data.value.terms.nodes
+          .filter((brand: any) => brand && brand.slug && brand.name)
+          .map((brand: any) => ({
+            databaseId: brand.databaseId,
+            slug: brand.slug,
+            name: brand.name,
+          }))
+          .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        
+        console.log('🔥 BRANDS PAGE: Client loaded', brands.value.length, 'brands');
+      }
+    } catch (error) {
+      console.error('Error loading brands:', error);
+    } finally {
+      isLoading.value = false;
+    }
+  }
 });
 
 // SEO за страницата с всички марки
