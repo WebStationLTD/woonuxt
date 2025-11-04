@@ -1,0 +1,43 @@
+query getTagAttributes($tagSlug: [String], $first: Int = 100, $after: String) {
+  products(first: $first, after: $after, where: { tagIn: $tagSlug, visibility: VISIBLE, status: "publish" }) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      # САМО атрибутни данни - никакви излишни полета
+      terms(first: 50) {
+        nodes {
+          taxonomyName
+          slug
+          name
+          databaseId
+        }
+      }
+      # Използваме inline fragment за ProductWithAttributes
+      ... on ProductWithAttributes {
+        attributes {
+          nodes {
+            variation
+            name
+            id
+            options
+            label
+            scope
+            ... on GlobalProductAttribute {
+              terms {
+                nodes {
+                  name
+                  slug
+                  taxonomyName
+                  databaseId
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

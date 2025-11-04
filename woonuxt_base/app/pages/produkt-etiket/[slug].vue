@@ -319,23 +319,8 @@ const extractRouteParams = () => {
   return { slug, pageNumber };
 };
 
-// Функция за обновяване на SEO метаданните при промяна на route
-const updateTagSeoMeta = () => {
-  const newSeoMeta = generateTagSeoMeta();
-
-  useSeoMeta({
-    title: newSeoMeta.title,
-    description: newSeoMeta.description,
-    ogTitle: newSeoMeta.title,
-    ogDescription: newSeoMeta.description,
-    ogUrl: newSeoMeta.canonicalUrl,
-    twitterTitle: newSeoMeta.title,
-    twitterDescription: newSeoMeta.description,
-  });
-
-  // Обновяваме и rel=prev/next links при навигация
-  updateTagNextPrevLinks();
-};
+// ⚡ ПРЕМАХНАТО: updateTagSeoMeta() - вече не е нужна!
+// Reactive computed tagSeoMeta автоматично се обновява когато matchingTagRef се промени.
 
 // Race condition protection
 let isNavigating = false;
@@ -475,14 +460,10 @@ const loadTagProducts = async () => {
     }
 
     hasEverLoaded.value = true;
-
-    await nextTick();
     currentPage.value = targetPageNumber;
 
-    await nextTick();
-    updateTagNextPrevLinks();
-
-    await nextTick();
+    // ⚡ ОПТИМИЗАЦИЯ: Обновяваме next/prev links БЕЗ await (не блокира)
+    nextTick(() => updateTagNextPrevLinks());
   } catch (error) {
     hasEverLoaded.value = true;
   } finally {
@@ -498,35 +479,49 @@ onMounted(async () => {
     filter: (route.query.filter as string | null) || null,
   };
 
-  // ⚡ ФАЗА 1.2: При client-side navigation БЕЗ кеш, зареждаме tag data async
-  if (process.client && !matchingTag) {
-    console.log('🔄 CLIENT (TAG): Loading tag data async (no cache)');
-    try {
-      const { data: tagData } = await useAsyncGql(
-        'getProductTags' as any,
-        {
-          slug: [slug],
-          hideEmpty: false,
-          first: 10,
-        } as any,
-      );
+  // ⚡ КРИТИЧНО: При client-side навигация ВИНАГИ зареждаме актуални tag data!
+  if (process.client) {
+    // Ако няма кеш или е стар етикет, зареждаме нов
+    const cachedData = getCachedTagData();
+    const needsRefresh = !cachedData || cachedData.tag?.slug !== slug;
+    
+    if (needsRefresh) {
+      console.log('🔄 CLIENT (TAG): Loading tag data async (no cache or different tag)');
+      try {
+        const { data: tagData } = await useAsyncGql(
+          'getProductTags' as any,
+          {
+            slug: [slug],
+            hideEmpty: false,
+            first: 10,
+          } as any,
+        );
 
-      if (tagData.value?.productTags?.nodes?.[0]) {
-        matchingTag = tagData.value.productTags.nodes[0] as Tag;
-        realProductCount = matchingTag.count || 0;
-        matchingTagRef.value = matchingTag;
-        
-        // Кешираме данните
-        setCachedTagData(matchingTag, realProductCount);
-        console.log('✅ CLIENT (TAG): Tag data loaded and cached');
-      } else {
+        if (tagData.value?.productTags?.nodes?.[0]) {
+          matchingTag = tagData.value.productTags.nodes[0] as Tag;
+          realProductCount = matchingTag.count || 0;
+          matchingTagRef.value = matchingTag;
+          
+          // Кешираме данните
+          setCachedTagData(matchingTag, realProductCount);
+          console.log('✅ CLIENT (TAG): Tag data loaded and cached');
+        } else {
+          throw showError({ statusCode: 404, statusMessage: 'Етикетът не е намерен' });
+        }
+      } catch (error) {
+        console.error('Failed to load tag:', error);
         throw showError({ statusCode: 404, statusMessage: 'Етикетът не е намерен' });
       }
-    } catch (error) {
-      console.error('Failed to load tag:', error);
-      throw showError({ statusCode: 404, statusMessage: 'Етикетът не е намерен' });
+    } else {
+      console.log('✅ CLIENT (TAG): Using cached tag data');
+      matchingTag = cachedData.tag;
+      realProductCount = cachedData.count;
+      matchingTagRef.value = matchingTag;
     }
   }
+
+  // След като имаме tag data, зареждаме продуктите
+  await loadTagProducts();
 
   // ⚡ ОПТИМИЗАЦИЯ: Cache warming в requestIdleCallback (не блокира main thread)
   if (process.client && 'requestIdleCallback' in window) {
@@ -536,11 +531,6 @@ onMounted(async () => {
   } else if (process.client) {
     setTimeout(() => warmUpCache(), 100);
   }
-
-  await nextTick();
-  
-  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
-  await loadTagProducts();
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {
@@ -548,10 +538,10 @@ onMounted(async () => {
   });
 });
 
-// За SSR зареждане - ПРЕМАХНАТО за по-бърза SSR!
-// if (process.server) {
-//   loadTagProducts();
-// }
+// ⚠️ ВАЖНО: Зареждаме на SSR за да имаме продукти при hard refresh!
+if (process.server) {
+  await loadTagProducts();
+}
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher
@@ -588,7 +578,7 @@ watch(
         if (pathChanged) {
           hasEverLoaded.value = false;
           await loadTagProducts();
-          updateTagSeoMeta();
+          // ⚡ ПРЕМАХНАТО: updateTagSeoMeta() - reactive computed ще се обнови автоматично!
           return;
         }
 
@@ -776,7 +766,7 @@ const loadTagCount = async (filters: any) => {
       <!-- Sidebar с филтри - вляво -->
       <aside v-if="storeSettings?.showFilters" class="hidden lg:block lg:w-80 flex-shrink-0">
         <div class="sticky top-4">
-          <Filters :hide-categories="true" />
+          <Filters :hide-categories="true" :tag-slug="currentSlug" />
         </div>
       </aside>
 

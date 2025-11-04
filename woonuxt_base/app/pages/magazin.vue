@@ -493,10 +493,10 @@ onMounted(async () => {
   await loadProductsFromRoute();
 });
 
-// За SSR зареждане при извикване на страницата - ВРЕМЕННО ИЗКЛЮЧЕНО заради composables грешки
-// if (process.server) {
-//   loadProductsFromRoute();
-// }
+// ⚠️ ВАЖНО: Зареждаме на SSR за да имаме продукти при hard refresh!
+if (process.server) {
+  await loadProductsFromRoute();
+}
 
 // Слушаме за промени в route-а
 watch(

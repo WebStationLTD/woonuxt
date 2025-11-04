@@ -121,6 +121,10 @@ const parentCategoryRef = ref<Category | null>(parentCategory);
 
 // Функция за генериране на SEO данни според страницата (взета от основната категория)
 const generateChildCategorySeoMeta = () => {
+  // ⚡ КРИТИЧНО: Извличаме актуалните slugs от route-а вместо top-level константи!
+  const actualParentSlug = route.params.parent ? decodeURIComponent(String(route.params.parent)) : parentSlug;
+  const actualChildSlug = route.params.child ? decodeURIComponent(String(route.params.child)) : childSlug;
+  
   // Получаваме номера на страницата (проверяваме и params и query)
   let pageNumber = 1;
 
@@ -142,8 +146,21 @@ const generateChildCategorySeoMeta = () => {
   // Използваме категорийните SEO данни като база
   const category = matchingCategoryRef.value || matchingCategory;
   const parent = parentCategoryRef.value || parentCategory;
-  const baseTitle = category?.seo?.title || `${category?.name} | ${parent?.name || 'Категории'}` || `${childSlug} | ${parentSlug}`;
-  const baseDescription = category?.seo?.metaDesc || category?.description || `Продукти в категория ${category?.name || childSlug}`;
+  
+  // ⚡ КРИТИЧНО: Проверяваме дали category съответства на актуалния slug!
+  const isCategoryMatching = category?.slug === actualChildSlug;
+  
+  const baseTitle = isCategoryMatching && category?.seo?.title 
+    ? category.seo.title 
+    : isCategoryMatching && category?.name 
+      ? `${category.name} | ${parent?.name || 'Категории'}`
+      : `${actualChildSlug} | ${actualParentSlug}`;
+      
+  const baseDescription = isCategoryMatching && category?.seo?.metaDesc 
+    ? category.seo.metaDesc 
+    : isCategoryMatching && category?.description 
+      ? category.description 
+      : `Продукти в категория ${actualChildSlug}`;
 
   // Генерираме динамичен title и description
   let finalTitle = baseTitle;
@@ -156,8 +173,8 @@ const generateChildCategorySeoMeta = () => {
 
   const canonicalUrl =
     pageNumber === 1
-      ? `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${parentSlug}/${childSlug}`
-      : `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${parentSlug}/${childSlug}/page/${pageNumber}`;
+      ? `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${actualParentSlug}/${actualChildSlug}`
+      : `${frontEndUrl || 'https://leaderfitness.net'}/produkt-kategoriya/${actualParentSlug}/${actualChildSlug}/page/${pageNumber}`;
 
   return {
     title: finalTitle,
@@ -170,20 +187,24 @@ const generateChildCategorySeoMeta = () => {
 // Генерираме SEO метаданните (статични за SSR, реактивни за client)
 // ⚡ КРИТИЧНО: За SSR генерираме ВЕДНЪЖ, за client използваме computed
 const initialChildSeoMeta = generateChildCategorySeoMeta();
-const childCategorySeoMeta = computed(() => generateChildCategorySeoMeta());
+const childCategorySeoMeta = computed(() => {
+  const seoMeta = generateChildCategorySeoMeta();
+  // ⚡ КРИТИЧНО: Ако title е undefined, връщаме SSR данните
+  return seoMeta.title && seoMeta.title !== 'undefined' ? seoMeta : initialChildSeoMeta;
+});
 
 useSeoMeta({
-  title: () => childCategorySeoMeta.value.title,
-  description: () => childCategorySeoMeta.value.description,
+  title: () => childCategorySeoMeta.value.title || initialChildSeoMeta.title,
+  description: () => childCategorySeoMeta.value.description || initialChildSeoMeta.description,
   keywords: () => (matchingCategoryRef.value || matchingCategory)?.seo?.metaKeywords,
-  ogTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphTitle || childCategorySeoMeta.value.title,
-  ogDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphDescription || childCategorySeoMeta.value.description,
+  ogTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphTitle || childCategorySeoMeta.value.title || initialChildSeoMeta.title,
+  ogDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphDescription || childCategorySeoMeta.value.description || initialChildSeoMeta.description,
   ogType: 'website',
-  ogUrl: () => childCategorySeoMeta.value.canonicalUrl,
+  ogUrl: () => childCategorySeoMeta.value.canonicalUrl || initialChildSeoMeta.canonicalUrl,
   ogImage: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphImage?.sourceUrl,
   twitterCard: 'summary_large_image',
-  twitterTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterTitle || childCategorySeoMeta.value.title,
-  twitterDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterDescription || childCategorySeoMeta.value.description,
+  twitterTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterTitle || childCategorySeoMeta.value.title || initialChildSeoMeta.title,
+  twitterDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterDescription || childCategorySeoMeta.value.description || initialChildSeoMeta.description,
   twitterImage: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterImage?.sourceUrl,
   robots: () => (matchingCategoryRef.value || matchingCategory)?.seo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
 });
@@ -470,12 +491,8 @@ const loadCategoryProducts = async () => {
     // Принудително обновяване на currentPage за правилна синхронизация с pagination
     currentPage.value = pageNumber;
 
-    // Обновяваме next/prev links след зареждане на данните
-    await nextTick();
-    updateChildCategoryNextPrevLinks();
-
-    // Принудително завършване на loading състоянието
-    await nextTick();
+    // ⚡ ОПТИМИЗАЦИЯ: Обновяваме next/prev links БЕЗ await (не блокира)
+    nextTick(() => updateChildCategoryNextPrevLinks());
   } catch (error) {
     hasEverLoaded.value = true; // Маркираме като опитано дори при грешка
   } finally {
@@ -483,24 +500,8 @@ const loadCategoryProducts = async () => {
   }
 };
 
-// Функция за обновяване на SEO метаданните при промяна на route
-const updateChildCategorySeoMeta = () => {
-  const newSeoMeta = generateChildCategorySeoMeta();
-
-  useSeoMeta({
-    title: newSeoMeta.title,
-    description: newSeoMeta.description,
-    keywords: () => (matchingCategoryRef.value || matchingCategory)?.seo?.metaKeywords,
-    ogTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphTitle || newSeoMeta.title,
-    ogDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.opengraphDescription || newSeoMeta.description,
-    ogUrl: newSeoMeta.canonicalUrl,
-    twitterTitle: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterTitle || newSeoMeta.title,
-    twitterDescription: () => (matchingCategoryRef.value || matchingCategory)?.seo?.twitterDescription || newSeoMeta.description,
-  });
-
-  // Обновяваме и rel=prev/next links при навигация (точно като в родителските категории)
-  updateChildCategoryNextPrevLinks();
-};
+// ⚡ ПРЕМАХНАТО: updateChildCategorySeoMeta() - вече не е нужна!
+// Reactive computed childCategorySeoMeta автоматично се обновява когато matchingCategoryRef се промени.
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.3: ПАРАЛЕЛИЗИРАН onMounted (като в родителските категории)
 onMounted(async () => {
@@ -511,42 +512,54 @@ onMounted(async () => {
     filter: (route.query.filter as string | null) || null,
   };
 
-  // ⚡ ФАЗА 1.2: При client-side navigation БЕЗ SSR data, зареждаме category data async
-  if (process.client && !matchingCategory) {
-    try {
-      const { data: categoryData } = await useAsyncGql('getProductCategories', { slug: [childSlug], hideEmpty: true });
+  // ⚡ КРИТИЧНО: При client-side навигация ВИНАГИ зареждаме актуални category data!
+  if (process.client) {
+    // Извличаме актуалния child slug от route-а
+    const actualChildSlug = route.params.child ? decodeURIComponent(String(route.params.child)) : '';
+    
+    // Проверяваме дали трябва да refresh-нем данните (нова категория или няма данни)
+    const needsRefresh = !matchingCategory || matchingCategory.slug !== actualChildSlug;
+    
+    if (needsRefresh) {
+      console.log('🔄 CLIENT (CHILD): Loading category data async (no cache or different category)', { actualChildSlug });
+      
+      try {
+        const [categoryData, productsCountData] = await Promise.all([
+          useAsyncGql('getProductCategories', { slug: [actualChildSlug], hideEmpty: true }),
+          useAsyncGql('getProductsCount', { slug: [actualChildSlug] }),
+        ]);
 
-      // Получаваме точния брой продукти с ЛЕКА заявка
-      const { data: productsCountData } = await useAsyncGql('getProductsCount', {
-        slug: [childSlug],
-      });
+        if (categoryData.data.value?.productCategories?.nodes?.[0]) {
+          matchingCategory = categoryData.data.value.productCategories.nodes[0];
+          matchingCategoryRef.value = matchingCategory;
 
-      if (categoryData.value?.productCategories?.nodes?.[0]) {
-        matchingCategory = categoryData.value.productCategories.nodes[0];
-        matchingCategoryRef.value = matchingCategory;
-
-        // Ако има parent информация
-        if (matchingCategory.parent?.node) {
-          parentCategory = matchingCategory.parent.node as Category;
-          parentCategoryRef.value = parentCategory;
+          // Ако има parent информация
+          if (matchingCategory.parent?.node) {
+            parentCategory = matchingCategory.parent.node as Category;
+            parentCategoryRef.value = parentCategory;
+          }
+        } else {
+          throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
         }
-      } else {
+
+        // Получаваме точния брой
+        if (productsCountData.data.value?.products?.edges) {
+          realProductCount = productsCountData.data.value.products.edges.length;
+        }
+      } catch (error) {
+        console.error('Failed to load category:', error);
         throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
       }
-
-      // Получаваме точния брой
-      if (productsCountData.value?.products?.edges) {
-        realProductCount = productsCountData.value.products.edges.length;
+    } else {
+      console.log('✅ CLIENT (CHILD): Using existing category data (already loaded)');
+      matchingCategoryRef.value = matchingCategory;
+      if (parentCategory) {
+        parentCategoryRef.value = parentCategory;
       }
-    } catch (error) {
-      console.error('Failed to load category:', error);
-      throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
     }
   }
 
-  await nextTick();
-  
-  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
+  // След като имаме category data, зареждаме продуктите
   await loadCategoryProducts();
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
@@ -596,7 +609,7 @@ watch(
         if (pathChanged) {
           hasEverLoaded.value = false;
           await loadCategoryProducts();
-          updateChildCategorySeoMeta();
+          // ⚡ ПРЕМАХНАТО: updateChildCategorySeoMeta() - reactive computed ще се обнови автоматично!
           return;
         }
 
@@ -669,49 +682,64 @@ watch(
 );
 
 // Watcher за филтри - актуализира правилния count при промяна на филтрите (взет от magazin.vue)
+// ⚡ ОПТИМИЗАЦИЯ: Debounce за да избегнем race condition с loadCategoryProducts
+let childFilterCountDebounceTimer: NodeJS.Timeout | null = null;
 watch(
   () => route.query.filter,
   async (newFilter) => {
-    if (process.client && newFilter) {
-      // Парсваме филтрите със същата логика като в loadCategoryProducts
-      const filterQuery = newFilter as string;
+    if (!process.client) return;
 
-      const getFilterValues = (filterName: string): string[] => {
-        const match = filterQuery.match(new RegExp(`${filterName}\\[([^\\]]*)\\]`));
-        if (!match || !match[1]) return [];
-        return match[1].split(',').filter((val) => val && val.trim());
-      };
-
-      const filters: any = {};
-
-      // OnSale филтър
-      const onSale = getFilterValues('sale');
-      if (onSale.length > 0 && onSale.includes('true')) {
-        filters.onSale = true;
-      }
-
-      // Ценови филтър
-      const priceRange = getFilterValues('price');
-      if (priceRange.length === 2 && priceRange[0] && priceRange[1]) {
-        const minPrice = parseFloat(priceRange[0]);
-        const maxPrice = parseFloat(priceRange[1]);
-        if (!isNaN(minPrice) && !isNaN(maxPrice)) {
-          filters.minPrice = minPrice;
-          filters.maxPrice = maxPrice;
-        }
-      }
-
-      // Search филтър
-      const searchTerm = getFilterValues('search');
-      if (searchTerm.length > 0 && searchTerm[0]) {
-        filters.search = searchTerm[0];
-      }
-
-      await loadCategoryCount(filters);
-    } else if (process.client && !newFilter) {
-      // Когато няма филтри, нулираме filtered count
-      filteredCategoryCount.value = null;
+    // Чистим предишния timer
+    if (childFilterCountDebounceTimer) {
+      clearTimeout(childFilterCountDebounceTimer);
     }
+
+    // ⚡ КРИТИЧНО: Изчакваме loadCategoryProducts() да завърши преди да зареждаме count
+    childFilterCountDebounceTimer = setTimeout(async () => {
+      if (newFilter) {
+        // Зареждаме count САМО ако не сме в процес на navigation
+        if (!isChildNavigating) {
+          // Парсваме филтрите със същата логика като в loadCategoryProducts
+          const filterQuery = newFilter as string;
+
+          const getFilterValues = (filterName: string): string[] => {
+            const match = filterQuery.match(new RegExp(`${filterName}\\[([^\\]]*)\\]`));
+            if (!match || !match[1]) return [];
+            return match[1].split(',').filter((val) => val && val.trim());
+          };
+
+          const filters: any = {};
+
+          // OnSale филтър
+          const onSale = getFilterValues('sale');
+          if (onSale.length > 0 && onSale.includes('true')) {
+            filters.onSale = true;
+          }
+
+          // Ценови филтър
+          const priceRange = getFilterValues('price');
+          if (priceRange.length === 2 && priceRange[0] && priceRange[1]) {
+            const minPrice = parseFloat(priceRange[0]);
+            const maxPrice = parseFloat(priceRange[1]);
+            if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+              filters.minPrice = minPrice;
+              filters.maxPrice = maxPrice;
+            }
+          }
+
+          // Search филтър
+          const searchTerm = getFilterValues('search');
+          if (searchTerm.length > 0 && searchTerm[0]) {
+            filters.search = searchTerm[0];
+          }
+
+          await loadCategoryCount(filters);
+        }
+      } else {
+        // Когато няма филтри, нулираме filtered count
+        filteredCategoryCount.value = null;
+      }
+    }, 150); // 150ms debounce - изчакваме loadCategoryProducts да стартира
   },
 );
 

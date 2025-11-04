@@ -343,23 +343,8 @@ const extractRouteParams = () => {
   return { slug, pageNumber };
 };
 
-// Функция за обновяване на SEO метаданните при промяна на route
-const updateBrandSeoMeta = () => {
-  const newSeoMeta = generateBrandSeoMeta();
-
-  useSeoMeta({
-    title: newSeoMeta.title,
-    description: newSeoMeta.description,
-    ogTitle: newSeoMeta.title,
-    ogDescription: newSeoMeta.description,
-    ogUrl: newSeoMeta.canonicalUrl,
-    twitterTitle: newSeoMeta.title,
-    twitterDescription: newSeoMeta.description,
-  });
-
-  // Обновяваме и rel=prev/next links при навигация
-  updateBrandNextPrevLinks();
-};
+// ⚡ ПРЕМАХНАТО: updateBrandSeoMeta() - вече не е нужна!
+// Reactive computed brandSeoMeta автоматично се обновява когато matchingBrandRef се промени.
 
 // Race condition protection
 let isNavigating = false;
@@ -548,14 +533,10 @@ const loadBrandProducts = async () => {
     }
 
     hasEverLoaded.value = true;
-
-    await nextTick();
     currentPage.value = targetPageNumber;
 
-    await nextTick();
-    updateBrandNextPrevLinks();
-
-    await nextTick();
+    // ⚡ ОПТИМИЗАЦИЯ: Обновяваме next/prev links БЕЗ await (не блокира)
+    nextTick(() => updateBrandNextPrevLinks());
   } catch (error) {
     hasEverLoaded.value = true;
   } finally {
@@ -571,63 +552,63 @@ onMounted(async () => {
     filter: (route.query.filter as string | null) || null,
   };
 
-  // ⚡ ФАЗА 1.2: При client-side navigation БЕЗ SSR data, зареждаме brand data async
-  if (process.client && !matchingBrand) {
-    console.log('🔥 BRAND DEBUG: Loading brand data on client...');
-    try {
-      const { data: allProductsData } = await useAsyncGql(
-        'getProducts' as any,
-        {
-          first: 50,
-          orderby: 'DATE',
-          order: 'DESC',
-          search: slug,
-        } as any,
-      );
+  // ⚡ КРИТИЧНО: При client-side навигация ВИНАГИ зареждаме актуални brand data!
+  if (process.client) {
+    // Проверяваме дали трябва да refresh-нем данните (нова марка или няма кеш)
+    const needsRefresh = !matchingBrand || matchingBrand.slug?.toLowerCase() !== slug.toLowerCase();
+    
+    if (needsRefresh) {
+      console.log('🔥 BRAND DEBUG: Loading brand data on client (no cache or different brand)...');
+      try {
+        const { data: allProductsData } = await useAsyncGql(
+          'getProducts' as any,
+          {
+            first: 50,
+            orderby: 'DATE',
+            order: 'DESC',
+            search: slug,
+          } as any,
+        );
 
-      if (allProductsData.value?.products?.nodes) {
-        const products = allProductsData.value.products.nodes;
-        for (const product of products) {
-          if (product?.pwbBrands && product.pwbBrands.length > 0) {
-            for (const brand of product.pwbBrands) {
-              const brandSlug = brand.slug?.toLowerCase();
-              if (brandSlug === slug.toLowerCase() || brandSlug?.includes(slug.toLowerCase())) {
-                matchingBrand = {
-                  slug: brand.slug,
-                  name: brand.name,
-                  description: brand.description,
-                  count: brand.count,
-                  databaseId: brand.databaseId,
-                };
-                realProductCount.value = brand.count || 0;
-                matchingBrandRef.value = matchingBrand;
-                break;
+        if (allProductsData.value?.products?.nodes) {
+          const products = allProductsData.value.products.nodes;
+          for (const product of products) {
+            if (product?.pwbBrands && product.pwbBrands.length > 0) {
+              for (const brand of product.pwbBrands) {
+                const brandSlug = brand.slug?.toLowerCase();
+                if (brandSlug === slug.toLowerCase() || brandSlug?.includes(slug.toLowerCase())) {
+                  matchingBrand = {
+                    slug: brand.slug,
+                    name: brand.name,
+                    description: brand.description,
+                    count: brand.count,
+                    databaseId: brand.databaseId,
+                  };
+                  realProductCount.value = brand.count || 0;
+                  matchingBrandRef.value = matchingBrand;
+                  break;
+                }
               }
             }
+            if (matchingBrand) break;
           }
-          if (matchingBrand) break;
         }
-      }
 
-      if (!matchingBrand) {
-        throw showError({ statusCode: 404, statusMessage: 'Марката не е намерена' });
-      }
+        if (!matchingBrand) {
+          throw showError({ statusCode: 404, statusMessage: 'Марката не е намерена' });
+        }
 
-      // ⚡ КРИТИЧНО: Получаваме ТОЧНИЯ брой продукти с ЛЕКА заявка
-      try {
-        const { data: productsCountData } = await useAsyncGql('getProductsCount', {
-          search: slug,
-          first: 2000,
-        });
+        // ⚡ КРИТИЧНО: Получаваме ТОЧНИЯ брой продукти с ЛЕКА заявка
+        try {
+          const { data: productsCountData } = await useAsyncGql('getProductsCount', {
+            search: slug,
+            first: 2000,
+          });
 
-        if (productsCountData.value?.products?.edges) {
-          const actualCount = productsCountData.value.products.edges.length;
-          console.log('🔥 BRAND DEBUG: Client REAL count from getProductsCount:', actualCount);
-          console.log('🔥 BRAND DEBUG: Client OLD count from brand.count:', realProductCount.value);
-          
-          realProductCount.value = actualCount;
-          
-          console.log('🔥 BRAND DEBUG: Client FINAL realProductCount.value:', realProductCount.value);
+          if (productsCountData.value?.products?.edges) {
+            const actualCount = productsCountData.value.products.edges.length;
+            console.log('🔥 BRAND DEBUG: Client REAL count from getProductsCount:', actualCount);
+            realProductCount.value = actualCount;
         }
       } catch (error) {
         console.error('❌ BRAND DEBUG: Client getProductsCount failed, keeping brand.count:', error);
@@ -636,11 +617,14 @@ onMounted(async () => {
       console.error('Failed to load brand:', error);
       throw showError({ statusCode: 404, statusMessage: 'Марката не е намерена' });
     }
+    } else {
+      console.log('✅ BRAND DEBUG: Using existing brand data (already loaded)');
+      // Данните вече са налични от SSR или предишна навигация
+      matchingBrandRef.value = matchingBrand;
+    }
   }
 
-  await nextTick();
-  
-  // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
+  // След като имаме brand data, зареждаме продуктите
   await loadBrandProducts();
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
@@ -649,10 +633,10 @@ onMounted(async () => {
   });
 });
 
-// За SSR зареждане - ПРЕМАХНАТО за по-бърза SSR!
-// if (process.server) {
-//   loadBrandProducts();
-// }
+// ⚠️ ВАЖНО: Зареждаме на SSR за да имаме продукти при hard refresh!
+if (process.server) {
+  await loadBrandProducts();
+}
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher
@@ -689,7 +673,7 @@ watch(
         if (pathChanged) {
           hasEverLoaded.value = false;
           await loadBrandProducts();
-          updateBrandSeoMeta();
+          // ⚡ ПРЕМАХНАТО: updateBrandSeoMeta() - reactive computed ще се обнови автоматично!
           return;
         }
 
@@ -889,7 +873,7 @@ const loadBrandCount = async (filters: any) => {
       <!-- Sidebar с филтри - вляво -->
       <aside v-if="storeSettings?.showFilters" class="hidden lg:block lg:w-80 flex-shrink-0">
         <div class="sticky top-4">
-          <Filters :hide-categories="true" />
+          <Filters :hide-categories="true" :brand-slug="currentSlug" />
         </div>
       </aside>
 

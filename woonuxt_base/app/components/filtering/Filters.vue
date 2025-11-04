@@ -1,19 +1,25 @@
 <script setup lang="ts">
 import { TaxonomyEnum } from '#woo';
 import { useCategoryFilters } from '../../composables/useCategoryFilters';
+import { useTagFilters } from '../../composables/useTagFilters';
+import { useBrandFilters } from '../../composables/useBrandFilters';
 
 const { isFiltersActive } = useFiltering();
 const { removeBodyClass } = useHelpers();
 const runtimeConfig = useRuntimeConfig();
 const { storeSettings } = useAppConfig();
 
-// Използваме новия оптимизиран composable за контекстуални филтри
+// Използваме оптимизирани composables за контекстуални филтри
 const { loadCategoryFilters, loading: categoryFiltersLoading } = useCategoryFilters();
+const { loadTagFilters, loading: tagFiltersLoading } = useTagFilters();
+const { loadBrandFilters, loading: brandFiltersLoading } = useBrandFilters();
 
-// Props: hide-categories и category-slug за контекстуални филтри
-const { hideCategories, categorySlug } = defineProps({
+// Props: hide-categories, category-slug, tag-slug и brand-slug за контекстуални филтри
+const { hideCategories, categorySlug, tagSlug, brandSlug } = defineProps({
   hideCategories: { type: Boolean, default: false },
   categorySlug: { type: String, default: null },
+  tagSlug: { type: String, default: null },
+  brandSlug: { type: String, default: null },
 });
 
 const globalProductAttributes = (runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES as WooNuxtFilter[]) || [];
@@ -82,9 +88,9 @@ const loadTerms = async () => {
   loadingTerms.value = true;
 
   try {
+    // ⚡ ПРИОРИТЕТ 1: КОНТЕКСТУАЛНИ ФИЛТРИ за категории
     if (categorySlug && categorySlug.trim().length > 0) {
-      // КОНТЕКСТУАЛНИ ФИЛТРИ за категории
-      console.log('🎯 Зареждам контекстуални филтри за:', categorySlug);
+      console.log('🎯 Зареждам контекстуални филтри за категория:', categorySlug);
       const contextualTerms = await loadCategoryFilters(categorySlug);
 
       if (contextualTerms.length > 0) {
@@ -92,10 +98,36 @@ const loadTerms = async () => {
         return;
       }
 
-      console.log('🔄 FALLBACK: Зареждам глобални филтри');
+      console.log('🔄 FALLBACK: Зареждам глобални филтри (категория няма данни)');
+    }
+    
+    // ⚡ ПРИОРИТЕТ 2: КОНТЕКСТУАЛНИ ФИЛТРИ за етикети
+    else if (tagSlug && tagSlug.trim().length > 0) {
+      console.log('🎯 Зареждам контекстуални филтри за етикет:', tagSlug);
+      const contextualTerms = await loadTagFilters(tagSlug);
+
+      if (contextualTerms.length > 0) {
+        terms.value = contextualTerms;
+        return;
+      }
+
+      console.log('🔄 FALLBACK: Зареждам глобални филтри (етикет няма данни)');
+    }
+    
+    // ⚡ ПРИОРИТЕТ 3: КОНТЕКСТУАЛНИ ФИЛТРИ за марки
+    else if (brandSlug && brandSlug.trim().length > 0) {
+      console.log('🎯 Зареждам контекстуални филтри за марка:', brandSlug);
+      const contextualTerms = await loadBrandFilters(brandSlug);
+
+      if (contextualTerms.length > 0) {
+        terms.value = contextualTerms;
+        return;
+      }
+
+      console.log('🔄 FALLBACK: Зареждам глобални филтри (марка няма данни)');
     }
 
-    // ГЛОБАЛНИ ФИЛТРИ - първо проверяваме кеша
+    // ⚡ ПРИОРИТЕТ 4: ГЛОБАЛНИ ФИЛТРИ - първо проверяваме кеша
     const cachedTerms = getCachedGlobalTerms();
     if (cachedTerms && cachedTerms.length > 0) {
       console.log('⚡ КЕШИРАНИ глобални филтри:', cachedTerms.length);

@@ -169,28 +169,24 @@ export function useFiltering() {
 
     const route = useRoute();
     const { scrollToTop } = useHelpers();
+    
+    // ⚡ КРИТИЧНО: Премахваме филтрите от URL-а
     filterQuery.value = '';
-    router.push({ query: { ...route.query, filter: undefined } });
-
-    // Изчакваме URL-а да се обнови и после зареждаме продуктите
+    
+    // Запазваме orderby и order, но премахваме filter
+    const newQuery = { ...route.query };
+    delete newQuery.filter;
+    
+    // ⚡ ОПТИМИЗАЦИЯ: Само обновяваме URL-а - route watcher-ите ще презаредят продуктите
+    // Това работи за ВСИЧКИ типове страници: категории, подкатегории, етикети, марки, магазин
+    await router.push({ query: newQuery });
+    
+    // Scroll към горе след update на URL-а
     await nextTick();
-
-    // Получаваме текущата категория от route ако е налична
-    let categorySlug: string[] | undefined;
-    if (route.params.slug) {
-      categorySlug = [route.params.slug as string];
-    }
-
-    // Получаваме orderby ако е налично
-    let graphqlOrderBy = 'DATE';
-    if (route.query.orderby === 'price') graphqlOrderBy = 'PRICE';
-    else if (route.query.orderby === 'rating') graphqlOrderBy = 'RATING';
-    else if (route.query.orderby === 'alphabetically') graphqlOrderBy = 'NAME_IN';
-    else if (route.query.orderby === 'date') graphqlOrderBy = 'DATE';
-    else if (route.query.orderby === 'discount') graphqlOrderBy = 'DATE';
-
-    await loadProductsWithFilters(categorySlug, graphqlOrderBy);
     scrollToTop();
+    
+    // ❌ НЕ извикваме loadProductsWithFilters - route watcher-ите се грижат за това!
+    // Това гарантира че всяка страница използва СВОЯТА логика за зареждане
   }
 
   /**
