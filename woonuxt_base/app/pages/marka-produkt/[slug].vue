@@ -895,6 +895,41 @@ const loadBrandCount = async (filters: any) => {
 
       <!-- Main съдържание - отдясно -->
       <main v-if="currentSlug" class="flex-1 min-w-0">
+        <!-- Breadcrumb навигация -->
+        <nav v-if="matchingBrandRef">
+          <!-- Мобилна версия: скрита на desktop -->
+          <div class="flex md:hidden text-xs leading-tight text-gray-400 gap-1.5 items-center py-2 mb-3">
+            <NuxtLink to="/" class="hover:text-primary shrink-0">
+              <Icon name="ion:home" size="14" class="text-gray-400" />
+            </NuxtLink>
+            <span class="shrink-0">/</span>
+            <NuxtLink to="/magazin" class="hover:text-primary shrink-0 line-clamp-1">
+              Магазин
+            </NuxtLink>
+            <span class="shrink-0 mx-0.5">/</span>
+            <span class="text-gray-800 font-medium line-clamp-2 leading-relaxed" :title="`Марка: ${matchingBrandRef.name}`">
+              Марка: {{ matchingBrandRef.name }}
+            </span>
+          </div>
+
+          <!-- Desktop версия: скрита на мобилно -->
+          <div class="hidden md:block mb-6 text-sm text-gray-600">
+            <ol class="flex items-center space-x-2">
+              <li>
+                <NuxtLink to="/" class="hover:text-gray-900">{{ $t('messages.general.home') }}</NuxtLink>
+              </li>
+              <li>
+                <span class="mx-2">/</span>
+                <NuxtLink to="/magazin" class="hover:text-gray-900">Магазин</NuxtLink>
+              </li>
+              <li>
+                <span class="mx-2">/</span>
+                <span class="text-gray-900 font-medium">Марка: {{ matchingBrandRef.name }}</span>
+              </li>
+            </ol>
+          </div>
+        </nav>
+
         <!-- Loading състояние с skeleton -->
         <div v-if="shouldShowLoading" class="space-y-8">
           <!-- Header skeleton -->
