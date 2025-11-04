@@ -32,9 +32,11 @@ const filteredCategoryCount = ref<number | null>(null);
 const totalProductsCount = ref<number | null>(null);
 
 // ⚡ ПОПРАВКА: Зареждаме общия брой продукти още при SSR за правилни SEO тагове
-const { data: initialCountData } = await useAsyncGql('getTotalProductsCountInstant');
-if (initialCountData.value?.totalProductsCount) {
-  totalProductsCount.value = initialCountData.value.totalProductsCount;
+if (process.server) {
+  const { data: initialCountData } = await useAsyncGql('getTotalProductsCountInstant');
+  if (initialCountData.value?.totalProductsCount) {
+    totalProductsCount.value = initialCountData.value.totalProductsCount;
+  }
 }
 
 // ИНТЕЛИГЕНТНО кеширане (според obuvki.bg подхода)
@@ -109,8 +111,11 @@ const warmUpCache = async () => {
 };
 
 // Зареждаме Yoast SEO данните за shop страницата
-const { data: seoData } = await useAsyncGql('getShopPage');
-const shopSeo = seoData.value?.page?.seo || null;
+let shopSeo = null;
+if (process.server) {
+  const { data: seoData } = await useAsyncGql('getShopPage');
+  shopSeo = seoData.value?.page?.seo || null;
+}
 
 // Функция за генериране на SEO данни според страницата
 const generateSeoMeta = () => {

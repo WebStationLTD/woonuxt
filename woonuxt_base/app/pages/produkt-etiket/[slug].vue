@@ -34,13 +34,14 @@ interface Tag {
   uri?: string | null;
 }
 
-const currentSlug = ref('');
-const currentPageNumber = ref(1);
-
 // ПОПРАВКА: Използваме правилния параметър и декодираме URL-а
 const routeSlug = route.params.tagSlug || route.params.slug; // Първо опитваме tagSlug, после slug
 const decodedSlug = routeSlug ? decodeURIComponent(String(routeSlug)) : '';
 const slug = decodedSlug;
+
+// ⚡ КРИТИЧНО: Инициализираме currentSlug СЪС SLUG от URL-а за да се рендира при SSR!
+const currentSlug = ref(slug);
+const currentPageNumber = ref(1);
 
 // ⚡ ОПТИМИЗАЦИЯ 1: SMART CACHING (като в magazin.vue)
 const TAG_CACHE_KEY = `woonuxt_tag_${slug}`;
@@ -186,9 +187,10 @@ const generateTagSeoMeta = () => {
     }
   }
 
-  // Използваме етикетните данни като база
-  const baseTitle = matchingTag?.name ? `Етикет: ${matchingTag.name}` : 'Етикет';
-  const baseDescription = matchingTag?.description || `Продукти с етикет ${matchingTag?.name}`;
+  // Използваме етикетните данни като база (reactive ref за динамични обновления)
+  const tag = matchingTagRef.value || matchingTag;
+  const baseTitle = tag?.name ? `Етикет: ${tag.name}` : 'Етикет';
+  const baseDescription = tag?.description || `Продукти с етикет ${tag?.name}`;
 
   // Генерираме динамичен title и description
   let finalTitle = baseTitle;

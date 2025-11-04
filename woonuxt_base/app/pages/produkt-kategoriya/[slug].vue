@@ -71,12 +71,13 @@ interface Category {
   } | null;
 }
 
-const currentSlug = ref('');
-const currentPageNumber = ref(1);
-
 // ПОПРАВКА: Използваме правилния параметър и декодираме URL-а
 const routeSlug = route.params.categorySlug || route.params.slug; // Първо опитваме categorySlug, после slug
 const decodedSlug = routeSlug ? decodeURIComponent(String(routeSlug)) : '';
+
+// ⚡ КРИТИЧНО: Инициализираме currentSlug СЪС SLUG от URL-а за да се рендира при SSR!
+const currentSlug = ref(decodedSlug);
+const currentPageNumber = ref(1);
 const slug = decodedSlug;
 
 // ⚡ ОПТИМИЗАЦИЯ 1: SMART CACHING (като в magazin.vue)

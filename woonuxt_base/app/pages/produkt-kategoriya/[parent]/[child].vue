@@ -73,41 +73,46 @@ interface Category {
   } | null;
 }
 
-const currentParentSlug = ref('');
-const currentChildSlug = ref('');
-const currentPageNumber = ref(1);
-
 // КЛЮЧОВО: Зареждаме ДИРЕКТНО категорията по child slug (същия подход като single product)
 const parentSlug = route.params.parent as string;
 const childSlug = route.params.child as string;
-const { data: categoryData } = await useAsyncGql('getProductCategories', { slug: [childSlug], hideEmpty: true });
 
-// Получаваме точния брой продукти с ЛЕКА заявка (само cursor-и, без тежки данни)
-const { data: productsCountData } = await useAsyncGql('getProductsCount', {
-  slug: [childSlug],
-});
+// ⚡ КРИТИЧНО: Инициализираме slugs от URL-а за да се рендира при SSR!
+const currentParentSlug = ref(parentSlug);
+const currentChildSlug = ref(childSlug);
+const currentPageNumber = ref(1);
 
 let matchingCategory: Category | null = null;
 let parentCategory: Category | null = null;
 let realProductCount: number | null = null;
 
-if (categoryData.value?.productCategories?.nodes?.[0]) {
-  matchingCategory = categoryData.value.productCategories.nodes[0];
+// ⚡ ВАЖНО: При SSR зареждаме category data синхронно
+if (process.server) {
+  const { data: categoryData } = await useAsyncGql('getProductCategories', { slug: [childSlug], hideEmpty: true });
 
-  // Ако има parent информация в данните
-  if (matchingCategory.parent?.node) {
-    parentCategory = matchingCategory.parent.node as Category;
+  // Получаваме точния брой продукти с ЛЕКА заявка (само cursor-и, без тежки данни)
+  const { data: productsCountData } = await useAsyncGql('getProductsCount', {
+    slug: [childSlug],
+  });
+
+  if (categoryData.value?.productCategories?.nodes?.[0]) {
+    matchingCategory = categoryData.value.productCategories.nodes[0];
+
+    // Ако има parent информация в данните
+    if (matchingCategory.parent?.node) {
+      parentCategory = matchingCategory.parent.node as Category;
+    }
   }
-}
 
-// Получаваме точния брой от ЛЕКА заявка (само cursor-и, без снимки/вариации/и т.н.)
-if (productsCountData.value?.products?.edges) {
-  realProductCount = productsCountData.value.products.edges.length;
-}
+  // Получаваме точния брой от ЛЕКА заявка (само cursor-и, без снимки/вариации/и т.н.)
+  if (productsCountData.value?.products?.edges) {
+    realProductCount = productsCountData.value.products.edges.length;
+  }
 
-// Fallback ако няма категория
-if (!matchingCategory) {
-  throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
+  // Fallback ако няма категория
+  if (!matchingCategory) {
+    throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
+  }
 }
 
 // Reactive refs за runtime промени
@@ -501,6 +506,39 @@ onMounted(async () => {
     order: (route.query.order as string | null) || null,
     filter: (route.query.filter as string | null) || null,
   };
+
+  // ⚡ ФАЗА 1.2: При client-side navigation БЕЗ SSR data, зареждаме category data async
+  if (process.client && !matchingCategory) {
+    try {
+      const { data: categoryData } = await useAsyncGql('getProductCategories', { slug: [childSlug], hideEmpty: true });
+
+      // Получаваме точния брой продукти с ЛЕКА заявка
+      const { data: productsCountData } = await useAsyncGql('getProductsCount', {
+        slug: [childSlug],
+      });
+
+      if (categoryData.value?.productCategories?.nodes?.[0]) {
+        matchingCategory = categoryData.value.productCategories.nodes[0];
+        matchingCategoryRef.value = matchingCategory;
+
+        // Ако има parent информация
+        if (matchingCategory.parent?.node) {
+          parentCategory = matchingCategory.parent.node as Category;
+          parentCategoryRef.value = parentCategory;
+        }
+      } else {
+        throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
+      }
+
+      // Получаваме точния брой
+      if (productsCountData.value?.products?.edges) {
+        realProductCount = productsCountData.value.products.edges.length;
+      }
+    } catch (error) {
+      console.error('Failed to load category:', error);
+      throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
+    }
+  }
 
   await nextTick();
   

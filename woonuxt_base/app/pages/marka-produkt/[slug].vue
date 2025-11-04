@@ -32,13 +32,14 @@ interface Brand {
   databaseId?: number | null;
 }
 
-const currentSlug = ref('');
-const currentPageNumber = ref(1);
-
 // ПОПРАВКА: Използваме правилния параметър и декодираме URL-а
 const routeSlug = route.params.brandSlug || route.params.slug; // Първо опитваме brandSlug, после slug
 const decodedSlug = routeSlug ? decodeURIComponent(String(routeSlug)) : '';
 const slug = decodedSlug;
+
+// ⚡ КРИТИЧНО: Инициализираме currentSlug СЪС SLUG от URL-а за да се рендира при SSR!
+const currentSlug = ref(slug);
+const currentPageNumber = ref(1);
 
 // Премахнахме кеширането за по-надеждно зареждане
 
@@ -46,10 +47,12 @@ const slug = decodedSlug;
 let matchingBrand: Brand | null = null;
 const realProductCount = ref<number | null>(null);
 
-console.log('🔥 BRAND DEBUG: Searching for brand with slug:', slug);
+// ⚡ ВАЖНО: При SSR зареждаме brand data синхронно
+if (process.server) {
+  console.log('🔥 BRAND DEBUG: Searching for brand with slug:', slug);
 
-// Минимална заявка за намиране на марката с точен count
-const { data: allProductsData } = await useAsyncGql(
+  // Минимална заявка за намиране на марката с точен count
+  const { data: allProductsData } = await useAsyncGql(
   'getProducts' as any,
   {
     first: 50, // Намалено - трябва ни само един продукт от марката
@@ -141,9 +144,33 @@ if (!matchingBrand) {
   }
 }
 
-// Ако все още няма марка
-if (!matchingBrand) {
-  throw showError({ statusCode: 404, statusMessage: 'Марката не е намерена' });
+  // Ако все още няма марка
+  if (!matchingBrand) {
+    throw showError({ statusCode: 404, statusMessage: 'Марката не е намерена' });
+  }
+
+  // ⚡ КРИТИЧНО: Получаваме ТОЧНИЯ брой продукти с ЛЕКА заявка (само cursor-и, БЕЗ nodes!)
+  try {
+    const { data: productsCountData } = await useAsyncGql('getProductsCount', {
+      search: slug,
+      first: 2000, // Достатъчно голям за повечето марки
+    });
+
+    if (productsCountData.value?.products?.edges) {
+      const actualCount = productsCountData.value.products.edges.length;
+      console.log('🔥 BRAND DEBUG: SSR REAL count from getProductsCount:', actualCount);
+      console.log('🔥 BRAND DEBUG: SSR OLD count from brand.count:', realProductCount.value);
+      
+      // Презаписваме с точния count
+      realProductCount.value = actualCount;
+      
+      console.log('🔥 BRAND DEBUG: SSR FINAL realProductCount.value:', realProductCount.value);
+    } else {
+      console.log('🔥 BRAND DEBUG: SSR getProductsCount returned no data, keeping brand.count:', realProductCount.value);
+    }
+  } catch (error) {
+    console.error('❌ BRAND DEBUG: SSR getProductsCount failed, keeping brand.count:', error);
+  }
 }
 
 // Reactive ref за runtime промени
@@ -234,6 +261,16 @@ const updateBrandNextPrevLinks = () => {
   // Изчисляваме общия брой страници на база на реалния брой продукти
   const totalProductCount = realProductCount.value || matchingBrand?.count || 0;
   const totalPages = Math.ceil(totalProductCount / productsPerPage.value);
+  
+  // 🐛 DEBUG: Проверяваме защо винаги показва 12 страници
+  console.log('🔍 PAGINATION DEBUG:', {
+    realProductCount: realProductCount.value,
+    matchingBrandCount: matchingBrand?.count,
+    totalProductCount,
+    productsPerPage: productsPerPage.value,
+    totalPages,
+    currentPage: currentSeoMeta.pageNumber,
+  });
 
   // Prev link
   if (currentSeoMeta.pageNumber > 1) {
@@ -404,7 +441,10 @@ const loadBrandProducts = async () => {
       if (totalProducts > 0) {
         const maxPages = Math.ceil(totalProducts / productsPerPage.value);
         if (pageNumber > maxPages) {
-          throw showError({ statusCode: 404, statusMessage: `Страница ${pageNumber} не съществува в тази марка. Максимална страница: ${maxPages}` });
+          // ⚡ REDIRECT към последна валидна страница вместо 404 за да избегнем infinite loop
+          console.warn(`⚠️ Page ${pageNumber} exceeds max ${maxPages}, redirecting to page ${maxPages}`);
+          await navigateTo(`/marka-produkt/${slug}/page/${maxPages}`, { replace: true });
+          return;
         }
       }
     }
@@ -487,7 +527,10 @@ const loadBrandProducts = async () => {
           const totalProducts = realProductCount.value || matchingBrand?.count || 0;
           const maxPages = totalProducts > 0 ? Math.ceil(totalProducts / productsPerPage.value) : 1;
           console.log('🔥 BRAND DEBUG: No products found, total:', totalProducts, 'maxPages:', maxPages);
-          throw showError({ statusCode: 404, statusMessage: `Страница ${pageNumber} не съществува в тази марка. Максимална страница: ${maxPages}` });
+          // ⚡ REDIRECT към последна валидна страница вместо 404
+          console.warn(`⚠️ Page ${pageNumber} has no products, redirecting to page ${maxPages}`);
+          await navigateTo(`/marka-produkt/${slug}/page/${maxPages}`, { replace: true });
+          return;
         }
       } else {
         console.log('🔥 BRAND DEBUG: Load page 1 (no filters) with brandFilters:', brandFilters);
@@ -524,6 +567,73 @@ onMounted(async () => {
     order: (route.query.order as string | null) || null,
     filter: (route.query.filter as string | null) || null,
   };
+
+  // ⚡ ФАЗА 1.2: При client-side navigation БЕЗ SSR data, зареждаме brand data async
+  if (process.client && !matchingBrand) {
+    console.log('🔥 BRAND DEBUG: Loading brand data on client...');
+    try {
+      const { data: allProductsData } = await useAsyncGql(
+        'getProducts' as any,
+        {
+          first: 50,
+          orderby: 'DATE',
+          order: 'DESC',
+          search: slug,
+        } as any,
+      );
+
+      if (allProductsData.value?.products?.nodes) {
+        const products = allProductsData.value.products.nodes;
+        for (const product of products) {
+          if (product?.pwbBrands && product.pwbBrands.length > 0) {
+            for (const brand of product.pwbBrands) {
+              const brandSlug = brand.slug?.toLowerCase();
+              if (brandSlug === slug.toLowerCase() || brandSlug?.includes(slug.toLowerCase())) {
+                matchingBrand = {
+                  slug: brand.slug,
+                  name: brand.name,
+                  description: brand.description,
+                  count: brand.count,
+                  databaseId: brand.databaseId,
+                };
+                realProductCount.value = brand.count || 0;
+                matchingBrandRef.value = matchingBrand;
+                break;
+              }
+            }
+          }
+          if (matchingBrand) break;
+        }
+      }
+
+      if (!matchingBrand) {
+        throw showError({ statusCode: 404, statusMessage: 'Марката не е намерена' });
+      }
+
+      // ⚡ КРИТИЧНО: Получаваме ТОЧНИЯ брой продукти с ЛЕКА заявка
+      try {
+        const { data: productsCountData } = await useAsyncGql('getProductsCount', {
+          search: slug,
+          first: 2000,
+        });
+
+        if (productsCountData.value?.products?.edges) {
+          const actualCount = productsCountData.value.products.edges.length;
+          console.log('🔥 BRAND DEBUG: Client REAL count from getProductsCount:', actualCount);
+          console.log('🔥 BRAND DEBUG: Client OLD count from brand.count:', realProductCount.value);
+          
+          realProductCount.value = actualCount;
+          
+          console.log('🔥 BRAND DEBUG: Client FINAL realProductCount.value:', realProductCount.value);
+        }
+      } catch (error) {
+        console.error('❌ BRAND DEBUG: Client getProductsCount failed, keeping brand.count:', error);
+      }
+    } catch (error) {
+      console.error('Failed to load brand:', error);
+      throw showError({ statusCode: 404, statusMessage: 'Марката не е намерена' });
+    }
+  }
 
   await nextTick();
   

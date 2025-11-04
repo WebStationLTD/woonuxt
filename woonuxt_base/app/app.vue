@@ -18,8 +18,27 @@ watch(
   () => closeCartAndMenu(),
 );
 
+// ⚡ КРИТИЧНО: Preconnect към WordPress backend за по-бързо зареждане
+const runtimeConfig = useRuntimeConfig();
+const gqlHost = runtimeConfig.public['graphql-client']?.clients?.default?.host || runtimeConfig.public.GQL_HOST;
+
+// Извличаме origin от GQL_HOST (без /graphql path)
+let backendOrigin = '';
+if (gqlHost) {
+  try {
+    const url = new URL(gqlHost);
+    backendOrigin = url.origin;
+  } catch (e) {
+    // Ignore invalid URLs
+  }
+}
+
 useHead({
   titleTemplate: `%s - ${siteName}`,
+  link: backendOrigin ? [
+    { rel: 'preconnect', href: backendOrigin },
+    { rel: 'dns-prefetch', href: backendOrigin },
+  ] : [],
 });
 
 // Принудително завършване на loading indicator-а при завършена навигация
