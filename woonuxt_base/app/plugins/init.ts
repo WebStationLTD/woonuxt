@@ -55,15 +55,29 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     // If we are in development mode, we want to initialise the store immediately
     const isDev = process.env.NODE_ENV === 'development';
 
+    // ⚡ ФАЗА 1.3: РАЗШИРЕНА SKIP LIST - повече страници които НЕ се нуждаят от cart веднага
     // Check if the current route path is one of the pages that need immediate initialization
     const pagesToInitializeRightAway = ['/checkout', '/my-account', '/order-summary'];
     const isPathThatRequiresInit = pagesToInitializeRightAway.some((page) => useRoute().path.includes(page));
+    
+    // Страници които НЕ се нуждаят от cart при първоначално зареждане
+    // (cart ще се зареди при първа потребителска интеракция)
+    const pagesToSkipInitialization = [
+      '/produkt-kategoriya/', // Всички категории
+      '/magazin',             // Главен магазин
+      '/marka-produkt/',      // Всички марки
+      '/produkt-etiket/',     // Всички етикети
+    ];
+    const shouldSkipInit = pagesToSkipInitialization.some((page) => useRoute().path.includes(page));
 
-    const shouldInit = isDev || isPathThatRequiresInit || !storeSettings.initStoreOnUserActionToReduceServerLoad;
+    // ⚡ ФАЗА 1.3: Подобрена логика - skip init за определени страници дори в dev mode
+    const shouldInit = (isDev && !shouldSkipInit) || isPathThatRequiresInit || !storeSettings.initStoreOnUserActionToReduceServerLoad;
 
     if (shouldInit) {
       initStore();
     } else {
+      // Отлагаме инициализацията до първа потребителска интеракция
+      console.log('⏳ Cart init deferred until user interaction (PHASE 1.3 optimization)');
       eventsToFireOn.forEach((event) => {
         window.addEventListener(event, initStore, { once: true });
       });

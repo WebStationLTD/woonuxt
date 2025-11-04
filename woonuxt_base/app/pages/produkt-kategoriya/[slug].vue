@@ -122,38 +122,37 @@ const setCachedCategoryData = (category: Category, count: number): void => {
   }
 };
 
-// ⚡ ОПТИМИЗАЦИЯ 2: БАТЧИРАНА SSR ЗАЯВКА - само 1 заявка вместо 2!
+// ⚡ ФАЗА 1.2: ПРЕМАХНАТ TOP-LEVEL AWAIT - ще зареждаме async в onMounted
+// Това позволява по-бързо initial render при client-side navigation
 let matchingCategory: Category | null = null;
 let realProductCount: number | null = null;
 
-// Първо проверяваме кеша
-const cachedData = getCachedCategoryData();
-if (cachedData) {
-  matchingCategory = cachedData.category;
-  realProductCount = cachedData.count;
-} else {
-  // САМО 1 GraphQL заявка при SSR вместо 2!
+// ⚡ ВАЖНО: При SSR все още трябва да заредим category data синхронно
+if (process.server) {
+  // САМО при SSR - батчирана заявка
   const { data: categoryData } = await useAsyncGql('getProductCategories', {
     slug: [slug],
     hideEmpty: false,
-    first: 10, // Намалено от 20 на 10 за бързина
+    first: 10,
   });
 
   if (categoryData.value?.productCategories?.nodes?.[0]) {
     matchingCategory = categoryData.value.productCategories.nodes[0] as Category;
-    // Използваме count от категорията директно вместо отделна заявка!
     realProductCount = matchingCategory.count || 0;
-
-    // Кешираме данните веднага
-    if (process.client && matchingCategory && realProductCount !== null) {
-      setCachedCategoryData(matchingCategory, realProductCount);
-    }
   }
-}
 
-// Fallback ако няма категория
-if (!matchingCategory) {
-  throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
+  if (!matchingCategory) {
+    throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
+  }
+} else {
+  // ⚡ При CLIENT - проверяваме кеша веднага (синхронно, БЕЗ await)
+  const cachedData = getCachedCategoryData();
+  if (cachedData) {
+    matchingCategory = cachedData.category;
+    realProductCount = cachedData.count;
+    console.log('✅ CACHE HIT: Using cached category data');
+  }
+  // Ако няма кеш, ще заредим в onMounted БЕЗ да блокираме initial render
 }
 
 // Reactive ref за runtime промени
@@ -608,8 +607,7 @@ const loadCategoryProducts = async () => {
   }
 };
 
-// ⚡ ОПТИМИЗАЦИЯ НИВО 1.3: ПАРАЛЕЛИЗИРАН onMounted
-// Вместо последователно изпълнение - паралелни операции където е възможно
+// ⚡ ФАЗА 1.2 + 1.3: ОПТИМИЗИРАН onMounted с async category loading
 onMounted(async () => {
   // Инициализираме предишните query стойности (синхронно - бързо)
   previousQuery.value = {
@@ -618,11 +616,41 @@ onMounted(async () => {
     filter: (route.query.filter as string | null) || null,
   };
 
+  // ⚡ ФАЗА 1.2: При client-side navigation БЕЗ кеш, зареждаме category data async
+  if (process.client && !matchingCategory) {
+    console.log('🔄 CLIENT: Loading category data async (no cache)');
+    try {
+      const { data: categoryData } = await useAsyncGql('getProductCategories', {
+        slug: [slug],
+        hideEmpty: false,
+        first: 10,
+      });
+
+      if (categoryData.value?.productCategories?.nodes?.[0]) {
+        matchingCategory = categoryData.value.productCategories.nodes[0] as Category;
+        realProductCount = matchingCategory.count || 0;
+        matchingCategoryRef.value = matchingCategory;
+
+        // Кешираме данните
+        setCachedCategoryData(matchingCategory, realProductCount);
+        console.log('✅ CLIENT: Category data loaded and cached');
+      } else {
+        throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
+      }
+    } catch (error) {
+      console.error('Failed to load category:', error);
+      throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
+    }
+  }
+
   // ⚡ ОПТИМИЗАЦИЯ: Cache warming в requestIdleCallback (не блокира main thread)
   if (process.client && 'requestIdleCallback' in window) {
-    requestIdleCallback(() => {
-      warmUpCache();
-    }, { timeout: 2000 });
+    requestIdleCallback(
+      () => {
+        warmUpCache();
+      },
+      { timeout: 2000 },
+    );
   } else if (process.client) {
     // Fallback за браузъри без requestIdleCallback
     setTimeout(() => warmUpCache(), 100);
@@ -630,10 +658,10 @@ onMounted(async () => {
 
   // Изчакваме един tick за да се установи правилно route състоянието
   await nextTick();
-  
+
   // ⚡ КРИТИЧНО: Зареждаме продуктите (това е най-важното)
   await loadCategoryProducts();
-  
+
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {
     updateCategoryNextPrevLinks();
@@ -701,9 +729,7 @@ watch(
           const newFilter = newRoute.query.filter as string | null;
 
           const sortingOrFilteringChanged =
-            newOrderBy !== previousQuery.value.orderby || 
-            newOrder !== previousQuery.value.order || 
-            newFilter !== previousQuery.value.filter;
+            newOrderBy !== previousQuery.value.orderby || newOrder !== previousQuery.value.order || newFilter !== previousQuery.value.filter;
 
           // Redirect към страница 1 ако променяме филтри/сортиране на страница > 1
           if (sortingOrFilteringChanged && route.params.pageNumber) {
@@ -746,7 +772,7 @@ watch(
       }
     }, 50); // 50ms debounce - баланс между бързина и предотвратяване на race conditions
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Watcher за промени в pageInfo за динамично обновяване на next/prev links

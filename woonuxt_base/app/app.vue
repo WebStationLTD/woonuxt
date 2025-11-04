@@ -55,7 +55,7 @@ if (process.client) {
 </script>
 
 <template>
-  <NuxtLoadingIndicator color="#9c0100" :height="3" :duration="300" />
+  <NuxtLoadingIndicator color="#9c0100" :height="3" :duration="200" />
   <div class="flex flex-col min-h-screen">
     <AppHeader />
 
@@ -112,7 +112,7 @@ select {
 .slide-from-right-enter-active,
 .slide-from-left-leave-active,
 .slide-from-left-enter-active {
-  transition: transform 300ms ease-in-out;
+  transition: transform 200ms ease-in-out;
 }
 
 .slide-from-right-enter-from,
@@ -128,7 +128,7 @@ select {
 /* Fade */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 300ms ease-in-out;
+  transition: opacity 150ms ease-in-out;
 }
 
 .fade-enter-from,
@@ -212,7 +212,7 @@ select {
 }
 
 .page-enter-active {
-  animation-duration: 200ms;
+  animation-duration: 150ms;
   animation-name: fadeIn;
   animation-timing-function: linear;
   backface-visibility: hidden;
@@ -220,7 +220,7 @@ select {
 
 .page-leave-active {
   animation-name: fadeOut;
-  animation-duration: 200ms;
+  animation-duration: 150ms;
 }
 
 @keyframes skelaton {

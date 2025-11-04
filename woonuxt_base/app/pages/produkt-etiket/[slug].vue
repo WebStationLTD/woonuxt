@@ -85,41 +85,39 @@ const setCachedTagData = (tag: Tag, count: number): void => {
   }
 };
 
-// ⚡ ОПТИМИЗАЦИЯ 2: БАТЧИРАНА SSR ЗАЯВКА - само 1 заявка вместо 2!
+// ⚡ ФАЗА 1.2: ПРЕМАХНАТ TOP-LEVEL AWAIT - ще зареждаме async в onMounted
 let matchingTag: Tag | null = null;
 let realProductCount: number | null = null;
 
-// Първо проверяваме кеша
-const cachedData = getCachedTagData();
-if (cachedData) {
-  matchingTag = cachedData.tag;
-  realProductCount = cachedData.count;
-} else {
-  // САМО 1 GraphQL заявка при SSR вместо 2!
+// ⚡ ВАЖНО: При SSR все още трябва да заредим tag data синхронно
+if (process.server) {
+  // САМО при SSR - батчирана заявка
   const { data: tagData } = await useAsyncGql(
     'getProductTags' as any,
     {
       slug: [slug],
       hideEmpty: false,
-      first: 10, // Намалено от 20 на 10 за бързина
+      first: 10,
     } as any,
   );
 
   if (tagData.value?.productTags?.nodes?.[0]) {
     matchingTag = tagData.value.productTags.nodes[0] as Tag;
-    // Използваме count от етикета директно вместо отделна заявка!
     realProductCount = matchingTag.count || 0;
-
-    // Кешираме данните веднага
-    if (process.client && matchingTag && realProductCount !== null) {
-      setCachedTagData(matchingTag, realProductCount);
-    }
   }
-}
-
-// Fallback ако няма етикет
-if (!matchingTag) {
-  throw showError({ statusCode: 404, statusMessage: 'Етикетът не е намерен' });
+  
+  if (!matchingTag) {
+    throw showError({ statusCode: 404, statusMessage: 'Етикетът не е намерен' });
+  }
+} else {
+  // ⚡ При CLIENT - проверяваме кеша веднага (синхронно, БЕЗ await)
+  const cachedData = getCachedTagData();
+  if (cachedData) {
+    matchingTag = cachedData.tag;
+    realProductCount = cachedData.count;
+    console.log('✅ CACHE HIT (TAG): Using cached tag data');
+  }
+  // Ако няма кеш, ще заредим в onMounted БЕЗ да блокираме initial render
 }
 
 // Reactive ref за runtime промени
@@ -488,7 +486,7 @@ const loadTagProducts = async () => {
   }
 };
 
-// Зареждаме при mount
+// ⚡ ФАЗА 1.2: ОПТИМИЗИРАН onMounted с async tag loading
 onMounted(async () => {
   previousQuery.value = {
     orderby: (route.query.orderby as string | null) || null,
@@ -496,7 +494,37 @@ onMounted(async () => {
     filter: (route.query.filter as string | null) || null,
   };
 
-  // ⚡ ОПТИМИЗАЦИЯ НИВО 1.3: Cache warming в requestIdleCallback (не блокира main thread)
+  // ⚡ ФАЗА 1.2: При client-side navigation БЕЗ кеш, зареждаме tag data async
+  if (process.client && !matchingTag) {
+    console.log('🔄 CLIENT (TAG): Loading tag data async (no cache)');
+    try {
+      const { data: tagData } = await useAsyncGql(
+        'getProductTags' as any,
+        {
+          slug: [slug],
+          hideEmpty: false,
+          first: 10,
+        } as any,
+      );
+
+      if (tagData.value?.productTags?.nodes?.[0]) {
+        matchingTag = tagData.value.productTags.nodes[0] as Tag;
+        realProductCount = matchingTag.count || 0;
+        matchingTagRef.value = matchingTag;
+        
+        // Кешираме данните
+        setCachedTagData(matchingTag, realProductCount);
+        console.log('✅ CLIENT (TAG): Tag data loaded and cached');
+      } else {
+        throw showError({ statusCode: 404, statusMessage: 'Етикетът не е намерен' });
+      }
+    } catch (error) {
+      console.error('Failed to load tag:', error);
+      throw showError({ statusCode: 404, statusMessage: 'Етикетът не е намерен' });
+    }
+  }
+
+  // ⚡ ОПТИМИЗАЦИЯ: Cache warming в requestIdleCallback (не блокира main thread)
   if (process.client && 'requestIdleCallback' in window) {
     requestIdleCallback(() => {
       warmUpCache();
