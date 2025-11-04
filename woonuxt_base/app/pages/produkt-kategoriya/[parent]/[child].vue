@@ -568,10 +568,11 @@ onMounted(async () => {
   });
 });
 
-// За SSR зареждане при извикване на страницата (точно като в родителските категории)
-if (process.server) {
-  loadCategoryProducts();
-}
+// ⚠️ ВАЖНО: НЕ зареждаме продукти на SSR (блокира TTFB за 4-5 секунди!)
+// Skeleton се рендерира от SSR, продуктите се зареждат client-side за бързина
+// if (process.server) {
+//   loadCategoryProducts();
+// }
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE (като в родителските категории)
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher
@@ -801,72 +802,45 @@ const loadCategoryCount = async (filters: any) => {
 
   if (hasAnyFilters) {
     try {
-      // ПОПРАВКА: Използваме ULTRA ГОЛЯМА first стойност за да получим всички резултати
-      let totalFilteredCount = 0;
-      let hasNextPage = true;
-      let cursor = null;
-      const batchSize = 1000; // Голям batch за по-малко заявки
-      let batchCount = 0;
-      const maxBatches = 5; // Максимум 5 batches = 5000 продукта
+      // ⚡ СУПЕР БЪРЗО: Използваме getProductsCount вместо getProducts!
+      const variables: any = {
+        slug: [childSlug], // Категория филтър
+        first: 2000, // Достатъчно за повечето случаи
+      };
 
-      while (hasNextPage && batchCount < maxBatches) {
-        const variables: any = {
-          first: batchSize,
-        };
+      // Добавяме всички филтри
+      if (filters.minPrice !== undefined) variables.minPrice = filters.minPrice;
+      if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
+      if (filters.onSale !== undefined) variables.onSale = filters.onSale;
+      if (filters.search) variables.search = filters.search;
 
-        if (cursor) {
-          variables.after = cursor;
+      // ⚡ КРИТИЧНО: Добавяме attributeFilter
+      const runtimeConfig = useRuntimeConfig();
+      const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES) ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES : [];
+
+      const attributeFilters: any[] = [];
+      globalProductAttributes.forEach((attr: any) => {
+        if (filters[attr.slug] && Array.isArray(filters[attr.slug])) {
+          attributeFilters.push({
+            taxonomy: attr.slug,
+            terms: filters[attr.slug],
+            operator: 'IN',
+          });
         }
+      });
 
-        // Добавяме всички филтри ако са налични
-        variables.slug = [childSlug]; // Категория филтър
-        if (filters.minPrice !== undefined) variables.minPrice = filters.minPrice;
-        if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
-        if (filters.onSale !== undefined) variables.onSale = filters.onSale;
-        if (filters.search) variables.search = filters.search;
-
-        // ⚡ КРИТИЧНО: Добавяме attributeFilter
-        const runtimeConfig = useRuntimeConfig();
-        const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES) ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES : [];
-
-        const attributeFilters: any[] = [];
-        globalProductAttributes.forEach((attr: any) => {
-          if (filters[attr.slug] && Array.isArray(filters[attr.slug])) {
-            attributeFilters.push({
-              taxonomy: attr.slug,
-              terms: filters[attr.slug],
-              operator: 'IN',
-            });
-          }
-        });
-
-        if (attributeFilters.length > 0) {
-          variables.attributeFilter = attributeFilters;
-        }
-
-        // Използваме основната getProducts заявка която поддържа всички филтри
-        const { data } = await useAsyncGql('getProducts', variables);
-
-        const result = data.value?.products;
-        if (result) {
-          const batchProducts = result.nodes || [];
-          totalFilteredCount += batchProducts.length;
-
-          hasNextPage = result.pageInfo?.hasNextPage || false;
-          cursor = result.pageInfo?.endCursor || null;
-
-          // Ако batch-ът не е пълен, значи сме достигнали края
-          if (batchProducts.length < batchSize) {
-            hasNextPage = false;
-          }
-        } else {
-          hasNextPage = false;
-        }
-
-        batchCount++;
+      if (attributeFilters.length > 0) {
+        variables.attributeFilter = attributeFilters;
       }
 
-      filteredCategoryCount.value = totalFilteredCount > 0 ? totalFilteredCount : null;
+      // ⚡ БЪРЗО: getProductsCount връща само cursor-и, БЕЗ продуктни данни!
+      const { data } = await useAsyncGql('getProductsCount', variables);
+      
+      if (data.value?.products?.edges) {
+        filteredCategoryCount.value = data.value.products.edges.length;
+      } else {
+        filteredCategoryCount.value = null;
+      }
     } catch (error) {
       filteredCategoryCount.value = null;
     }

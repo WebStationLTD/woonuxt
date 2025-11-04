@@ -493,10 +493,11 @@ onMounted(async () => {
   await loadProductsFromRoute();
 });
 
-// ⚠️ ВАЖНО: Зареждаме на SSR за да имаме продукти при hard refresh!
-if (process.server) {
-  await loadProductsFromRoute();
-}
+// ⚠️ ВАЖНО: НЕ зареждаме продукти на SSR (блокира TTFB за 4-5 секунди!)
+// Skeleton се рендерира от SSR, продуктите се зареждат client-side за бързина
+// if (process.server) {
+//   await loadProductsFromRoute();
+// }
 
 // Слушаме за промени в route-а
 watch(
