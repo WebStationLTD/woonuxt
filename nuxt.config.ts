@@ -433,6 +433,10 @@ export default defineNuxtConfig({
         },
       },
     },
+    esbuild: {
+      // ⚡ ФАЗА 1: Премахване на console.log в production за по-добър performance
+      drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+    },
   },
 
   compatibilityDate: "2025-05-03",
