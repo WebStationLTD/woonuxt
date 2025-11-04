@@ -624,8 +624,12 @@ onMounted(async () => {
     }
   }
 
-  // След като имаме brand data, зареждаме продуктите
-  await loadBrandProducts();
+  // ⚡ HYBRID: Ако има SSR продукти, зареждаме останалите
+  const hasSSRProducts = products.value.length > 0 && products.value.length < productsPerPage.value;
+  
+  if (hasSSRProducts || products.value.length === 0) {
+    await loadBrandProducts();
+  }
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {
@@ -633,11 +637,25 @@ onMounted(async () => {
   });
 });
 
-// ⚠️ ВАЖНО: НЕ зареждаме продукти на SSR (блокира TTFB за 4-5 секунди!)
-// Skeleton се рендерира от SSR, продуктите се зареждат client-side за бързина
-// if (process.server) {
-//   await loadBrandProducts();
-// }
+// ⚡ HYBRID: SSR зарежда САМО първите 12 продукта (за LCP), останалите client-side
+if (process.server) {
+  try {
+    const { data } = await useAsyncGql('getProductsOptimized', {
+      first: 12,
+      search: slug,
+      orderby: 'DATE',
+    });
+    
+    if (data.value?.products?.nodes) {
+      products.value = data.value.products.nodes;
+      pageInfo.hasNextPage = data.value.products.pageInfo?.hasNextPage || false;
+      pageInfo.endCursor = data.value.products.pageInfo?.endCursor || '';
+      hasEverLoaded.value = true;
+    }
+  } catch (error) {
+    console.error('SSR product load failed:', error);
+  }
+}
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher

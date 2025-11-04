@@ -568,10 +568,9 @@ onMounted(async () => {
   });
 });
 
-// ⚠️ ВАЖНО: НЕ зареждаме продукти на SSR (блокира TTFB за 4-5 секунди!)
-// Skeleton се рендерира от SSR, продуктите се зареждат client-side за бързина
+// ⚠️ НЕ зареждаме продукти на SSR - skeleton се рендерира, продукти client-side
 // if (process.server) {
-//   loadCategoryProducts();
+//   await loadCategoryProducts();
 // }
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE (като в родителските категории)

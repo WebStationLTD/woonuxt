@@ -128,18 +128,24 @@ const setCachedCategoryData = (category: Category, count: number): void => {
 let matchingCategory: Category | null = null;
 let realProductCount: number | null = null;
 
-// ⚡ ВАЖНО: При SSR все още трябва да заредим category data синхронно
+// ⚡ ВАЖНО: При SSR зареждаме category data И products count ПАРАЛЕЛНО (като в child.vue)
 if (process.server) {
-  // САМО при SSR - батчирана заявка
-  const { data: categoryData } = await useAsyncGql('getProductCategories', {
-    slug: [slug],
-    hideEmpty: false,
-    first: 10,
-  });
+  // ⚡ ОПТИМИЗАЦИЯ: Promise.all зарежда 2те заявки едновременно вместо последователно!
+  const [categoryData, productsCountData] = await Promise.all([
+    useAsyncGql('getProductCategories', {
+      slug: [slug],
+      hideEmpty: false,
+      first: 10,
+    }),
+    useAsyncGql('getProductsCount', {
+      slug: [slug],
+    }),
+  ]);
 
-  if (categoryData.value?.productCategories?.nodes?.[0]) {
-    matchingCategory = categoryData.value.productCategories.nodes[0] as Category;
-    realProductCount = matchingCategory.count || 0;
+  if (categoryData.data.value?.productCategories?.nodes?.[0]) {
+    matchingCategory = categoryData.data.value.productCategories.nodes[0] as Category;
+    // Използваме точния count от getProductsCount вместо category.count
+    realProductCount = productsCountData.data.value?.products?.edges?.length || matchingCategory.count || 0;
   }
 
   if (!matchingCategory) {
@@ -494,11 +500,6 @@ const parseFiltersFromQuery = (filterQuery: string) => {
 
 // Основна функция за зареждане на продукти (СИЛНО ОПТИМИЗИРАНА)
 const loadCategoryProducts = async () => {
-  console.log('🔵 loadCategoryProducts: START', { isNavigating });
-  
-  // ❌ ПРЕМАХНАТО: if (isNavigating) return;
-  // Това създаваше deadlock с route watcher-а!
-
   try {
     const { slug, pageNumber } = extractRouteParams();
 
@@ -512,9 +513,9 @@ const loadCategoryProducts = async () => {
     // ВАЖНО: Запазваме pageNumber преди reset за да не го загубим
     const targetPageNumber = pageNumber;
 
-    console.log('🗑️ loadCategoryProducts: BEFORE reset', { productsCount: products.value.length });
+    // ⚡ КРИТИЧНО: Сетваме isLoading ПРЕДИ reset за да се покаже skeleton!
+    isLoading.value = true;
     resetProductsState();
-    console.log('🧹 loadCategoryProducts: AFTER reset', { productsCount: products.value.length });
     currentSlug.value = slug;
     currentPageNumber.value = targetPageNumber;
 
@@ -536,10 +537,8 @@ const loadCategoryProducts = async () => {
 
     // ⚡ КРИТИЧНО: Използваме локалния slug, не глобалната константа!
     const categoryIdentifier = [slug];
-    console.log('🔍 loadCategoryProducts: Checking filters/orderby', { hasFilters, hasOrderBy, slug, categoryIdentifier, pageNumber });
 
     if (hasFilters || hasOrderBy) {
-      console.log('📋 loadCategoryProducts: Loading WITH filters/orderby');
       // Парсваме филтрите директно от route.query.filter с validation
       const filters = hasFilters ? parseFiltersFromQuery(route.query.filter as string) : {};
 
@@ -584,16 +583,12 @@ const loadCategoryProducts = async () => {
       // Зареждаме category count при филтриране
       await loadCategoryCount(filters);
     } else {
-      console.log('📦 loadCategoryProducts: Loading WITHOUT filters/orderby', { pageNumber, slug, categoryIdentifier });
       // Ако няма филтри, зареждаме конкретната страница
       if (pageNumber === 1) {
-        console.log('🎯 loadCategoryProducts: Calling loadProductsPageOptimized for page 1');
         await loadProductsPageOptimized(pageNumber, categoryIdentifier);
       } else {
-        console.log('🎯 loadCategoryProducts: Calling jumpToPageOptimized for page', pageNumber);
         await jumpToPageOptimized(pageNumber, categoryIdentifier);
       }
-      console.log('✨ loadCategoryProducts: Products loaded, count:', products.value.length);
 
       // КРИТИЧНО: Проверяваме дали получихме резултати БЕЗ филтри
       if (process.client && pageNumber > 1 && (!products.value || products.value.length === 0)) {
@@ -612,26 +607,19 @@ const loadCategoryProducts = async () => {
     // Принудително обновяване на currentPage за правилна синхронизация с pagination
     currentPage.value = targetPageNumber;
 
-    // ⚡ ОПТИМИЗАЦИЯ: Обновяваме next/prev links БЕЗ await (не блокира)
-    nextTick(() => updateCategoryNextPrevLinks());
-    
-    console.log('🟢 loadCategoryProducts: SUCCESS');
+    // Обновяваме next/prev links след зареждане на данните
+    await nextTick();
+    updateCategoryNextPrevLinks();
+
+    // Принудително завършване на loading състоянието
+    await nextTick();
   } catch (error) {
-    console.error('🔴 loadCategoryProducts: ERROR', error);
     hasEverLoaded.value = true; // Маркираме като опитано дори при грешка
   }
-  // ❌ ПРЕМАХНАТО: finally блок с isNavigating = false
-  // Route watcher се грижи за това!
 };
 
-// ⚡ ФАЗА 1.2 + 1.3: ОПТИМИЗИРАН onMounted с паралелно зареждане
+// ⚡ ФАЗА 1.2 + 1.3: ОПТИМИЗИРАН onMounted с async category loading
 onMounted(async () => {
-  console.log('🟡 onMounted: START', { 
-    hasMatchingCategory: !!matchingCategory,
-    categoryName: matchingCategory?.name,
-    productsCount: products.value.length
-  });
-  
   // Инициализираме предишните query стойности (синхронно - бързо)
   previousQuery.value = {
     orderby: (route.query.orderby as string | null) || null,
@@ -639,48 +627,49 @@ onMounted(async () => {
     filter: (route.query.filter as string | null) || null,
   };
 
-  // ⚡ КРИТИЧНО: При client-side навигация ВИНАГИ зареждаме актуални category data!
+  // ⚡ КРИТИЧНО: При client-side проверяваме дали имаме валидни category data!
+  // При hard refresh или нова категория, зареждаме данните
   if (process.client) {
-    // Ако няма кеш или е стара категория, зареждаме нова
-    const cachedData = getCachedCategoryData();
-    const needsRefresh = !cachedData || cachedData.category?.slug !== slug;
+    // ИЗВЛИЧАМЕ актуалния slug от route-а (не използваме top-level константа!)
+    const actualSlug = route.params.slug ? decodeURIComponent(String(route.params.slug)) : (route.params.categorySlug ? decodeURIComponent(String(route.params.categorySlug)) : '');
+    
+    // ТОЧНО КАТО В CHILD.VUE: Проверяваме дали трябва да refresh-нем данните
+    const needsRefresh = !matchingCategory || matchingCategory.slug !== actualSlug;
     
     if (needsRefresh) {
-      console.log('🔄 CLIENT: Loading category data async (no cache or different category)');
       try {
-        const { data: categoryData } = await useAsyncGql('getProductCategories', {
-          slug: [slug],
-          hideEmpty: false,
-          first: 10,
-        });
+        // ПАРАЛЕЛНО зареждане на category data И product count (като в child.vue)
+        const [categoryData, productsCountData] = await Promise.all([
+          useAsyncGql('getProductCategories', { slug: [actualSlug], hideEmpty: false, first: 10 }),
+          useAsyncGql('getProductsCount', { slug: [actualSlug] }),
+        ]);
 
-        if (categoryData.value?.productCategories?.nodes?.[0]) {
-          matchingCategory = categoryData.value.productCategories.nodes[0] as Category;
-          realProductCount = matchingCategory.count || 0;
+        if (categoryData.data.value?.productCategories?.nodes?.[0]) {
+          matchingCategory = categoryData.data.value.productCategories.nodes[0] as Category;
           matchingCategoryRef.value = matchingCategory;
-
-          // Кешираме данните
-          setCachedCategoryData(matchingCategory, realProductCount);
-          console.log('✅ CLIENT: Category data loaded and cached');
         } else {
           throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
         }
+
+        // Получаваме точния брой продукти (като в child.vue)
+        if (productsCountData.data.value?.products?.edges) {
+          realProductCount = productsCountData.data.value.products.edges.length;
+        }
+
+        // Кешираме данните
+        setCachedCategoryData(matchingCategory, realProductCount);
       } catch (error) {
         console.error('Failed to load category:', error);
         throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
       }
     } else {
-      console.log('✅ CLIENT: Using cached category data');
-      matchingCategory = cachedData.category;
-      realProductCount = cachedData.count;
+      // Използваме съществуващите данни
       matchingCategoryRef.value = matchingCategory;
     }
   }
 
   // След като имаме category data, зареждаме продуктите
-  console.log('🚀 onMounted: About to call loadCategoryProducts');
   await loadCategoryProducts();
-  console.log('✅ onMounted: loadCategoryProducts completed');
 
   // ⚡ ОПТИМИЗАЦИЯ: Cache warming в requestIdleCallback (не блокира main thread)
   if (process.client && 'requestIdleCallback' in window) {
@@ -701,11 +690,10 @@ onMounted(async () => {
   });
 });
 
-// ⚠️ ВАЖНО: НЕ зареждаме продукти на SSR (блокира TTFB за 4-5 секунди!)
-// Skeleton се рендерира от SSR, продуктите се зареждат client-side за бързина
-// if (process.server) {
-//   await loadCategoryProducts();
-// }
+// ⚠️ ВАЖНО: Зареждаме на SSR за да имаме продукти при hard refresh!
+if (process.server) {
+  await loadCategoryProducts();
+}
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher
@@ -719,14 +707,9 @@ watch(
   () => route.fullPath,
   async (newFullPath, oldFullPath) => {
     if (!process.client) return;
-    
-    console.log('🚨 CATEGORY WATCHER: Detected route change', { oldFullPath, newFullPath });
 
     // Проверяваме дали наистина има промяна
-    if (newFullPath === oldFullPath) {
-      console.log('⚠️ CATEGORY WATCHER: No actual change, ignoring');
-      return;
-    }
+    if (newFullPath === oldFullPath) return;
 
     // Debounce за да избегнем множество едновременни заявки
     if (navigationDebounceTimer) {
@@ -736,38 +719,21 @@ watch(
     navigationDebounceTimer = setTimeout(async () => {
       // ⚡ ВАЖНО: Поставяме флага в началото на timeout-а
       isNavigating = true;
-      console.log('🔄 CATEGORY: Route watcher processing after debounce');
 
       try {
-        // Извличаме path и query от route (актуалните стойности)
-        const currentPath = route.path;
-        const currentQuery = route.query;
-        
-        console.log('📊 CATEGORY: Current route state', { 
-          path: currentPath,
-          query: currentQuery
-        });
-
-        // Проверяваме дали има промяна в query параметрите (филтри/сортиране)
-        const newOrderBy = currentQuery.orderby as string | null;
-        const newOrder = currentQuery.order as string | null;
-        const newFilter = currentQuery.filter as string | null;
+        // Проверяваме дали има промяна в query параметрите (філтри/сортиране)
+        const newOrderBy = route.query.orderby as string | null;
+        const newOrder = route.query.order as string | null;
+        const newFilter = route.query.filter as string | null;
 
         const sortingOrFilteringChanged =
           newOrderBy !== previousQuery.value.orderby || newOrder !== previousQuery.value.order || newFilter !== previousQuery.value.filter;
 
-        console.log('🔍 CATEGORY: Checking for changes', {
-          sortingOrFilteringChanged,
-          previous: previousQuery.value,
-          current: { orderby: newOrderBy, order: newOrder, filter: newFilter }
-        });
-
-        // Redirect към страница 1 ако променяме филтри/сортиране на страница > 1
+        // Redirect към страница 1 ако променяме філтри/сортиране на страница > 1
         if (sortingOrFilteringChanged && route.params.pageNumber) {
           const currentPageNumber = parseInt(String(route.params.pageNumber) || '1');
 
           if (currentPageNumber > 1) {
-            console.log('🔀 CATEGORY: Redirecting to page 1');
             const queryParams = new URLSearchParams();
             if (newOrderBy) queryParams.set('orderby', newOrderBy);
             if (newOrder) queryParams.set('order', newOrder);
@@ -795,11 +761,9 @@ watch(
         };
 
         // Зареждаме продуктите (винаги, независимо дали има промяна)
-        console.log('✅ CATEGORY: Loading products');
         hasEverLoaded.value = false;
         await loadCategoryProducts();
       } finally {
-        console.log('✨ CATEGORY: Navigation complete, resetting flag');
         isNavigating = false;
         navigationDebounceTimer = null;
       }

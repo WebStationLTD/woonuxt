@@ -156,11 +156,11 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
   }; // ⚡ КРАЙ НА loadTrackingScripts функцията
 
-  // ⚡ EMERGENCY FIX 2.2: АГРЕСИВЕН DELAY UNTIL INTERACTION (DUI) PATTERN
+  // ⚡ DELAY UNTIL INTERACTION (DUI) PATTERN
   // Зареждаме tracking скриптовете САМО при реално потребителско взаимодействие
-  // или СЛЕД 5 секунди (за Lighthouse/ботове)
+  // или СЛЕД 7 секунди (за Lighthouse/ботове)
   const events = ['scroll', 'mousemove', 'touchstart', 'click', 'keydown'];
-  const timeoutDuration = 5000; // ⚡ УВЕЛИЧЕНО: 5 секунди (беше 3s)
+  const timeoutDuration = 7000; // 7 секунди - баланс между performance и tracking
 
   // Wrapper функция която зарежда скриптовете и премахва listeners
   const loadAndCleanup = () => {
@@ -185,8 +185,8 @@ export default defineNuxtPlugin((nuxtApp) => {
     window.addEventListener(event, loadAndCleanup, { once: true, passive: true });
   });
 
-  // Timeout fallback - зареждаме след 5 секунди дори без interaction
-  // ⚡ EMERGENCY FIX: requestIdleCallback за минимално влияние върху performance
+  // Timeout fallback - зареждаме след 7 секунди дори без interaction
+  // ⚡ requestIdleCallback за минимално влияние върху performance
   if ("requestIdleCallback" in window) {
     requestIdleCallback(() => {
       setTimeout(loadTrackingScripts, timeoutDuration);
@@ -196,7 +196,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   }
 
   if (config.public.TRACKING_DEBUG) {
-    console.log("⏳ Tracking scripts will load on first interaction or after 5s (idle)");
+    console.log("⏳ Tracking scripts will load on first interaction or after 7s (idle)");
   }
 
   // ============================================

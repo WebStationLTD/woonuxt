@@ -366,18 +366,9 @@ export function useProducts() {
         }
       }
 
-      // DEBUG: Покажи какво пращаме към GraphQL
-      console.log('🔍 loadProductsPageOptimized: GraphQL variables:', JSON.stringify(variables, null, 2));
-
       // Използваме оптимизираната заявка
       const { data } = await useAsyncGql('getProductsOptimized', variables);
       const result = data.value?.products;
-      
-      console.log('📦 loadProductsPageOptimized: GraphQL result:', {
-        hasResult: !!result,
-        nodesCount: result?.nodes?.length || 0,
-        hasNextPage: result?.pageInfo?.hasNextPage,
-      });
 
       if (result && result.pageInfo) {
         let productsToShow = result.nodes || [];

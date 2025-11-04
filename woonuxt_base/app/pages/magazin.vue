@@ -493,11 +493,23 @@ onMounted(async () => {
   await loadProductsFromRoute();
 });
 
-// ⚠️ ВАЖНО: НЕ зареждаме продукти на SSR (блокира TTFB за 4-5 секунди!)
-// Skeleton се рендерира от SSR, продуктите се зареждат client-side за бързина
-// if (process.server) {
-//   await loadProductsFromRoute();
-// }
+// ⚡ HYBRID: SSR зарежда САМО първите 12 продукта (за LCP), останалите client-side
+if (process.server) {
+  try {
+    const { data } = await useAsyncGql('getProductsOptimized', {
+      first: 12,
+      orderby: 'DATE',
+    });
+    
+    if (data.value?.products?.nodes) {
+      products.value = data.value.products.nodes;
+      pageInfo.hasNextPage = data.value.products.pageInfo?.hasNextPage || false;
+      pageInfo.endCursor = data.value.products.pageInfo?.endCursor || '';
+    }
+  } catch (error) {
+    console.error('SSR product load failed:', error);
+  }
+}
 
 // Слушаме за промени в route-а
 watch(

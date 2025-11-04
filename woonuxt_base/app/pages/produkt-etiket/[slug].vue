@@ -520,8 +520,12 @@ onMounted(async () => {
     }
   }
 
-  // След като имаме tag data, зареждаме продуктите
-  await loadTagProducts();
+  // ⚡ HYBRID: Ако има SSR продукти, зареждаме останалите
+  const hasSSRProducts = products.value.length > 0 && products.value.length < productsPerPage.value;
+  
+  if (hasSSRProducts || products.value.length === 0) {
+    await loadTagProducts();
+  }
 
   // ⚡ ОПТИМИЗАЦИЯ: Cache warming в requestIdleCallback (не блокира main thread)
   if (process.client && 'requestIdleCallback' in window) {
@@ -538,8 +542,7 @@ onMounted(async () => {
   });
 });
 
-// ⚠️ ВАЖНО: НЕ зареждаме продукти на SSR (блокира TTFB за 4-5 секунди!)
-// Skeleton се рендерира от SSR, продуктите се зареждат client-side за бързина
+// ⚠️ НЕ зареждаме продукти на SSR - skeleton се рендерира, продукти client-side
 // if (process.server) {
 //   await loadTagProducts();
 // }
