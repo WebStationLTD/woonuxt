@@ -606,8 +606,11 @@ onMounted(async () => {
     }
   }
 
-  // След като имаме category data, зареждаме продуктите
-  await loadCategoryProducts();
+  // ⚡ ВАЖНО: Зареждаме продукти САМО ако няма SSR продукти
+  // При hard refresh SSR вече зареди продуктите - не ги презареждаме!
+  if (products.value.length === 0 || !hasEverLoaded.value) {
+    await loadCategoryProducts();
+  }
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {
@@ -615,7 +618,7 @@ onMounted(async () => {
   });
 });
 
-// ⚠️ ВАЖНО: Зареждаме на SSR за да имаме продукти при hard refresh!
+// ⚠️ ВАЖНО: Зареждаме всички продукти на SSR за stable hard refresh!
 if (process.server) {
   await loadCategoryProducts();
 }

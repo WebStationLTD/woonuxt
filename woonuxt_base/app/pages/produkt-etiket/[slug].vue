@@ -480,10 +480,9 @@ onMounted(async () => {
     }
   }
 
-  // ⚡ HYBRID: Ако има SSR продукти, зареждаме останалите
-  const hasSSRProducts = products.value.length > 0 && products.value.length < productsPerPage.value;
-  
-  if (hasSSRProducts || products.value.length === 0) {
+  // ⚡ ВАЖНО: Зареждаме продукти САМО ако няма SSR продукти
+  // При hard refresh SSR вече зареди продуктите - не ги презареждаме!
+  if (products.value.length === 0 || !hasEverLoaded.value) {
     await loadTagProducts();
   }
 
@@ -495,7 +494,7 @@ onMounted(async () => {
   });
 });
 
-// ⚠️ ВАЖНО: Зареждаме на SSR за да имаме продукти при hard refresh!
+// ⚠️ ВАЖНО: Зареждаме всички продукти на SSR за stable hard refresh!
 if (process.server) {
   await loadTagProducts();
 }
