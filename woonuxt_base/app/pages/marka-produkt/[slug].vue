@@ -618,7 +618,6 @@ onMounted(async () => {
       throw showError({ statusCode: 404, statusMessage: 'Марката не е намерена' });
     }
     } else {
-      console.log('✅ BRAND DEBUG: Using existing brand data (already loaded)');
       // Данните вече са налични от SSR или предишна навигация
       matchingBrandRef.value = matchingBrand;
     }

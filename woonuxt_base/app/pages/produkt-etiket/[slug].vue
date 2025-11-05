@@ -495,10 +495,10 @@ onMounted(async () => {
   });
 });
 
-// ⚠️ НЕ зареждаме продукти на SSR - skeleton се рендерира, продукти client-side
-// if (process.server) {
-//   await loadTagProducts();
-// }
+// ⚠️ ВАЖНО: Зареждаме на SSR за да имаме продукти при hard refresh!
+if (process.server) {
+  await loadTagProducts();
+}
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher
