@@ -55,10 +55,35 @@ onMounted(() => {
             items: 6,
           },
         },
+        onInit: fixAccessibility,
       });
+
+      // Слушаме за промени в слайдовете и актуализираме accessibility
+      slider.events.on('indexChanged', fixAccessibility);
     }
   });
 });
+
+// Функция за оправяне на accessibility проблемите
+function fixAccessibility() {
+  if (!sliderContainerRef.value) return;
+
+  const slides = sliderContainerRef.value.querySelectorAll('.tiny-slide');
+  slides.forEach((slide: Element) => {
+    const isHidden = slide.getAttribute('aria-hidden') === 'true';
+    const focusableElements = slide.querySelectorAll('button, input, a, select, textarea, [tabindex]:not([tabindex="-1"])');
+    
+    focusableElements.forEach((el: Element) => {
+      if (isHidden) {
+        // Скриваме focusable елементите в скритите слайдове
+        el.setAttribute('tabindex', '-1');
+      } else {
+        // Възстановяваме tabindex за видимите слайдове
+        el.removeAttribute('tabindex');
+      }
+    });
+  });
+}
 
 // Унищожаваме Tiny-Slider когато компонентът е премахнат
 onUnmounted(() => {
@@ -81,17 +106,25 @@ onUnmounted(() => {
     <client-only>
       <div class="carousel-wrapper">
         <div class="relative carousel-outer-container">
-          <div class="slider-controls">
+          <div class="slider-controls" role="group" aria-label="Навигация на карусел">
             <!-- Лява стрелка -->
-            <button class="custom-prev-button">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button 
+              class="custom-prev-button" 
+              type="button"
+              aria-label="Предишен слайд"
+              :title="$t('messages.general.previous') || 'Предишен'">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
 
             <!-- Дясна стрелка -->
-            <button class="custom-next-button">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button 
+              class="custom-next-button" 
+              type="button"
+              aria-label="Следващ слайд"
+              :title="$t('messages.general.next') || 'Следващ'">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>

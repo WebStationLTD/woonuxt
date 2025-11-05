@@ -64,8 +64,8 @@ useHead({
 <template>
   <!-- Мобилна версия: скрита на desktop -->
   <div class="flex md:hidden text-xs leading-tight text-gray-400 gap-1.5 items-center py-2 mb-3">
-    <NuxtLink to="/" class="hover:text-primary shrink-0">
-      <Icon name="ion:home" size="14" class="text-gray-400" />
+    <NuxtLink to="/" class="hover:text-primary shrink-0" aria-label="Начало" title="Начало">
+      <Icon name="ion:home" size="14" class="text-gray-400" aria-hidden="true" />
     </NuxtLink>
     <span class="shrink-0">/</span>
     

@@ -215,7 +215,7 @@ const availableVariationsText = computed(() => {
         :width="imgWidth"
         :height="imgHeight"
         :src="imagetoDisplay"
-        :alt="node.image?.altText || node.name || 'Product image'"
+        :alt="node.image?.altText || `Снимка на ${node.name}`"
         :title="node.image?.title || node.name"
         :loading="index <= 3 ? 'eager' : 'lazy'"
         :fetchpriority="index <= 3 ? 'high' : 'auto'"
@@ -236,8 +236,10 @@ const availableVariationsText = computed(() => {
 
         <!-- Селект за вариации (само за вариационни продукти) -->
         <div v-if="hasVariations" class="flex w-full mt-2 sm:mt-0 sm:justify-end sm:w-[100px]">
+          <label :for="`variations-${node.databaseId}`" class="sr-only">Изберете {{ primaryAttributeName }} за {{ node.name }}</label>
           <select
             :id="`variations-${node.databaseId}`"
+            :aria-label="`Изберете ${primaryAttributeName} за ${node.name}`"
             class="text-xs py-1 px-2 border border-gray-300 rounded focus:outline-none focus:border-gray-400 bg-white w-full sm:max-w-[160px]"
             @change="(e) => selectVariation(Number((e.target as HTMLSelectElement).value))">
             <option value="" disabled selected>{{ primaryAttributeName }}</option>
@@ -269,25 +271,31 @@ const availableVariationsText = computed(() => {
       <div v-if="shouldShowCart">
         <!-- Брояч и бутон Купи -->
         <div class="flex items-center justify-between space-x-2">
-          <div class="flex items-center h-8 bg-white border border-gray-300 rounded-md">
+          <div class="flex items-center h-8 bg-white border border-gray-300 rounded-md" role="group" aria-label="Количество">
             <button
               @click.prevent="decrementQuantity"
               type="button"
+              aria-label="Намали количеството"
+              title="Намали количеството"
               class="flex items-center justify-center w-6 h-full text-xs text-gray-500 transition-colors border-r border-gray-300 hover:bg-gray-50"
               :disabled="quantity <= 1">
-              <Icon name="ion:remove" size="14" />
+              <Icon name="ion:remove" size="14" aria-hidden="true" />
             </button>
+            <label :for="`quantity-${node.databaseId}`" class="sr-only">Количество за {{ node.name }}</label>
             <input
               :id="`quantity-${node.databaseId}`"
               v-model.number="quantity"
               type="number"
               min="1"
+              :aria-label="`Количество за ${node.name}`"
               class="w-8 h-full text-xs text-center bg-transparent focus:outline-none" />
             <button
               @click.prevent="incrementQuantity"
               type="button"
+              aria-label="Увеличи количеството"
+              title="Увеличи количеството"
               class="flex items-center justify-center w-6 h-full text-xs text-gray-500 transition-colors border-l border-gray-300 hover:bg-gray-50">
-              <Icon name="ion:add" size="14" />
+              <Icon name="ion:add" size="14" aria-hidden="true" />
             </button>
           </div>
 
@@ -314,6 +322,19 @@ const availableVariationsText = computed(() => {
 </template>
 
 <style scoped>
+/* Screen reader only class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
