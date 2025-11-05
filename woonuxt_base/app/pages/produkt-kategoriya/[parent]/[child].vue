@@ -262,8 +262,10 @@ const headLinks = ref([{ rel: 'canonical', href: initialChildSeoMeta.canonicalUr
 // ⚡ LCP ОПТИМИЗАЦИЯ: Helper за генериране на Vercel Image URL
 const getVercelImageUrl = (originalUrl: string, width: number) => {
   // Vercel Image Optimization формат: /_vercel/image?url=ENCODED_URL&w=WIDTH&q=QUALITY
+  // ВАЖНО: Vercel автоматично използва q=50 за малки размери (320px) и q=80 за големи
   const encodedUrl = encodeURIComponent(originalUrl);
-  return `/_vercel/image?url=${encodedUrl}&w=${width}&q=80`;
+  const quality = width <= 320 ? 50 : 80; // Adaptive quality (като NuxtImg)
+  return `/_vercel/image?url=${encodedUrl}&w=${width}&q=${quality}`;
 };
 
 // ⚡ LCP ОПТИМИЗАЦИЯ: Preload първите 3 продуктни снимки (за по-бърз LCP)
@@ -287,6 +289,7 @@ const preloadImages = computed(() => {
           as: 'image',
           href: img640, // Основен URL (desktop размер)
           fetchpriority: index === 0 ? 'high' : 'auto', // Само първата снимка е high priority
+          crossOrigin: 'anonymous', // ВАЖНО: Nuxt изисква camelCase! (не 'crossorigin')
           // imagesrcset с Vercel URLs (като в NuxtImg резултата)
           imagesrcset: `${img320} 140w, ${img320} 280w, ${img640} 560w`,
           imagesizes: '(max-width: 768px) 140px, 280px',
