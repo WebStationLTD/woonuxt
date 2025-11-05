@@ -198,6 +198,13 @@ useSeoMeta({
 // Reactive refs за SEO links (използваме SSR стойност за initial render)
 const headLinks = ref([{ rel: 'canonical', href: ssrTagSeoMeta.canonicalUrl }]);
 
+// ⚡ LCP ОПТИМИЗАЦИЯ: Helper за генериране на Vercel Image URL
+const getVercelImageUrl = (originalUrl: string, width: number) => {
+  // Vercel Image Optimization формат: /_vercel/image?url=ENCODED_URL&w=WIDTH&q=QUALITY
+  const encodedUrl = encodeURIComponent(originalUrl);
+  return `/_vercel/image?url=${encodedUrl}&w=${width}&q=80`;
+};
+
 // ⚡ LCP ОПТИМИЗАЦИЯ: Preload първите 3 продуктни снимки (за по-бърз LCP)
 const preloadImages = computed(() => {
   const links: any[] = [];
@@ -210,14 +217,18 @@ const preloadImages = computed(() => {
       const imageUrl = product?.image?.producCardSourceUrl || product?.image?.sourceUrl;
       
       if (imageUrl) {
+        // Генерираме Vercel Image URLs за различни резолюции (като NuxtImg)
+        const img320 = getVercelImageUrl(imageUrl, 320); // За 140w физически
+        const img640 = getVercelImageUrl(imageUrl, 640); // За 280w физически и 2x DPI
+        
         links.push({
           rel: 'preload',
           as: 'image',
-          href: imageUrl,
+          href: img640, // Основен URL (desktop размер)
           fetchpriority: index === 0 ? 'high' : 'auto', // Само първата снимка е high priority
-          // За Nuxt Image добавяме и responsive sizes
-          imagesrcset: `${imageUrl}?width=140 140w, ${imageUrl}?width=280 280w`,
-          imagesizes: 'sm:140px md:280px',
+          // imagesrcset с Vercel URLs (като в NuxtImg резултата)
+          imagesrcset: `${img320} 140w, ${img320} 280w, ${img640} 560w`,
+          imagesizes: '(max-width: 768px) 140px, 280px',
         });
       }
     });
