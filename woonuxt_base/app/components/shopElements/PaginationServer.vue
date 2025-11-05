@@ -220,11 +220,12 @@ const shouldShowDotsAfterFirst = computed(() => {
         :to="previousPageUrl"
         class="prev"
         :class="{ 'opacity-50': isLoading, 'rounded-l-md': !firstPageUrl }"
-        aria-label="Previous">
-        <Icon name="ion:chevron-back-outline" size="20" class="w-5 h-5" />
+        aria-label="Предишна страница"
+        title="Предишна страница">
+        <Icon name="ion:chevron-back-outline" size="20" class="w-5 h-5" aria-hidden="true" />
       </NuxtLink>
-      <span v-else class="prev cursor-not-allowed opacity-50" :class="{ 'rounded-l-md': !firstPageUrl }" aria-label="Previous">
-        <Icon name="ion:chevron-back-outline" size="20" class="w-5 h-5" />
+      <span v-else class="prev cursor-not-allowed opacity-50" :class="{ 'rounded-l-md': !firstPageUrl }" role="button" aria-disabled="true" title="Предишна страница (неактивна)">
+        <Icon name="ion:chevron-back-outline" size="20" class="w-5 h-5" aria-hidden="true" />
       </span>
 
       <!-- DOTS AFTER FIRST -->
@@ -250,11 +251,11 @@ const shouldShowDotsAfterFirst = computed(() => {
       </NuxtLink>
 
       <!-- NEXT -->
-      <NuxtLink v-if="nextPageUrl" :to="nextPageUrl" class="next" :class="{ 'opacity-50': isLoading, 'rounded-r-md': !lastPageUrl }" aria-label="Next">
-        <Icon name="ion:chevron-forward-outline" size="20" class="w-5 h-5" />
+      <NuxtLink v-if="nextPageUrl" :to="nextPageUrl" class="next" :class="{ 'opacity-50': isLoading, 'rounded-r-md': !lastPageUrl }" aria-label="Следваща страница" title="Следваща страница">
+        <Icon name="ion:chevron-forward-outline" size="20" class="w-5 h-5" aria-hidden="true" />
       </NuxtLink>
-      <span v-else class="next cursor-not-allowed opacity-50" :class="{ 'rounded-r-md': !lastPageUrl }" aria-label="Next">
-        <Icon name="ion:chevron-forward-outline" size="20" class="w-5 h-5" />
+      <span v-else class="next cursor-not-allowed opacity-50" :class="{ 'rounded-r-md': !lastPageUrl }" role="button" aria-disabled="true" title="Следваща страница (неактивна)">
+        <Icon name="ion:chevron-forward-outline" size="20" class="w-5 h-5" aria-hidden="true" />
       </span>
     </nav>
 

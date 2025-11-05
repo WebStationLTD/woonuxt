@@ -866,11 +866,11 @@ const loadCategoryCount = async (filters: any) => {
         <nav v-if="parentCategoryRef && matchingCategoryRef">
           <!-- Мобилна версия: скрита на desktop -->
           <div class="flex md:hidden text-xs leading-tight text-gray-400 gap-1.5 items-center py-2 mb-3">
-            <NuxtLink to="/" class="hover:text-primary shrink-0">
-              <Icon name="ion:home" size="14" class="text-gray-400" />
+            <NuxtLink to="/" class="hover:text-primary shrink-0" aria-label="Начало" title="Начало">
+              <Icon name="ion:home" size="14" class="text-gray-400" aria-hidden="true" />
             </NuxtLink>
             <span class="shrink-0">/</span>
-            <NuxtLink :to="`/produkt-kategoriya/${parentCategoryRef.slug}`" class="hover:text-primary shrink-0 line-clamp-1" :title="parentCategoryRef.name">
+            <NuxtLink :to="`/produkt-kategoriya/${parentCategoryRef.slug}`" class="hover:text-primary shrink-0 line-clamp-1" :title="parentCategoryRef.name" :aria-label="parentCategoryRef.name">
               {{ parentCategoryRef.name }}
             </NuxtLink>
             <span class="shrink-0 mx-0.5">/</span>

@@ -22,9 +22,10 @@ const toggleWishlist = (event: Event) => {
     type="button"
     class="absolute top-2 left-2 z-40 bg-white/80 hover:bg-white rounded-full shadow-md transition-all duration-200 wishlist-btn"
     @click="toggleWishlist"
+    :aria-label="isWishlisted ? ($t('messages.shop.wishlistRemove') || 'Премахни от любими') : ($t('messages.shop.wishlistAdd') || 'Добави в любими')"
     :title="isWishlisted ? $t('messages.shop.wishlistRemove') : $t('messages.shop.wishlistAdd')">
-    <Icon v-if="isWishlisted" name="ion:heart" size="24" class="text-[#9c0100] md:w-6 md:h-6 w-5 h-5" />
-    <Icon v-else name="ion:heart-outline" size="24" class="text-gray-600 md:w-6 md:h-6 w-5 h-5" />
+    <Icon v-if="isWishlisted" name="ion:heart" size="24" class="text-[#9c0100] md:w-6 md:h-6 w-5 h-5" aria-hidden="true" />
+    <Icon v-else name="ion:heart-outline" size="24" class="text-gray-600 md:w-6 md:h-6 w-5 h-5" aria-hidden="true" />
   </button>
 </template>
 

@@ -34,21 +34,23 @@ watch(isFiltersActive, () => {
         <input
           id="price-from"
           v-model="price[0]"
-          class="bg-white border rounded-lg max-w-full border-gray-200 leading-none w-auto p-2 pr-12 md:text-sm"
+          class="bg-white border rounded-lg max-w-full border-gray-200 leading-none w-auto p-2 pr-12 md:text-sm text-gray-900"
           type="number"
-          placeholder="From"
-          min="0" />
-        <label for="price-from" class="leading-none px-2 text-gray-400 absolute right-0" v-html="currencySymbol" />
+          placeholder="От"
+          min="0"
+          aria-label="Минимална цена" />
+        <label for="price-from" class="leading-none px-2 text-gray-600 absolute right-0 pointer-events-none" v-html="currencySymbol" />
       </div>
       <div class="flex relative items-center">
         <input
           id="price-to"
           v-model="price[1]"
-          class="bg-white border rounded-lg max-w-full border-gray-200 leading-none w-auto p-2 pr-12 md:text-sm"
+          class="bg-white border rounded-lg max-w-full border-gray-200 leading-none w-auto p-2 pr-12 md:text-sm text-gray-900"
           type="number"
-          placeholder="Up to"
-          min="1" />
-        <label for="price-to" class="leading-none px-2 text-gray-400 absolute right-0" v-html="currencySymbol" />
+          placeholder="До"
+          min="1"
+          aria-label="Максимална цена" />
+        <label for="price-to" class="leading-none px-2 text-gray-600 absolute right-0 pointer-events-none" v-html="currencySymbol" />
       </div>
       <div class="mx-1 mt-1 col-span-full">
         <ClientOnly>
