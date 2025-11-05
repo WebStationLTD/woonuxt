@@ -245,8 +245,36 @@ useSeoMeta({
 // Reactive refs за SEO links (използваме SSR стойност за initial render)
 const headLinks = ref([{ rel: 'canonical', href: ssrCategorySeoMeta.canonicalUrl }]);
 
+// ⚡ LCP ОПТИМИЗАЦИЯ: Preload първите 3 продуктни снимки (за по-бърз LCP)
+const preloadImages = computed(() => {
+  const links: any[] = [];
+  
+  // Вземаме първите 3 продукта (само на SSR за да са в initial HTML)
+  if (process.server && products.value?.length) {
+    const firstProducts = products.value.slice(0, 3);
+    
+    firstProducts.forEach((product: any, index: number) => {
+      const imageUrl = product?.image?.producCardSourceUrl || product?.image?.sourceUrl;
+      
+      if (imageUrl) {
+        links.push({
+          rel: 'preload',
+          as: 'image',
+          href: imageUrl,
+          fetchpriority: index === 0 ? 'high' : 'auto', // Само първата снимка е high priority
+          // За Nuxt Image добавяме и responsive sizes
+          imagesrcset: `${imageUrl}?width=140 140w, ${imageUrl}?width=280 280w`,
+          imagesizes: 'sm:140px md:280px',
+        });
+      }
+    });
+  }
+  
+  return links;
+});
+
 useHead({
-  link: headLinks,
+  link: computed(() => [...headLinks.value, ...preloadImages.value]),
 });
 
 // Schema markup от категорията ако е наличен
