@@ -116,7 +116,6 @@ if (process.server) {
   if (cachedData) {
     matchingTag = cachedData.tag;
     realProductCount = cachedData.count;
-    console.log('✅ CACHE HIT (TAG): Using cached tag data');
   }
   // Ако няма кеш, ще заредим в onMounted БЕЗ да блокираме initial render
 }
@@ -127,45 +126,9 @@ const matchingTagRef = ref<Tag | null>(matchingTag);
 // Ref за филтриран count при филтриране
 const filteredTagCount = ref<number | null>(null);
 
-// ⚡ ОПТИМИЗАЦИЯ 3: Функция за асинхронно зареждане на точен count (lazy loading)
-const loadPreciseCount = async () => {
-  if (!process.client || realProductCount === null) return;
-
-  try {
-    // Зареждаме точния count асинхронно БЕЗ да блокираме UI
-    const { data: countData } = await useAsyncGql(
-      'getProductsCount' as any,
-      {
-        productTag: [slug],
-      } as any,
-    );
-
-    if (countData.value?.products?.edges) {
-      const preciseCount = countData.value.products.edges.length;
-      if (preciseCount !== realProductCount) {
-        realProductCount = preciseCount;
-        // Обновяваме кеша с точния count
-        if (matchingTag) {
-          setCachedTagData(matchingTag, preciseCount);
-        }
-      }
-    }
-  } catch (error) {
-    // Ignore errors, use cached count
-  }
-};
-
-// ⚡ ОПТИМИЗАЦИЯ 4: Proactive cache warming
-const warmUpCache = async () => {
-  if (!process.client) return;
-
-  // Зареждаме точния count в background
-  setTimeout(async () => {
-    if (process.client) {
-      await loadPreciseCount();
-    }
-  }, 100);
-};
+// ⚡ ОПТИМИЗАЦИЯ: loadPreciseCount е премахната!
+// WooCommerce GraphQL API вече връща точен count в getProductTags
+// Не е нужна отделна заявка - спестяваме 300-800ms!
 
 // Функция за генериране на SEO данни според страницата (взета от категориите)
 const generateTagSeoMeta = () => {
@@ -486,7 +449,6 @@ onMounted(async () => {
     const needsRefresh = !cachedData || cachedData.tag?.slug !== slug;
     
     if (needsRefresh) {
-      console.log('🔄 CLIENT (TAG): Loading tag data async (no cache or different tag)');
       try {
         const { data: tagData } = await useAsyncGql(
           'getProductTags' as any,
@@ -504,7 +466,6 @@ onMounted(async () => {
           
           // Кешираме данните
           setCachedTagData(matchingTag, realProductCount);
-          console.log('✅ CLIENT (TAG): Tag data loaded and cached');
         } else {
           throw showError({ statusCode: 404, statusMessage: 'Етикетът не е намерен' });
         }
@@ -513,7 +474,6 @@ onMounted(async () => {
         throw showError({ statusCode: 404, statusMessage: 'Етикетът не е намерен' });
       }
     } else {
-      console.log('✅ CLIENT (TAG): Using cached tag data');
       matchingTag = cachedData.tag;
       realProductCount = cachedData.count;
       matchingTagRef.value = matchingTag;
@@ -527,14 +487,7 @@ onMounted(async () => {
     await loadTagProducts();
   }
 
-  // ⚡ ОПТИМИЗАЦИЯ: Cache warming в requestIdleCallback (не блокира main thread)
-  if (process.client && 'requestIdleCallback' in window) {
-    requestIdleCallback(() => {
-      warmUpCache();
-    }, { timeout: 2000 });
-  } else if (process.client) {
-    setTimeout(() => warmUpCache(), 100);
-  }
+  // ⚡ ОПТИМИЗАЦИЯ: Премахнато cache warming - използваме built-in count от GraphQL!
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {

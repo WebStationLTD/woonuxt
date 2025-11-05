@@ -82,6 +82,50 @@ const currentParentSlug = ref(parentSlug);
 const currentChildSlug = ref(childSlug);
 const currentPageNumber = ref(1);
 
+// ⚡ ОПТИМИЗАЦИЯ: Session Storage Cache за child категории
+const CHILD_CATEGORY_CACHE_KEY = `woonuxt_child_category_${parentSlug}_${childSlug}`;
+const CACHE_DURATION = 30 * 60 * 1000; // 30 минути
+const CACHE_VERSION = 'v1';
+
+// Функции за кеширане
+const getCachedChildCategoryData = (): { category: Category | null; parent: Category | null; count: number | null } | null => {
+  if (!process.client) return null;
+
+  try {
+    const cached = sessionStorage.getItem(CHILD_CATEGORY_CACHE_KEY);
+    if (!cached) return null;
+
+    const { category, parent, count, timestamp, version } = JSON.parse(cached);
+    const now = Date.now();
+
+    if (version !== CACHE_VERSION || now - timestamp > CACHE_DURATION) {
+      sessionStorage.removeItem(CHILD_CATEGORY_CACHE_KEY);
+      return null;
+    }
+
+    return { category, parent, count };
+  } catch (error) {
+    return null;
+  }
+};
+
+const setCachedChildCategoryData = (category: Category, parent: Category | null, count: number): void => {
+  if (!process.client) return;
+
+  try {
+    const cacheData = {
+      category,
+      parent,
+      count,
+      timestamp: Date.now(),
+      version: CACHE_VERSION,
+    };
+    sessionStorage.setItem(CHILD_CATEGORY_CACHE_KEY, JSON.stringify(cacheData));
+  } catch {
+    // Ignore cache errors
+  }
+};
+
 let matchingCategory: Category | null = null;
 let parentCategory: Category | null = null;
 let realProductCount: number | null = null;
@@ -90,13 +134,12 @@ let realProductCount: number | null = null;
 if (process.server) {
   const { data: categoryData } = await useAsyncGql('getProductCategories', { slug: [childSlug], hideEmpty: true });
 
-  // Получаваме точния брой продукти с ЛЕКА заявка (само cursor-и, без тежки данни)
-  const { data: productsCountData } = await useAsyncGql('getProductsCount', {
-    slug: [childSlug],
-  });
-
   if (categoryData.value?.productCategories?.nodes?.[0]) {
     matchingCategory = categoryData.value.productCategories.nodes[0];
+
+    // ⚡ ОПТИМИЗАЦИЯ: Използваме built-in count от GraphQL API (без излишна заявка!)
+    // WooCommerce GraphQL API вече връща точен count - не е нужна отделна заявка
+    realProductCount = matchingCategory.count || 0;
 
     // Ако има parent информация в данните
     if (matchingCategory.parent?.node) {
@@ -104,15 +147,19 @@ if (process.server) {
     }
   }
 
-  // Получаваме точния брой от ЛЕКА заявка (само cursor-и, без снимки/вариации/и т.н.)
-  if (productsCountData.value?.products?.edges) {
-    realProductCount = productsCountData.value.products.edges.length;
-  }
-
   // Fallback ако няма категория
   if (!matchingCategory) {
     throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
   }
+} else {
+  // ⚡ ОПТИМИЗАЦИЯ: При CLIENT - проверяваме кеша веднага (синхронно, БЕЗ await)
+  const cachedData = getCachedChildCategoryData();
+  if (cachedData) {
+    matchingCategory = cachedData.category;
+    parentCategory = cachedData.parent;
+    realProductCount = cachedData.count;
+  }
+  // Ако няма кеш, ще заредим в onMounted БЕЗ да блокираме initial render
 }
 
 // Reactive refs за runtime промени
@@ -521,37 +568,37 @@ onMounted(async () => {
     const needsRefresh = !matchingCategory || matchingCategory.slug !== actualChildSlug;
     
     if (needsRefresh) {
-      console.log('🔄 CLIENT (CHILD): Loading category data async (no cache or different category)', { actualChildSlug });
-      
       try {
-        const [categoryData, productsCountData] = await Promise.all([
-          useAsyncGql('getProductCategories', { slug: [actualChildSlug], hideEmpty: true }),
-          useAsyncGql('getProductsCount', { slug: [actualChildSlug] }),
-        ]);
+        // ⚡ ОПТИМИЗАЦИЯ: Една заявка вместо две! 
+        // getProductCategories вече връща точен count - не е нужна getProductsCount
+        const { data: categoryData } = await useAsyncGql('getProductCategories', { 
+          slug: [actualChildSlug], 
+          hideEmpty: true 
+        });
 
-        if (categoryData.data.value?.productCategories?.nodes?.[0]) {
-          matchingCategory = categoryData.data.value.productCategories.nodes[0];
+        if (categoryData.value?.productCategories?.nodes?.[0]) {
+          matchingCategory = categoryData.value.productCategories.nodes[0];
           matchingCategoryRef.value = matchingCategory;
+
+          // ⚡ ОПТИМИЗАЦИЯ: Директно използваме built-in count от GraphQL
+          realProductCount = matchingCategory.count || 0;
 
           // Ако има parent информация
           if (matchingCategory.parent?.node) {
             parentCategory = matchingCategory.parent.node as Category;
             parentCategoryRef.value = parentCategory;
           }
+
+          // ⚡ ОПТИМИЗАЦИЯ: Кешираме данните за по-бързо повторно посещение
+          setCachedChildCategoryData(matchingCategory, parentCategory, realProductCount);
         } else {
           throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
-        }
-
-        // Получаваме точния брой
-        if (productsCountData.data.value?.products?.edges) {
-          realProductCount = productsCountData.data.value.products.edges.length;
         }
       } catch (error) {
         console.error('Failed to load category:', error);
         throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
       }
     } else {
-      console.log('✅ CLIENT (CHILD): Using existing category data (already loaded)');
       matchingCategoryRef.value = matchingCategory;
       if (parentCategory) {
         parentCategoryRef.value = parentCategory;

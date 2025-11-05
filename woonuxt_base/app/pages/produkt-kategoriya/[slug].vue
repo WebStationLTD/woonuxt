@@ -157,7 +157,6 @@ if (process.server) {
   if (cachedData) {
     matchingCategory = cachedData.category;
     realProductCount = cachedData.count;
-    console.log('✅ CACHE HIT: Using cached category data');
   }
   // Ако няма кеш, ще заредим в onMounted БЕЗ да блокираме initial render
 }
@@ -168,42 +167,9 @@ const matchingCategoryRef = ref<Category | null>(matchingCategory);
 // Ref за филтриран count при филтриране (взето от magazin.vue)
 const filteredCategoryCount = ref<number | null>(null);
 
-// ⚡ ОПТИМИЗАЦИЯ 3: Функция за асинхронно зареждане на точен count (lazy loading)
-const loadPreciseCount = async () => {
-  if (!process.client || realProductCount === null) return;
-
-  try {
-    // Зареждаме точния count асинхронно БЕЗ да блокираме UI
-    const { data: countData } = await useAsyncGql('getProductsCount', {
-      slug: [slug],
-    });
-
-    if (countData.value?.products?.edges) {
-      const preciseCount = countData.value.products.edges.length;
-      if (preciseCount !== realProductCount) {
-        realProductCount = preciseCount;
-        // Обновяваме кеша с точния count
-        if (matchingCategory) {
-          setCachedCategoryData(matchingCategory, preciseCount);
-        }
-      }
-    }
-  } catch (error) {
-    // Ignore errors, use cached count
-  }
-};
-
-// ⚡ ОПТИМИЗАЦИЯ 4: Proactive cache warming
-const warmUpCache = async () => {
-  if (!process.client) return;
-
-  // Зареждаме точния count в background
-  setTimeout(async () => {
-    if (process.client) {
-      await loadPreciseCount();
-    }
-  }, 100);
-};
+// ⚡ ОПТИМИЗАЦИЯ: loadPreciseCount е премахната!
+// WooCommerce GraphQL API вече връща точен count в getProductCategories
+// Не е нужна отделна заявка - спестяваме 300-800ms!
 
 // Функция за генериране на SEO данни според страницата (взета от /magazin)
 const generateCategorySeoMeta = () => {
@@ -671,18 +637,7 @@ onMounted(async () => {
   // След като имаме category data, зареждаме продуктите
   await loadCategoryProducts();
 
-  // ⚡ ОПТИМИЗАЦИЯ: Cache warming в requestIdleCallback (не блокира main thread)
-  if (process.client && 'requestIdleCallback' in window) {
-    requestIdleCallback(
-      () => {
-        warmUpCache();
-      },
-      { timeout: 2000 },
-    );
-  } else if (process.client) {
-    // Fallback за браузъри без requestIdleCallback
-    setTimeout(() => warmUpCache(), 100);
-  }
+  // ⚡ ОПТИМИЗАЦИЯ: Премахнато cache warming - използваме built-in count от GraphQL!
 
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
   nextTick(() => {
