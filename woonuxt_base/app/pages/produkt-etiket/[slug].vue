@@ -198,50 +198,8 @@ useSeoMeta({
 // Reactive refs за SEO links (използваме SSR стойност за initial render)
 const headLinks = ref([{ rel: 'canonical', href: ssrTagSeoMeta.canonicalUrl }]);
 
-// ⚡ LCP ОПТИМИЗАЦИЯ: Helper за генериране на Vercel Image URL
-const getVercelImageUrl = (originalUrl: string, width: number) => {
-  // Vercel Image Optimization формат: /_vercel/image?url=ENCODED_URL&w=WIDTH&q=QUALITY
-  // ВАЖНО: Vercel автоматично използва q=50 за малки размери (320px) и q=80 за големи
-  const encodedUrl = encodeURIComponent(originalUrl);
-  const quality = width <= 320 ? 50 : 80; // Adaptive quality (като NuxtImg)
-  return `/_vercel/image?url=${encodedUrl}&w=${width}&q=${quality}`;
-};
-
-// ⚡ LCP ОПТИМИЗАЦИЯ: Preload първите 3 продуктни снимки (за по-бърз LCP)
-const preloadImages = computed(() => {
-  const links: any[] = [];
-  
-  // Вземаме първите 3 продукта (само на SSR за да са в initial HTML)
-  if (process.server && products.value?.length) {
-    const firstProducts = products.value.slice(0, 3);
-    
-    firstProducts.forEach((product: any, index: number) => {
-      const imageUrl = product?.image?.producCardSourceUrl || product?.image?.sourceUrl;
-      
-      if (imageUrl) {
-        // Генерираме Vercel Image URLs за различни резолюции (като NuxtImg)
-        const img320 = getVercelImageUrl(imageUrl, 320); // За 140w физически
-        const img640 = getVercelImageUrl(imageUrl, 640); // За 280w физически и 2x DPI
-        
-        links.push({
-          rel: 'preload',
-          as: 'image',
-          href: img640, // Основен URL (desktop размер)
-          fetchpriority: index === 0 ? 'high' : 'auto', // Само първата снимка е high priority
-          crossOrigin: 'anonymous', // ВАЖНО: Nuxt изисква camelCase! (не 'crossorigin')
-          // imagesrcset с Vercel URLs (като в NuxtImg резултата)
-          imagesrcset: `${img320} 140w, ${img320} 280w, ${img640} 560w`,
-          imagesizes: '(max-width: 768px) 140px, 280px',
-        });
-      }
-    });
-  }
-  
-  return links;
-});
-
 useHead({
-  link: computed(() => [...headLinks.value, ...preloadImages.value]),
+  link: headLinks,
 });
 
 // Cache за да не извикваме функцията твърде често
