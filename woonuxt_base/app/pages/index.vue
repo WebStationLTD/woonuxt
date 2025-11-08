@@ -42,24 +42,31 @@ useSeoMeta({
   robots: homeSeo?.metaRobotsNoindex === 'noindex' ? 'noindex' : 'index, follow',
 });
 
-// Preload на първото (LCP) изображение за по-бързо зареждане
-const firstCategoryImage = productCategories?.[0]?.image?.sourceUrl;
+// ⚡ LCP ОПТИМИЗАЦИЯ: Preload на първата категория (БОКС)
+const firstParentCategory = productCategories.find((cat) => !cat.parent?.node);
+const lcpImageUrl = firstParentCategory?.image?.sourceUrl;
+
+// Генерираме Vercel Image URL за LCP снимката
 const img = useImage();
-const preloadImageUrl = firstCategoryImage
-  ? img.getSizes(firstCategoryImage, { width: 1536, quality: 95 }).src
+const preloadLcpImage = lcpImageUrl
+  ? img.getSizes(lcpImageUrl, { 
+      sizes: '(max-width: 768px) 100vw, (max-width: 1024px) 90vw, 1200px',
+      modifiers: { quality: 95, width: 1200 }
+    }).src
   : null;
 
-// Canonical URL + Preload на LCP изображението
+// Canonical URL + Preload на LCP снимката
 useHead({
   link: [
     { rel: 'canonical', href: canonicalUrl },
-    ...(preloadImageUrl
+    ...(preloadLcpImage
       ? [
           {
             rel: 'preload',
             as: 'image' as const,
-            href: preloadImageUrl,
+            href: preloadLcpImage,
             fetchpriority: 'high' as const,
+            type: 'image/jpeg',
           },
         ]
       : []),

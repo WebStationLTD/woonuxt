@@ -186,14 +186,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   });
 
   // Timeout fallback - зареждаме след 7 секунди дори без interaction
-  // ⚡ requestIdleCallback за минимално влияние върху performance
-  if ("requestIdleCallback" in window) {
-    requestIdleCallback(() => {
-      setTimeout(loadTrackingScripts, timeoutDuration);
-    });
-  } else {
-    setTimeout(loadTrackingScripts, timeoutDuration);
-  }
+  setTimeout(loadTrackingScripts, timeoutDuration);
 
   if (config.public.TRACKING_DEBUG) {
     console.log("⏳ Tracking scripts will load on first interaction or after 7s (idle)");
