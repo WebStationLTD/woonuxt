@@ -757,6 +757,16 @@ const loadTagCount = async (filters: any) => {
 
         <!-- Loading състояние с skeleton -->
         <div v-if="shouldShowLoading" class="space-y-8">
+          <!-- H1 Заглавие skeleton -->
+          <div class="h-8 sm:h-10 bg-gray-200 rounded-md w-64 animate-pulse mb-4"></div>
+
+          <!-- Описание skeleton (TopTaxonomyDescription) -->
+          <div class="space-y-2 mb-6">
+            <div class="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
+            <div class="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
+            <div class="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+          </div>
+
           <!-- Header skeleton -->
           <div class="flex items-center justify-between w-full gap-4 mb-8">
             <div class="h-6 bg-gray-200 rounded-md w-32 animate-pulse"></div>

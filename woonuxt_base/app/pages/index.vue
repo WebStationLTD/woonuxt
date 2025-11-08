@@ -73,19 +73,19 @@ useHead({
   ],
 });
 
-// Зареждане на tiny-slider САМО на началната страница (non-blocking CSS!)
+// Зареждане на tiny-slider САМО на началната страница (ЛОКАЛНО - по-бързо от CDN!)
 useHead({
   link: [
     { 
       rel: 'stylesheet', 
-      href: 'https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/tiny-slider.css',
+      href: '/tiny-slider.css',
       media: 'print',
       onload: "this.media='all'; this.onload=null;",
     },
   ],
   script: [
     {
-      src: 'https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/min/tiny-slider.js',
+      src: '/tiny-slider.min.js',
       defer: true,
     },
   ],
@@ -140,7 +140,7 @@ if (homeSeo?.schema?.raw) {
         <!-- Лога -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 items-center justify-items-center max-w-6xl mx-auto">
           <NuxtLink to="/marka-produkt/venum" class="flex items-center justify-center w-full h-32 md:h-40 rounded-xl overflow-hidden bg-white/50 grayscale hover:grayscale-0 hover:scale-105 hover:shadow-lg transition-all duration-300">
-            <NuxtImg
+            <img
               src="https://admin.leaderfitness.net/wp-content/uploads/2022/03/brand-VENUM-logo.png"
               alt="Venum - Професионални боксови продукти"
               class="brand-logo h-28 md:h-36 w-auto max-w-full object-contain"
@@ -149,7 +149,7 @@ if (homeSeo?.schema?.raw) {
               height="200" />
           </NuxtLink>
           <NuxtLink to="/marka-produkt/amila" class="flex items-center justify-center w-full h-32 md:h-40 rounded-xl overflow-hidden bg-white/50 grayscale hover:grayscale-0 hover:scale-105 hover:shadow-lg transition-all duration-300">
-            <NuxtImg
+            <img
               src="https://admin.leaderfitness.net/wp-content/uploads/2022/03/brand-AMILA-LOGO.jpg"
               alt="Amila - Спортно оборудване и аксесоари"
               class="brand-logo h-28 md:h-36 w-auto max-w-full object-contain"
@@ -158,7 +158,7 @@ if (homeSeo?.schema?.raw) {
               height="200" />
           </NuxtLink>
           <NuxtLink to="/marka-produkt/body-solid" class="flex items-center justify-center w-full h-32 md:h-40 rounded-xl overflow-hidden bg-white/50 grayscale hover:grayscale-0 hover:scale-105 hover:shadow-lg transition-all duration-300">
-            <NuxtImg
+            <img
               src="https://admin.leaderfitness.net/wp-content/uploads/2022/03/Brand-BODY-SOLID-LOGO.jpg"
               alt="Body Solid - Фитнес оборудване"
               class="brand-logo h-28 md:h-36 w-auto max-w-full object-contain"
@@ -167,7 +167,7 @@ if (homeSeo?.schema?.raw) {
               height="200" />
           </NuxtLink>
           <NuxtLink to="/marka-produkt/orion-fitness" class="flex items-center justify-center w-full h-32 md:h-40 rounded-xl overflow-hidden bg-white/50 grayscale hover:grayscale-0 hover:scale-105 hover:shadow-lg transition-all duration-300">
-            <NuxtImg
+            <img
               src="https://admin.leaderfitness.net/wp-content/uploads/2022/03/brand-ORION-FITNESS-logo-1.jpg"
               alt="Orion Fitness - Професионални фитнес уреди"
               class="brand-logo h-28 md:h-36 w-auto max-w-full object-contain"
