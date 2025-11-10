@@ -130,23 +130,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- DROPDOWN -->
-      <div v-else-if="attr.terms.nodes && attr.terms.nodes?.length > 8" class="grid gap-2">
-        <div class="text-sm">
-          {{ attr.label }} <span v-if="activeVariations.length" class="text-gray-400">{{ getSelectedName(attr, activeVariations[i]) }}</span>
-        </div>
-        <select :id="attr.name" :ref="attr.name" :name="attr.name" required class="border-white shadow" @change="updateAttrs">
-          <option disabled hidden>{{ $t('messages.general.choose') }} {{ decodeURIComponent(attr.label) }}</option>
-          <option
-            v-for="(term, dropdownIndex) in getSortedTerms(attr.terms.nodes)"
-            :key="dropdownIndex"
-            :value="term.slug"
-            v-html="term.name"
-            :selected="dropdownIndex == 0" />
-        </select>
-      </div>
-
-      <!-- CHECKBOXES -->
+      <!-- RADIO BUTTONS -->
       <div v-else class="grid gap-2">
         <div class="text-sm">
           {{ attr.label }} <span v-if="activeVariations.length" class="text-gray-400">: {{ getSelectedName(attr, activeVariations[i]) }}</span>
