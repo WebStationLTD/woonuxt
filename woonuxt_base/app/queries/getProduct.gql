@@ -1,5 +1,6 @@
 # import "./fragments/ProductTagsFragment.gql"
 # import "./fragments/PwbBrandsFragment.gql"
+# import "./fragments/ProductAttributeFragment.gql"
 
 query getProduct($slug: ID!) {
   product(id: $slug, idType: SLUG) {
@@ -40,33 +41,6 @@ query getProduct($slug: ID!) {
         node {
           ...Comment
         }
-      }
-    }
-  }
-}
-
-fragment ProductWithAttributes on ProductWithAttributes {
-  attributes {
-    nodes {
-      ...ProductAttribute
-    }
-  }
-}
-
-fragment ProductAttribute on ProductAttribute {
-  variation
-  name
-  id
-  options
-  label
-  scope
-  ... on GlobalProductAttribute {
-    terms {
-      nodes {
-        name
-        slug
-        taxonomyName
-        databaseId
       }
     }
   }

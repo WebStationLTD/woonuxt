@@ -1,32 +1,6 @@
 # import "./fragments/ProductTagsFragment.gql"
 # import "./fragments/PwbBrandsFragment.gql"
-
-fragment ProductWithAttributes on ProductWithAttributes {
-  attributes {
-    nodes {
-      ...ProductAttribute
-    }
-  }
-}
-
-fragment ProductAttribute on ProductAttribute {
-  variation
-  name
-  id
-  options
-  label
-  scope
-  ... on GlobalProductAttribute {
-    terms {
-      nodes {
-        name
-        slug
-        taxonomyName
-        databaseId
-      }
-    }
-  }
-}
+# import "./fragments/ProductAttributeFragment.gql"
 
 query getProducts(
   $after: String

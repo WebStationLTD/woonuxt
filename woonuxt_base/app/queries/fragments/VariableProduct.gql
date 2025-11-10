@@ -31,7 +31,7 @@ fragment VariableProduct on VariableProduct {
       ...VariationAttribute
     }
   }
-  variations(first: 20) {
+  variations(first: 50) {
     nodes {
       name
       databaseId
@@ -90,7 +90,7 @@ fragment VariableProductGrid on VariableProduct {
     ...Image
     producCardSourceUrl: sourceUrl(size: WOOCOMMERCE_THUMBNAIL)
   }
-  variations(first: 15) {
+  variations(first: 50) {
     nodes {
       name
       databaseId

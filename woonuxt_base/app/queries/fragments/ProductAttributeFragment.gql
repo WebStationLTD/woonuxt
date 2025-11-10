@@ -1,0 +1,27 @@
+fragment ProductWithAttributes on ProductWithAttributes {
+  attributes {
+    nodes {
+      ...ProductAttribute
+    }
+  }
+}
+
+fragment ProductAttribute on ProductAttribute {
+  variation
+  name
+  id
+  options
+  label
+  scope
+  ... on GlobalProductAttribute {
+    terms(first: 50) {
+      nodes {
+        name
+        slug
+        taxonomyName
+        databaseId
+      }
+    }
+  }
+}
+
