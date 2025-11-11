@@ -294,6 +294,11 @@ export function useProducts() {
       // Използваме cursor ако е предоставен за navigation
       if (cursor) {
         variables.after = cursor;
+      } else if (page > 1) {
+        // ⚠️ FALLBACK: Ако НЯМА cursor (query фейлна), зареждаме ВСИЧКИ продукти до страницата
+        // За страница 3 с 24/страница = first: 3 * 24 = 72 продукта
+        const itemsToLoad = page * productsPerPage.value;
+        variables.first = itemsToLoad;
       }
 
       // Добавяме order параметъра ако е зададен
@@ -425,6 +430,14 @@ export function useProducts() {
         }
 
         // WPGraphQL Filter Query plugin прави server-side филтриране - БЕЗ клиентски код!
+
+        // ⚠️ FALLBACK SLICE: Ако заредихме повече от една страница (заради липса на cursor),
+        // вземаме САМО продуктите за текущата страница
+        if (!cursor && page > 1 && productsToShow.length > productsPerPage.value) {
+          const startIndex = (page - 1) * productsPerPage.value;
+          const endIndex = page * productsPerPage.value;
+          productsToShow = productsToShow.slice(startIndex, endIndex);
+        }
 
         // Клиентско сортиране по discount ако е нужно (САМО сортиране)
         if (process.client && orderBy === 'discount') {
@@ -577,12 +590,19 @@ export function useProducts() {
       }
 
       // Получаваме cursor-ите (много бърза заявка!)
-      const { data: cursorsData } = await useAsyncGql('getProductCursors', variables);
+      const cursorsResult = await useAsyncGql('getProductCursors', variables);
+      
+      // ⚠️ ВАЖНО: useAsyncGql понякога остава в idle състояние при първо извикване
+      // Форсваме изпълнението с refresh() ако е необходимо
+      if (cursorsResult.status?.value === 'idle') {
+        await cursorsResult.refresh();
+      }
+      
+      const cursorsData = cursorsResult.data;
+      const cursorsError = cursorsResult.error;
 
-      if (cursorsData.value?.products?.edges) {
+      if (cursorsData?.value?.products?.edges) {
         const edges = cursorsData.value.products.edges;
-
-        console.log(`🔍 CURSOR DEBUG: Искаме страница ${targetPage}, получихме ${edges.length} cursor-а`);
 
         // ПОПРАВКА: Правилно изчисление на cursor позицията
         // За страница N, трябва cursor СЛЕД продукт (N-1) * 12
@@ -610,7 +630,6 @@ export function useProducts() {
         // Стъпка 2: Зареждаме САМО продуктите за тази страница
         await loadProductsPageOptimized(targetPage, categorySlug, orderBy, filters, targetCursor || undefined, productTag);
       } else {
-        console.log('❌ CURSOR: Не успяхме да получим cursor данни, използваме fallback');
         // Fallback към обикновено зареждане
         await loadProductsPageOptimized(targetPage, categorySlug, orderBy, filters, undefined, productTag);
       }

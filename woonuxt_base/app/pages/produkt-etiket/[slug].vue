@@ -355,7 +355,10 @@ const loadTagProducts = async () => {
 
     const targetPageNumber = pageNumber;
 
-    resetProductsState();
+    // ⚡ ВАЖНО: НЕ изчистваме продуктите! Показваме старите докато зареждаме новите
+    // resetProductsState(); // ПРЕМАХНАТО - създава race condition!
+    
+    // Само update-ваме текущите стойности
     currentSlug.value = slug;
     currentPageNumber.value = targetPageNumber;
 
@@ -422,15 +425,20 @@ const loadTagProducts = async () => {
       filteredTagCount.value = null;
     }
 
-    hasEverLoaded.value = true;
+    // ⚡ КРИТИЧНО: Маркираме hasEverLoaded САМО ако имаме продукти!
+    if (products.value && products.value.length > 0) {
+      hasEverLoaded.value = true;
+    }
     currentPage.value = targetPageNumber;
 
     // ⚡ ОПТИМИЗАЦИЯ: Обновяваме next/prev links БЕЗ await (не блокира)
     nextTick(() => updateTagNextPrevLinks());
   } catch (error) {
-    hasEverLoaded.value = true;
+    // ⚡ КРИТИЧНО: При грешка НЕ маркираме като заредено!
+    console.error('loadTagProducts error:', error);
   } finally {
     isNavigating = false;
+    // useProducts.ts ще изключи isLoading в своя finally блок
   }
 };
 
@@ -480,9 +488,16 @@ onMounted(async () => {
     }
   }
 
-  // ⚡ ВАЖНО: Зареждаме продукти САМО ако няма SSR продукти
-  // При hard refresh SSR вече зареди продуктите - не ги презареждаме!
-  if (products.value.length === 0 || !hasEverLoaded.value) {
+  // ⚡ КРИТИЧНО: При hard refresh с филтри, ВИНАГИ презареждаме
+  // Защото при SSR route.query е празен и SSR зарежда НЕФИЛТРИРАНИ продукти
+  const hasFilters = route.query.filter || route.query.orderby;
+  
+  if (hasFilters) {
+    // Force reload - SSR данните са грешни при филтри
+    hasEverLoaded.value = false; // Reset флага
+    await loadTagProducts();
+  } else if (products.value.length === 0 || !hasEverLoaded.value) {
+    // Без филтри - зареждаме само ако няма SSR продукти
     await loadTagProducts();
   }
 
@@ -494,9 +509,19 @@ onMounted(async () => {
   });
 });
 
-// ⚠️ ВАЖНО: Зареждаме всички продукти на SSR за stable hard refresh!
+// ⚠️ ВАЖНО: Зареждаме продукти на SSR САМО ако няма филтри в URL-а!
+// При SSR в Nuxt 3, route.query е празен, което води до грешни резултати при филтри
 if (process.server) {
-  await loadTagProducts();
+  // Проверяваме дали URL-ът съдържа query параметри
+  const event = useRequestEvent();
+  const url = event?.node?.req?.url || '';
+  const hasQueryParams = url.includes('?');
+  
+  // Зареждаме САМО ако няма query параметри (филтри/сортиране)
+  if (!hasQueryParams) {
+    await loadTagProducts();
+  }
+  // Ако има query параметри, client-side ще зареди правилните данни в onMounted
 }
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE

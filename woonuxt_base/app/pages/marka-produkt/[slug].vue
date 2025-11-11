@@ -419,7 +419,10 @@ const loadBrandProducts = async () => {
 
     const targetPageNumber = pageNumber;
 
-    resetProductsState();
+    // ⚡ ВАЖНО: НЕ изчистваме продуктите! Показваме старите докато зареждаме новите
+    // resetProductsState(); // ПРЕМАХНАТО - създава race condition!
+    
+    // Само update-ваме текущите стойности
     currentSlug.value = slug;
     currentPageNumber.value = targetPageNumber;
 
@@ -532,15 +535,20 @@ const loadBrandProducts = async () => {
       filteredBrandCount.value = null;
     }
 
-    hasEverLoaded.value = true;
+    // ⚡ КРИТИЧНО: Маркираме hasEverLoaded САМО ако имаме продукти!
+    if (products.value && products.value.length > 0) {
+      hasEverLoaded.value = true;
+    }
     currentPage.value = targetPageNumber;
 
     // ⚡ ОПТИМИЗАЦИЯ: Обновяваме next/prev links БЕЗ await (не блокира)
     nextTick(() => updateBrandNextPrevLinks());
   } catch (error) {
-    hasEverLoaded.value = true;
+    // ⚡ КРИТИЧНО: При грешка НЕ маркираме като заредено!
+    console.error('loadBrandProducts error:', error);
   } finally {
     isNavigating = false;
+    // useProducts.ts ще изключи isLoading в своя finally блок
   }
 };
 
@@ -623,10 +631,16 @@ onMounted(async () => {
     }
   }
 
-  // ⚡ HYBRID: Ако има SSR продукти, зареждаме останалите
-  const hasSSRProducts = products.value.length > 0 && products.value.length < productsPerPage.value;
+  // ⚡ КРИТИЧНО: При hard refresh с филтри, ВИНАГИ презареждаме
+  // Защото при SSR route.query е празен и SSR зарежда НЕФИЛТРИРАНИ продукти
+  const hasFilters = route.query.filter || route.query.orderby;
   
-  if (hasSSRProducts || products.value.length === 0) {
+  if (hasFilters) {
+    // Force reload - SSR данните са грешни при филтри
+    hasEverLoaded.value = false; // Reset флага
+    await loadBrandProducts();
+  } else if (products.value.length === 0 || !hasEverLoaded.value) {
+    // Без филтри - зареждаме само ако няма SSR продукти
     await loadBrandProducts();
   }
   
@@ -636,24 +650,34 @@ onMounted(async () => {
   });
 });
 
-// ⚡ HYBRID: SSR зарежда САМО първите 12 продукта (за LCP), останалите client-side
+// ⚡ ВАЖНО: Зареждаме продукти на SSR САМО ако няма филтри в URL-а!
+// При SSR в Nuxt 3, route.query е празен, което води до грешни резултати при филтри
 if (process.server) {
-  try {
-    const { data } = await useAsyncGql('getProductsOptimized', {
-      first: 12,
-      search: slug,
-      orderby: 'DATE',
-    });
-    
-    if (data.value?.products?.nodes) {
-      products.value = data.value.products.nodes;
-      pageInfo.hasNextPage = data.value.products.pageInfo?.hasNextPage || false;
-      pageInfo.endCursor = data.value.products.pageInfo?.endCursor || '';
-      hasEverLoaded.value = true;
+  // Проверяваме дали URL-ът съдържа query параметри
+  const event = useRequestEvent();
+  const url = event?.node?.req?.url || '';
+  const hasQueryParams = url.includes('?');
+  
+  // Зареждаме САМО ако няма query параметри (филтри/сортиране)
+  if (!hasQueryParams) {
+    try {
+      const { data } = await useAsyncGql('getProductsOptimized', {
+        first: 12,
+        search: slug,
+        orderby: 'DATE',
+      });
+      
+      if (data.value?.products?.nodes) {
+        products.value = data.value.products.nodes;
+        pageInfo.hasNextPage = data.value.products.pageInfo?.hasNextPage || false;
+        pageInfo.endCursor = data.value.products.pageInfo?.endCursor || '';
+        hasEverLoaded.value = true;
+      }
+    } catch (error) {
+      console.error('SSR product load failed:', error);
     }
-  } catch (error) {
-    console.error('SSR product load failed:', error);
   }
+  // Ако има query параметри, client-side ще зареди правилните данни в onMounted
 }
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE

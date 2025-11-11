@@ -567,8 +567,10 @@ const loadCategoryProducts = async () => {
       filteredCategoryCount.value = null;
     }
 
-    // Маркираме че сме зареждали данни поне веднъж
-    hasEverLoaded.value = true;
+    // Маркираме че сме зареждали данни поне веднъж САМО ако има продукти
+    if (products.value && products.value.length > 0) {
+      hasEverLoaded.value = true;
+    }
 
     // Принудително обновяване на currentPage за правилна синхронизация с pagination
     currentPage.value = targetPageNumber;
@@ -580,7 +582,8 @@ const loadCategoryProducts = async () => {
     // Принудително завършване на loading състоянието
     await nextTick();
   } catch (error) {
-    hasEverLoaded.value = true; // Маркираме като опитано дори при грешка
+    console.error('loadCategoryProducts error:', error);
+    // НЕ сетваме hasEverLoaded = true при грешка, за да не показваме "Няма намерени продукти"
   }
 };
 
@@ -634,9 +637,16 @@ onMounted(async () => {
     }
   }
 
-  // ⚡ ВАЖНО: Зареждаме продукти САМО ако няма SSR продукти
-  // При hard refresh SSR вече зареди продуктите - не ги презареждаме!
-  if (products.value.length === 0 || !hasEverLoaded.value) {
+  // ⚡ ВАЖНО: Зареждаме продукти ако:
+  // 1. Няма SSR продукти (products.value.length === 0)
+  // 2. Или имаме филтри/sorting (SSR ги пропуска, trябва да ги зареддим на client)
+  const hasFilters = route.query.filter || route.query.orderby;
+  
+  if (hasFilters) {
+    // При филтри ВИНАГИ презареждаме, защото SSR не може да ги обработи правилно
+    hasEverLoaded.value = false;
+    await loadCategoryProducts();
+  } else if (products.value.length === 0 || !hasEverLoaded.value) {
     await loadCategoryProducts();
   }
 
@@ -648,9 +658,16 @@ onMounted(async () => {
   });
 });
 
-// ⚠️ ВАЖНО: Зареждаме всички продукти на SSR за stable hard refresh!
+// ⚠️ ВАЖНО: Зареждаме продукти на SSR САМО ако няма филтри в URL-а!
+// При SSR в Nuxt 3, route.query е празен, което води до грешни резултати при филтри
 if (process.server) {
-  await loadCategoryProducts();
+  const event = useRequestEvent();
+  const url = event?.node?.req?.url || '';
+  const hasQueryParams = url.includes('?');
+  
+  if (!hasQueryParams) {
+    await loadCategoryProducts();
+  }
 }
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
@@ -923,16 +940,6 @@ const loadCategoryCount = async (filters: any) => {
 
         <!-- Loading състояние с skeleton -->
         <div v-if="shouldShowLoading" class="space-y-8">
-          <!-- H1 Заглавие skeleton -->
-          <div class="h-8 sm:h-10 bg-gray-200 rounded-md w-64 animate-pulse mb-4"></div>
-
-          <!-- Описание skeleton (TopTaxonomyDescription) -->
-          <div class="space-y-2 mb-6">
-            <div class="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
-            <div class="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
-            <div class="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-          </div>
-
           <!-- Header skeleton -->
           <div class="flex items-center justify-between w-full gap-4 mb-8">
             <div class="h-6 bg-gray-200 rounded-md w-32 animate-pulse"></div>

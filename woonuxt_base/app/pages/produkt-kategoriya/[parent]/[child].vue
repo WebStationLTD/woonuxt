@@ -442,12 +442,13 @@ const loadCategoryProducts = async () => {
     return;
   }
 
-  // Винаги reset-ваме за чисто състояние при зареждане
-  resetProductsState();
-
-  currentParentSlug.value = parentSlug;
-  currentChildSlug.value = childSlug;
-  currentPageNumber.value = pageNumber;
+    // ⚡ ВАЖНО: НЕ изчистваме продуктите! Показваме старите докато зареждаме новите
+    // resetProductsState(); // ПРЕМАХНАТО - създава race condition!
+    
+    // Само update-ваме текущите стойности
+    currentParentSlug.value = parentSlug;
+    currentChildSlug.value = childSlug;
+    currentPageNumber.value = pageNumber;
 
   try {
     // КРИТИЧНО: Проверяваме за невалидни страници ПРЕДИ зареждане (като в magazin.vue)
@@ -532,8 +533,10 @@ const loadCategoryProducts = async () => {
       filteredCategoryCount.value = null;
     }
 
-    // Маркираме че сме зареждали данни поне веднъж
-    hasEverLoaded.value = true;
+    // ⚡ КРИТИЧНО: Маркираме hasEverLoaded САМО ако имаме продукти!
+    if (products.value && products.value.length > 0) {
+      hasEverLoaded.value = true;
+    }
 
     // Принудително обновяване на currentPage за правилна синхронизация с pagination
     currentPage.value = pageNumber;
@@ -541,9 +544,11 @@ const loadCategoryProducts = async () => {
     // ⚡ ОПТИМИЗАЦИЯ: Обновяваме next/prev links БЕЗ await (не блокира)
     nextTick(() => updateChildCategoryNextPrevLinks());
   } catch (error) {
-    hasEverLoaded.value = true; // Маркираме като опитано дори при грешка
+    // ⚡ КРИТИЧНО: При грешка НЕ маркираме като заредено!
+    console.error('loadCategoryProducts error:', error);
   } finally {
     isNavigating = false;
+    // useProducts.ts ще изключи isLoading в своя finally блок
   }
 };
 
@@ -606,9 +611,16 @@ onMounted(async () => {
     }
   }
 
-  // ⚡ ВАЖНО: Зареждаме продукти САМО ако няма SSR продукти
-  // При hard refresh SSR вече зареди продуктите - не ги презареждаме!
-  if (products.value.length === 0 || !hasEverLoaded.value) {
+  // ⚡ КРИТИЧНО: При hard refresh с филтри, ВИНАГИ презареждаме
+  // Защото при SSR route.query е празен и SSR зарежда НЕФИЛТРИРАНИ продукти
+  const hasFilters = route.query.filter || route.query.orderby;
+  
+  if (hasFilters) {
+    // Force reload - SSR данните са грешни при филтри
+    hasEverLoaded.value = false; // Reset флага
+    await loadCategoryProducts();
+  } else if (products.value.length === 0 || !hasEverLoaded.value) {
+    // Без филтри - зареждаме само ако няма SSR продукти
     await loadCategoryProducts();
   }
   
@@ -618,9 +630,19 @@ onMounted(async () => {
   });
 });
 
-// ⚠️ ВАЖНО: Зареждаме всички продукти на SSR за stable hard refresh!
+// ⚠️ ВАЖНО: Зареждаме продукти на SSR САМО ако няма филтри в URL-а!
+// При SSR в Nuxt 3, route.query е празен, което води до грешни резултати при филтри
 if (process.server) {
-  await loadCategoryProducts();
+  // Проверяваме дали URL-ът съдържа query параметри
+  const event = useRequestEvent();
+  const url = event?.node?.req?.url || '';
+  const hasQueryParams = url.includes('?');
+  
+  // Зареждаме САМО ако няма query параметри (филтри/сортиране)
+  if (!hasQueryParams) {
+    await loadCategoryProducts();
+  }
+  // Ако има query параметри, client-side ще зареди правилните данни в onMounted
 }
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE (като в родителските категории)

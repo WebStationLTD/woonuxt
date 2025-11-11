@@ -9,6 +9,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { pageInfo, currentPage, isLoading, productsPerPage } = useProducts();
 const route = useRoute();
+const router = useRouter();
+
+// Метод за навигация (в setup контекста)
+const handleNavigation = (url: string) => {
+  router.push(url);
+};
 
 // Cached computed properties за оптимизация
 const basePath = computed(() => {
@@ -47,15 +53,13 @@ const basePath = computed(() => {
     const path = `/produkt-kategoriya/${route.params.parent}/${route.params.child}`;
     return path;
   }
+  // ⚡ КРИТИЧНО: Проверяваме categorySlug ПЪРВИ (от custom route)
+  else if (route.params.categorySlug && route.path.startsWith('/produkt-kategoriya/')) {
+    return `/produkt-kategoriya/${route.params.categorySlug}`;
+  }
   // Проверяваме за родителски категории (slug)
   else if (route.params.slug && route.path.startsWith('/produkt-kategoriya/')) {
     return `/produkt-kategoriya/${route.params.slug}`;
-  }
-  // Проверяваме за новите български пътища (плоски категории)
-  else if (route.name === 'produkt-kategoriya-slug' && route.params.categorySlug) {
-    return `/produkt-kategoriya/${route.params.categorySlug}`;
-  } else if (route.path.startsWith('/produkt-kategoriya/') && route.params.categorySlug) {
-    return `/produkt-kategoriya/${route.params.categorySlug}`;
   }
   return '/magazin';
 });
@@ -64,18 +68,20 @@ const queryParams = computed(() => ({ ...route.query }));
 
 // Функция за генериране на URL за дадена страница (само за computed properties)
 const buildPageUrl = (pageNumber: number) => {
-  // За първата страница не добавяме page
+  const base = basePath.value;
+  const queryString = Object.keys(queryParams.value).length > 0
+    ? '?' + new URLSearchParams(queryParams.value as any).toString()
+    : '';
+  
+  // ⚡ КРИТИЧНО: Encode кирилица + генерираме STRING URL
+  const encodedBase = base.split('/').map(segment => {
+    return /[а-яА-Я]/.test(segment) ? encodeURIComponent(segment) : segment;
+  }).join('/');
+  
   if (pageNumber === 1) {
-    return {
-      path: basePath.value,
-      query: queryParams.value,
-    };
+    return `${encodedBase}${queryString}`;
   } else {
-    // За останалите страници добавяме /page/N
-    return {
-      path: `${basePath.value}/page/${pageNumber}`,
-      query: queryParams.value,
-    };
+    return `${encodedBase}/page/${pageNumber}${queryString}`;
   }
 };
 
@@ -209,21 +215,23 @@ const shouldShowDotsAfterFirst = computed(() => {
     <!-- Pagination -->
     <nav v-if="pageInfo.hasNextPage || currentPage > 1" class="flex-wrap inline-flex self-end -space-x-px rounded-md shadow-sm isolate" aria-label="Pagination">
       <!-- FIRST PAGE -->
-      <NuxtLink v-if="firstPageUrl" :to="firstPageUrl" class="first-page" :class="{ 'opacity-50': isLoading }" aria-label="First page" title="Първа страница">
+      <a v-if="firstPageUrl" :href="firstPageUrl" class="first-page" :class="{ 'opacity-50': isLoading }" aria-label="First page" title="Първа страница"
+         @click.prevent="handleNavigation(firstPageUrl)">
         <Icon name="ion:chevron-back-outline" size="16" class="w-4 h-4" />
         <Icon name="ion:chevron-back-outline" size="16" class="w-4 h-4 -ml-1" />
-      </NuxtLink>
+      </a>
 
       <!-- PREV -->
-      <NuxtLink
+      <a
         v-if="previousPageUrl"
-        :to="previousPageUrl"
+        :href="previousPageUrl"
         class="prev"
         :class="{ 'opacity-50': isLoading, 'rounded-l-md': !firstPageUrl }"
         aria-label="Предишна страница"
-        title="Предишна страница">
+        title="Предишна страница"
+        @click.prevent="handleNavigation(previousPageUrl)">
         <Icon name="ion:chevron-back-outline" size="20" class="w-5 h-5" aria-hidden="true" />
-      </NuxtLink>
+      </a>
       <span v-else class="prev cursor-not-allowed opacity-50" :class="{ 'rounded-l-md': !firstPageUrl }" role="button" aria-disabled="true" title="Предишна страница (неактивна)">
         <Icon name="ion:chevron-back-outline" size="20" class="w-5 h-5" aria-hidden="true" />
       </span>
@@ -233,9 +241,10 @@ const shouldShowDotsAfterFirst = computed(() => {
 
       <!-- NUMBERS -->
       <template v-for="pageNumber in visiblePages" :key="pageNumber">
-        <NuxtLink v-if="pageNumber !== currentPage" :to="pageUrls.get(pageNumber)" class="page-number" :class="{ 'opacity-50': isLoading }">
+        <a v-if="pageNumber !== currentPage" :href="pageUrls.get(pageNumber)" class="page-number" :class="{ 'opacity-50': isLoading }"
+           @click.prevent="handleNavigation(pageUrls.get(pageNumber))">
           {{ pageNumber }}
-        </NuxtLink>
+        </a>
         <span v-else :aria-current="'page'" class="page-number page-number-current">
           {{ pageNumber }}
         </span>
@@ -245,15 +254,17 @@ const shouldShowDotsAfterFirst = computed(() => {
       <span v-if="shouldShowDotsBeforeLast" class="page-number cursor-default"> ... </span>
 
       <!-- LAST PAGE -->
-      <NuxtLink v-if="lastPageUrl" :to="lastPageUrl" class="last-page" :class="{ 'opacity-50': isLoading }" aria-label="Last page" title="Последна страница">
+      <a v-if="lastPageUrl" :href="lastPageUrl" class="last-page" :class="{ 'opacity-50': isLoading }" aria-label="Last page" title="Последна страница"
+         @click.prevent="handleNavigation(lastPageUrl)">
         <Icon name="ion:chevron-forward-outline" size="16" class="w-4 h-4" />
         <Icon name="ion:chevron-forward-outline" size="16" class="w-4 h-4 -ml-1" />
-      </NuxtLink>
+      </a>
 
       <!-- NEXT -->
-      <NuxtLink v-if="nextPageUrl" :to="nextPageUrl" class="next" :class="{ 'opacity-50': isLoading, 'rounded-r-md': !lastPageUrl }" aria-label="Следваща страница" title="Следваща страница">
+      <a v-if="nextPageUrl" :href="nextPageUrl" class="next" :class="{ 'opacity-50': isLoading, 'rounded-r-md': !lastPageUrl }" aria-label="Следваща страница" title="Следваща страница"
+         @click.prevent="handleNavigation(nextPageUrl)">
         <Icon name="ion:chevron-forward-outline" size="20" class="w-5 h-5" aria-hidden="true" />
-      </NuxtLink>
+      </a>
       <span v-else class="next cursor-not-allowed opacity-50" :class="{ 'rounded-r-md': !lastPageUrl }" role="button" aria-disabled="true" title="Следваща страница (неактивна)">
         <Icon name="ion:chevron-forward-outline" size="20" class="w-5 h-5" aria-hidden="true" />
       </span>
@@ -282,14 +293,6 @@ const shouldShowDotsAfterFirst = computed(() => {
 
 .last-page {
   @apply rounded-r-md;
-}
-
-.prev {
-  /* rounded-l-md само ако няма first-page */
-}
-
-.next {
-  /* rounded-r-md само ако няма last-page */
 }
 
 .page-number {

@@ -1,25 +1,29 @@
 <script setup lang="ts">
-// Този файл автоматично препраща към основната категория страница
-// с правилните параметри за pagination
+// ⚡ КРИТИЧНО: Този файл обработва URL-и от типа /produkt-kategoriya/[slug]/page/[pageNumber]
+// и redirect-ва към основния [slug].vue като запазва всички филтри
 
 const route = useRoute();
 
 // Извличаме параметрите
-const categorySlug = route.params.slug as string;
-const pageNumber = route.params.pageNumber as string;
+const categorySlug = String(route.params.slug);
+const pageNumber = String(route.params.pageNumber);
 
-// Конструираме URL с query параметри
-const queryParams = new URLSearchParams({
-  ...(route.query as Record<string, string>),
-  page: pageNumber,
-});
+// ⚡ ВАЖНО: Запазваме ВСИЧКИ query параметри (включително филтри)
+const queryParams = { ...route.query };
 
-const redirectUrl = `/produkt-kategoriya/${categorySlug}?${queryParams.toString()}`;
+// Добавяме page параметъра
+queryParams.page = pageNumber;
 
-// Препращаме към основната категория страница
-await navigateTo(redirectUrl, {
-  replace: true,
-});
+// Redirect към основната категория страница
+await navigateTo(
+  {
+    path: `/produkt-kategoriya/${categorySlug}`,
+    query: queryParams,
+  },
+  {
+    replace: true,
+  }
+);
 </script>
 
 <template>
