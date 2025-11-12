@@ -204,25 +204,11 @@ export default defineNuxtConfig({
           crossorigin: "",
         },
         { rel: "dns-prefetch", href: "https://admin.leaderfitness.net" },
-        // ⚡ EMERGENCY FIX 2.1: Font Optimization
-        // Preconnect за Google Fonts - спестява ~150ms (Lighthouse препоръка)
-        {
-          rel: "preconnect",
-          href: "https://fonts.googleapis.com",
-          crossorigin: "",
-        },
-        {
-          rel: "preconnect",
-          href: "https://fonts.gstatic.com",
-          crossorigin: "",
-        },
-        { rel: "dns-prefetch", href: "https://fonts.googleapis.com" },
-        { rel: "dns-prefetch", href: "https://fonts.gstatic.com" },
       ],
     },
   },
 
-  // ⚡ EMERGENCY FIX 2.1: Global CSS за font optimization
+  // ⚡ Global CSS (image lazy loading optimization)
   css: ["~/assets/css/fonts.css"],
 
   // Sitemap генерирането е изнесено в scripts/generate-sitemap.js
