@@ -425,10 +425,9 @@ const loadTagProducts = async () => {
       filteredTagCount.value = null;
     }
 
-    // ⚡ КРИТИЧНО: Маркираме hasEverLoaded САМО ако имаме продукти!
-    if (products.value && products.value.length > 0) {
-      hasEverLoaded.value = true;
-    }
+    // ⚡ КРИТИЧНО: Маркираме че сме зареждали данни ВИНАГИ след успешна заявка
+    // (дори ако няма продукти - за да може да се покаже "Няма намерени продукти")
+    hasEverLoaded.value = true;
     currentPage.value = targetPageNumber;
 
     // ⚡ ОПТИМИЗАЦИЯ: Обновяваме next/prev links БЕЗ await (не блокира)
@@ -492,13 +491,17 @@ onMounted(async () => {
   // Защото при SSR route.query е празен и SSR зарежда НЕФИЛТРИРАНИ продукти
   const hasFilters = route.query.filter || route.query.orderby;
   
+  // ⚡ КРИТИЧНО: При филтри ТРЯБВА да await-нем за да избегнем race conditions
+  // БЕЗ филтри - паралелизираме за по-бързо зареждане
   if (hasFilters) {
-    // Force reload - SSR данните са грешни при филтри
+    // Force reload И ЧАКАМЕ - SSR данните са грешни при филтри
     hasEverLoaded.value = false; // Reset флага
     await loadTagProducts();
   } else if (products.value.length === 0 || !hasEverLoaded.value) {
-    // Без филтри - зареждаме само ако няма SSR продукти
-    await loadTagProducts();
+    // БЕЗ филтри - зареждаме паралелно (Filters компонентът ще зареди своите данни паралелно)
+    loadTagProducts().catch((error) => {
+      console.error('❌ Грешка при зареждане на етикет:', error);
+    });
   }
 
   // ⚡ ОПТИМИЗАЦИЯ: Премахнато cache warming - използваме built-in count от GraphQL!

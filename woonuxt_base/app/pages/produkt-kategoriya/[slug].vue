@@ -567,10 +567,9 @@ const loadCategoryProducts = async () => {
       filteredCategoryCount.value = null;
     }
 
-    // Маркираме че сме зареждали данни поне веднъж САМО ако има продукти
-    if (products.value && products.value.length > 0) {
-      hasEverLoaded.value = true;
-    }
+    // ⚡ КРИТИЧНО: Маркираме че сме зареждали данни ВИНАГИ след успешна заявка
+    // (дори ако няма продукти - за да може да се покаже "Няма намерени продукти")
+    hasEverLoaded.value = true;
 
     // Принудително обновяване на currentPage за правилна синхронизация с pagination
     currentPage.value = targetPageNumber;
@@ -637,17 +636,19 @@ onMounted(async () => {
     }
   }
 
-  // ⚡ ВАЖНО: Зареждаме продукти ако:
-  // 1. Няма SSR продукти (products.value.length === 0)
-  // 2. Или имаме филтри/sorting (SSR ги пропуска, trябва да ги зареддим на client)
+  // ⚡ КРИТИЧНО: При филтри ТРЯБВА да await-нем за да избегнем race conditions
+  // БЕЗ филтри - паралелизираме за по-бързо зареждане
   const hasFilters = route.query.filter || route.query.orderby;
   
   if (hasFilters) {
-    // При филтри ВИНАГИ презареждаме, защото SSR не може да ги обработи правилно
+    // При филтри ВИНАГИ презареждаме И ЧАКАМЕ, защото SSR не може да ги обработи правилно
     hasEverLoaded.value = false;
     await loadCategoryProducts();
   } else if (products.value.length === 0 || !hasEverLoaded.value) {
-    await loadCategoryProducts();
+    // БЕЗ филтри - зареждаме паралелно (Filters компонентът ще зареди своите данни паралелно)
+    loadCategoryProducts().catch((error) => {
+      console.error('❌ Грешка при зареждане на продукти:', error);
+    });
   }
 
   // ⚡ ОПТИМИЗАЦИЯ: Премахнато cache warming - използваме built-in count от GraphQL!

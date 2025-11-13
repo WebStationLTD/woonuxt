@@ -353,8 +353,6 @@ export function useProducts() {
         globalProductAttributes.forEach((attribute: string) => {
           const attributeValues = getFilter(attribute);
           if (attributeValues.length > 0) {
-            console.log(`🔥 SERVER-SIDE TAXONOMY FILTER ${attribute}:`, attributeValues);
-
             // Добавяме taxonomy филтър за този атрибут
             taxonomyFilters.push({
               taxonomy: attribute,
@@ -366,13 +364,19 @@ export function useProducts() {
 
         // Ако има атрибутни филтри, пращаме ги като attributeFilter
         if (taxonomyFilters.length > 0) {
-          console.log('🔥 ПРАЩАМЕ КАТО attributeFilter:', taxonomyFilters);
           variables.attributeFilter = taxonomyFilters;
         }
       }
 
       // Използваме оптимизираната заявка
-      const { data } = await useAsyncGql('getProductsOptimized', variables);
+      const { data, status, error, refresh } = await useAsyncGql('getProductsOptimized', variables);
+      
+      // ⚡ КРИТИЧЕН FIX: Ако useAsyncGql е idle (не се е изпълнил), принудително го refresh-ваме!
+      // Това се случва когато има attributeFilter в заявката
+      if (status?.value === 'idle') {
+        await refresh();
+      }
+      
       const result = data.value?.products;
 
       if (result && result.pageInfo) {
@@ -382,54 +386,7 @@ export function useProducts() {
         pageInfo.hasNextPage = result.pageInfo.hasNextPage || false;
         pageInfo.endCursor = result.pageInfo.endCursor || '';
 
-        // Клиентски филтри (ако са нужни)
-        if (productsToShow.length > 0) {
-          // DEBUG: Колко продукта имат атрибути
-          const productsWithAttributes = productsToShow.filter((p) => (p as any).attributes?.nodes?.length > 0);
-          console.log(`🔍 АТРИБУТИ: ${productsWithAttributes.length}/${productsToShow.length} продукта имат атрибути`);
-
-          if (productsWithAttributes.length > 0) {
-            console.log(
-              '📝 Продукти с атрибути:',
-              productsWithAttributes.map((p) => p.name),
-            );
-
-            // ДЕТАЙЛНО: Покажи какви атрибути имат продуктите
-            productsWithAttributes.slice(0, 3).forEach((p: any) => {
-              console.log(
-                `📋 ${p.name} атрибути:`,
-                p.attributes?.nodes?.map((attr: any) => ({
-                  name: attr.name,
-                  label: attr.label,
-                  options: attr.options,
-                  termsCount: attr.terms?.nodes?.length || 0,
-                  terms: attr.terms?.nodes?.map((t: any) => t.name) || [],
-                })),
-              );
-            });
-          }
-
-          const productsWithoutAttributes = productsToShow.filter((p) => !(p as any).attributes?.nodes?.length);
-          if (productsWithoutAttributes.length > 0) {
-            console.log(
-              '❌ Продукти БЕЗ атрибути:',
-              productsWithoutAttributes.slice(0, 5).map((p) => p.name),
-            );
-
-            // ДЕТАЙЛНО: Проверявай дали имат terms
-            productsWithoutAttributes.slice(0, 3).forEach((p: any) => {
-              const termsCount = p.terms?.nodes?.length || 0;
-              if (termsCount > 0) {
-                console.log(
-                  `📋 ${p.name} terms (${termsCount}):`,
-                  p.terms.nodes.map((t: any) => `${t.name} (${t.taxonomyName})`),
-                );
-              }
-            });
-          }
-        }
-
-        // WPGraphQL Filter Query plugin прави server-side филтриране - БЕЗ клиентски код!
+        // Server-side филтриране чрез WPGraphQL Filter Query plugin - БЕЗ клиентски код!
 
         // ⚠️ FALLBACK SLICE: Ако заредихме повече от една страница (заради липса на cursor),
         // вземаме САМО продуктите за текущата страница

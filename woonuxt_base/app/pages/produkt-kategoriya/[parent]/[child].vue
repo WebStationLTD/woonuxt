@@ -533,10 +533,9 @@ const loadCategoryProducts = async () => {
       filteredCategoryCount.value = null;
     }
 
-    // ⚡ КРИТИЧНО: Маркираме hasEverLoaded САМО ако имаме продукти!
-    if (products.value && products.value.length > 0) {
-      hasEverLoaded.value = true;
-    }
+    // ⚡ КРИТИЧНО: Маркираме че сме зареждали данни ВИНАГИ след успешна заявка
+    // (дори ако няма продукти - за да може да се покаже "Няма намерени продукти")
+    hasEverLoaded.value = true;
 
     // Принудително обновяване на currentPage за правилна синхронизация с pagination
     currentPage.value = pageNumber;
@@ -544,7 +543,7 @@ const loadCategoryProducts = async () => {
     // ⚡ ОПТИМИЗАЦИЯ: Обновяваме next/prev links БЕЗ await (не блокира)
     nextTick(() => updateChildCategoryNextPrevLinks());
   } catch (error) {
-    // ⚡ КРИТИЧНО: При грешка НЕ маркираме като заредено!
+    // НЕ сетваме hasEverLoaded = true при грешка, за да не показваме "Няма намерени продукти"
     console.error('loadCategoryProducts error:', error);
   } finally {
     isNavigating = false;
@@ -611,17 +610,19 @@ onMounted(async () => {
     }
   }
 
-  // ⚡ КРИТИЧНО: При hard refresh с филтри, ВИНАГИ презареждаме
-  // Защото при SSR route.query е празен и SSR зарежда НЕФИЛТРИРАНИ продукти
+  // ⚡ КРИТИЧНО: При филтри ТРЯБВА да await-нем за да избегнем race conditions
+  // БЕЗ филтри - паралелизираме за по-бързо зареждане
   const hasFilters = route.query.filter || route.query.orderby;
   
   if (hasFilters) {
-    // Force reload - SSR данните са грешни при филтри
+    // Force reload И ЧАКАМЕ - SSR данните са грешни при филтри
     hasEverLoaded.value = false; // Reset флага
     await loadCategoryProducts();
   } else if (products.value.length === 0 || !hasEverLoaded.value) {
-    // Без филтри - зареждаме само ако няма SSR продукти
-    await loadCategoryProducts();
+    // БЕЗ филтри - зареждаме паралелно (Filters компонентът ще зареди своите данни паралелно)
+    loadCategoryProducts().catch((error) => {
+      console.error('❌ Грешка при зареждане на подкатегория:', error);
+    });
   }
   
   // ⚡ ОПТИМИЗАЦИЯ: SEO links се обновяват в следващия tick БЕЗ blocking
