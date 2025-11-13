@@ -31,7 +31,7 @@ const { category } = defineProps({
 const title = category.seo?.title || category.name || 'Категория';
 const metaDescription = category.seo?.metaDesc || category.description || `Продукти в категория ${category.name}`;
 const canonical = `${frontEndUrl || 'https://leaderfitness.net'}${path}`;
-const siteName = process.env.SITE_TITLE ?? 'WooNuxt';
+const siteName = process.env.SITE_TITLE ?? 'Leaderfitness';
 
 // OpenGraph and Twitter data
 const ogTitle = category.seo?.opengraphTitle || title;

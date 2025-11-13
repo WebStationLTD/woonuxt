@@ -5,7 +5,7 @@ const { t } = useI18n();
 
 // SEO Meta данни
 useSeoMeta({
-  title: 'Нови продукти | WooNuxt',
+  title: 'Нови продукти | Leaderfitness',
   description: 'Открийте най-новите продукти в нашия магазин. Последни постъпления и най-актуални предложения.',
 });
 

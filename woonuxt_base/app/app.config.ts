@@ -4,10 +4,10 @@
  * Below are the default values.
  */
 export default defineAppConfig({
-  siteName: 'WooNuxt',
-  shortDescription: 'This is an example of a WooNuxt store. It provides a modern, fast, and SEO friendly ecommerce store built with Nuxt and WooCommerce.',
-  description: `WooNuxt is unmatched when it comes to performance and scalability. Reap the benefits of having a online store that out performs all of your competitors. You can edit components to display your own information just like the one you're reading now.`,
-  baseUrl: 'https://v3.woonuxt.com',
+  siteName: 'Leaderfitness',
+  shortDescription: 'Leaderfitness - Онлайн магазин за професионално спортно оборудване и фитнес уреди с високо качество и конкурентни цени.',
+  description: `Leaderfitness предлага широка гама от професионално спортно оборудване, фитнес уреди, бойни спортове екипировка и аксесоари. Високо качество, конкурентни цени и бърза доставка в цялата страна.`,
+  baseUrl: 'https://leaderfitness.net',
   siteImage: 'https://user-images.githubusercontent.com/5116925/218879668-f4c1f9fd-bef4-44b0-bc7f-e87d994aa3a1.png',
   storeSettings: {
     autoOpenCart: false,

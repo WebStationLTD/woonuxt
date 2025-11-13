@@ -8,7 +8,7 @@ const title = info.seo?.title || info.name;
 const metaDescription =
   info.seo?.metaDesc || (info.shortDescription || info.description ? stripHtml(info.shortDescription || '') : stripHtml(info.description || ''));
 const canonical = `${frontEndUrl || 'https://leaderfitness.net'}${path}`;
-const siteName = process.env.SITE_TITLE ?? 'WooNuxt';
+const siteName = process.env.SITE_TITLE ?? 'Leaderfitness';
 
 // Prioritize Yoast SEO OpenGraph image
 const img = useImage();

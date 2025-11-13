@@ -20,7 +20,7 @@ const { data: productData } = await useAsyncGql('getProducts', { first: 5, order
 const popularProducts = productData.value.products?.nodes || [];
 
 // Използване на SEO данни от Yoast ако са налични, иначе използване на данни от конфигурацията
-const seoTitle = homeSeo?.title || siteName || 'WooNuxt - Най-добрият онлайн магазин за спортно оборудване';
+const seoTitle = homeSeo?.title || siteName || 'Leaderfitness - Професионално спортно оборудване и фитнес уреди';
 const seoDescription =
   homeSeo?.metaDesc ||
   description ||
