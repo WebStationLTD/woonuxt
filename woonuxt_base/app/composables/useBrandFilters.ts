@@ -16,6 +16,9 @@ const brandAttributesCache = new Map<
 // Кеш TTL - 10 минути
 const CACHE_TTL = 10 * 60 * 1000;
 
+// ⚡ ВЕРСИЯ НА КЕША: Увеличаваме при промени в логиката за автоматично инвалидиране
+const CACHE_VERSION = 'v3'; // v3 = attributeFilter query fix
+
 export const useBrandFilters = () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -31,11 +34,10 @@ export const useBrandFilters = () => {
 
   // Зарежда контекстуални филтри за марка
   const loadBrandFilters = async (brandSlug: string): Promise<any[]> => {
-    const cacheKey = `brand-${brandSlug}`;
+    const cacheKey = `${CACHE_VERSION}-brand-${brandSlug}`; // ⚡ Добавяме версия към ключа!
 
     // Проверяваме кеша първо
     if (isCacheValid(cacheKey)) {
-      console.log(`🚀 КЕШИРАНИ филтри за марка: ${brandSlug}`);
       return brandAttributesCache.get(cacheKey)!.terms;
     }
 
@@ -43,18 +45,24 @@ export const useBrandFilters = () => {
     error.value = null;
 
     try {
-      console.log(`🎯 Зареждам ОПТИМИЗИРАНИ филтри за марка: ${brandSlug}`);
 
       let allProducts: any[] = [];
       let hasNextPage = true;
       let after: string | null = null;
       let batchCount = 0;
-      const maxBatches = 5; // Максимум 5 batch-а (500 продукта)
+      const maxBatches = 20; // Увеличено: 20 batch-а (2000 продукта) - покрива всички марки
 
       // Зареждаме пагинирано за да не претоварим заявката
       while (hasNextPage && batchCount < maxBatches) {
         const variables: any = {
-          brandSearch: brandSlug, // ⚡ КРИТИЧНО: За марки използваме brandSearch!
+          // ⚡ КРИТИЧНО FIX: Използваме attributeFilter с pa_brands вместо brandSearch!
+          attributeFilter: [
+            {
+              taxonomy: 'pa_brands',
+              terms: [brandSlug],
+              operator: 'IN'
+            }
+          ],
           first: 100,
         };
 
@@ -74,16 +82,8 @@ export const useBrandFilters = () => {
         after = pageInfo?.endCursor || null;
         batchCount++;
 
-        console.log(`📦 BRAND Batch ${batchCount}: +${batch.length} продукта (общо: ${allProducts.length})`);
-
-        // Прекъсваме ако имаме достатъчно данни за репрезентативни филтри
-        if (allProducts.length >= 200) {
-          console.log(`⚡ BRAND: Спираме на ${allProducts.length} продукта за бързо зареждане`);
-          break;
-        }
+        // ⚡ ВАЖНО: НЕ прекъсваме рано! Зареждаме ВСИЧКИ продукти от марката!
       }
-
-      console.log(`🔍 BRAND: Обработвам ${allProducts.length} продукта за филтри`);
 
       // Създаваме термините от продуктните данни
       const termMap = new Map<string, any>();
@@ -156,7 +156,6 @@ export const useBrandFilters = () => {
       }
 
       const terms = Array.from(termMap.values());
-      console.log(`✅ BRAND: Създадени ${terms.length} контекстуални термина за ${brandSlug}`);
 
       // Кешираме резултата
       brandAttributesCache.set(cacheKey, {
@@ -178,7 +177,6 @@ export const useBrandFilters = () => {
   // Изчиства кеша (за тестване)
   const clearCache = () => {
     brandAttributesCache.clear();
-    console.log('🗑️ BRAND: Кеша за филтри е изчистен');
   };
 
   // Статистики за кеша

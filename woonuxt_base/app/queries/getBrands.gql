@@ -19,7 +19,8 @@ query getProductBrands($first: Int, $after: String, $slug: [String], $hideEmpty:
 }
 
 # МИНИМАЛНА ЗАЯВКА САМО ЗА ПРОДУКТНИ ДАННИ - С марки count
-query getBrands($first: Int = 300) {
+# ВАЖНО: first не може да е твърде голям (WordPress memory limit!)
+query getBrands($first: Int = 1000) {
   products(first: $first, where: { visibility: VISIBLE, status: "publish" }) {
     pageInfo {
       hasNextPage

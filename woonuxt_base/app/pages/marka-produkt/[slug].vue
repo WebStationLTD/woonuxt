@@ -47,58 +47,28 @@ const currentPageNumber = ref(1);
 let matchingBrand: Brand | null = null;
 const realProductCount = ref<number | null>(null);
 
-// ⚡ ВАЖНО: При SSR зареждаме brand data синхронно
+// ⚡ ВАЖНО: При SSR зареждаме brand data ДИРЕКТНО от taxonomy!
 if (process.server) {
-  console.log('🔥 BRAND DEBUG: Searching for brand with slug:', slug);
+  // ⚡ НОВА СТРАТЕГИЯ: Зареждаме марката ДИРЕКТНО от getProductBrands
+  const { data: brandData } = await useAsyncGql('getProductBrands', {
+    first: 10,
+    hideEmpty: true,
+    slug: [slug], // Търсим точно тази марка!
+  });
 
-  // Минимална заявка за намиране на марката с точен count
-  const { data: allProductsData } = await useAsyncGql(
-  'getProducts' as any,
-  {
-    first: 50, // Намалено - трябва ни само един продукт от марката
-    orderby: 'DATE',
-    order: 'DESC',
-    search: slug, // Търсим директно по slug
-  } as any,
-);
-
-console.log('🔥 BRAND DEBUG: Initial products search returned:', allProductsData.value?.products?.nodes?.length || 0, 'products');
-
-// Намираме марката от първия продукт и използваме count от GraphQL
-if (allProductsData.value?.products?.nodes) {
-  const products = allProductsData.value.products.nodes;
-  console.log('🔥 BRAND DEBUG: Searching through', products.length, 'products for brand');
-
-  // Намираме първия продукт с марка която съответства на slug-а
-  for (const product of products) {
-    if (product?.pwbBrands && product.pwbBrands.length > 0) {
-      for (const brand of product.pwbBrands) {
-        const brandSlug = brand.slug?.toLowerCase();
-        const searchSlug = slug.toLowerCase();
-
-        console.log('🔥 BRAND DEBUG: Comparing brandSlug:', brandSlug, 'with searchSlug:', searchSlug);
-
-        // Exact match или partial match
-        if (brandSlug === searchSlug || brandSlug?.includes(searchSlug) || searchSlug?.includes(brandSlug || '')) {
+  if (brandData.value?.terms?.nodes && brandData.value.terms.nodes.length > 0) {
+    // Вземаме първата (и единствената) марка
+    const brand = brandData.value.terms.nodes[0];
+    
           matchingBrand = {
             slug: brand.slug,
             name: brand.name,
             description: brand.description,
-            count: brand.count, // ⚡ ИЗПОЛЗВАМЕ ДИРЕКТНО COUNT ОТ GraphQL!
+      count: brand.count,
             databaseId: brand.databaseId,
           };
 
-          // ⚡ ДИРЕКТНО ИЗПОЛЗВАМЕ COUNT ОТ GraphQL
           realProductCount.value = brand.count || 0;
-
-          console.log('🔥 BRAND DEBUG: Found matching brand with exact count:', matchingBrand);
-          console.log('🔥 BRAND DEBUG: Set realProductCount from GraphQL to:', realProductCount.value);
-          break;
-        }
-      }
-      if (matchingBrand) break; // Излизаме от външния цикъл ако сме намерили марката
-    }
-  }
 }
 
 // FALLBACK: Ако не намерихме марката от първата заявка, опитваме с по-голяма
@@ -130,8 +100,6 @@ if (!matchingBrand) {
 
               // ⚡ ДИРЕКТНО ИЗПОЛЗВАМЕ COUNT ОТ GraphQL
               realProductCount.value = brand.count || 0;
-
-              console.log('🔥 BRAND DEBUG: Found brand in fallback with exact count:', realProductCount.value);
               break;
             }
           }
@@ -149,28 +117,8 @@ if (!matchingBrand) {
     throw showError({ statusCode: 404, statusMessage: 'Марката не е намерена' });
   }
 
-  // ⚡ КРИТИЧНО: Получаваме ТОЧНИЯ брой продукти с ЛЕКА заявка (само cursor-и, БЕЗ nodes!)
-  try {
-    const { data: productsCountData } = await useAsyncGql('getProductsCount', {
-      search: slug,
-      first: 2000, // Достатъчно голям за повечето марки
-    });
-
-    if (productsCountData.value?.products?.edges) {
-      const actualCount = productsCountData.value.products.edges.length;
-      console.log('🔥 BRAND DEBUG: SSR REAL count from getProductsCount:', actualCount);
-      console.log('🔥 BRAND DEBUG: SSR OLD count from brand.count:', realProductCount.value);
-      
-      // Презаписваме с точния count
-      realProductCount.value = actualCount;
-      
-      console.log('🔥 BRAND DEBUG: SSR FINAL realProductCount.value:', realProductCount.value);
-    } else {
-      console.log('🔥 BRAND DEBUG: SSR getProductsCount returned no data, keeping brand.count:', realProductCount.value);
-    }
-  } catch (error) {
-    console.error('❌ BRAND DEBUG: SSR getProductsCount failed, keeping brand.count:', error);
-  }
+  // ⚡ ОПТИМИЗАЦИЯ: Използваме count от taxonomy директно!
+  // НЕ правим допълнителна getProductsCount заявка защото search не търси в pwbBrands!
 }
 
 // Reactive ref за runtime промени
@@ -264,16 +212,6 @@ const updateBrandNextPrevLinks = () => {
   // Изчисляваме общия брой страници на база на реалния брой продукти
   const totalProductCount = realProductCount.value || matchingBrand?.count || 0;
   const totalPages = Math.ceil(totalProductCount / productsPerPage.value);
-  
-  // 🐛 DEBUG: Проверяваме защо винаги показва 12 страници
-  console.log('🔍 PAGINATION DEBUG:', {
-    realProductCount: realProductCount.value,
-    matchingBrandCount: matchingBrand?.count,
-    totalProductCount,
-    productsPerPage: productsPerPage.value,
-    totalPages,
-    currentPage: currentSeoMeta.pageNumber,
-  });
 
   // Prev link
   if (currentSeoMeta.pageNumber > 1) {
@@ -393,15 +331,33 @@ const parseFiltersFromQuery = (filterQuery: string) => {
     filters.search = searchTerm[0];
   }
 
+  // ⚡ КРИТИЧНО: Парсваме attributeFilter за атрибути като размер, цвят и т.н.
+  const runtimeConfig = useRuntimeConfig();
+  const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES) ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES : [];
+  
+  const attributeFilters: any[] = [];
+  
+  globalProductAttributes.forEach((attr: any) => {
+    const values = getFilterValues(attr.slug);
+    if (values.length > 0) {
+      attributeFilters.push({
+        taxonomy: attr.slug,
+        terms: values,
+        operator: 'IN'
+      });
+    }
+  });
+  
+  if (attributeFilters.length > 0) {
+    filters.attributeFilter = attributeFilters;
+  }
+
   return filters;
 };
 
 // Основна функция за зареждане на продукти (КОПИРАНО ОТ ЕТИКЕТИТЕ - СЪЩАТА ЛОГИКА!)
 const loadBrandProducts = async () => {
-  console.log('🔥 BRAND DEBUG: Starting loadBrandProducts');
-
   if (isNavigating) {
-    console.log('🔥 BRAND DEBUG: Already navigating, skipping');
     return;
   }
 
@@ -459,76 +415,67 @@ const loadBrandProducts = async () => {
         else if (orderBy === 'discount') graphqlOrderBy = 'DATE';
       }
 
-      console.log('🔥 BRAND DEBUG: Has filters or orderBy:', { hasFilters, hasOrderBy, filters, graphqlOrderBy });
-
-      // BACK TO SEARCH: Добавяме search по марка към филтрите (но с DEBUG)
-      if (matchingBrand?.name) {
-        console.log('🔥 BRAND DEBUG: Adding brand search filter:', matchingBrand.name);
-
-        // Ако има search в филтрите, комбинираме го с марката
-        if (filters.search && !filters.search.includes(matchingBrand.name)) {
-          filters.search = `${filters.search} ${matchingBrand.name}`;
-        } else {
-          filters.search = matchingBrand.name;
-        }
-
-        console.log('🔥 BRAND DEBUG: Final search filter:', filters.search);
+      // Добавяме attributeFilter по марка към филтрите
+      // ⚡ ПРАВИЛЕН ПОДХОД: Използваме pa_brands taxonomy!
+      
+      console.log('🔥 DEBUG: filters ПРЕДИ добавяне на марка:', JSON.stringify(filters));
+      
+      // Създаваме или обновяваме attributeFilter
+      if (!filters.attributeFilter) {
+        filters.attributeFilter = [];
       }
+
+      // Добавяме pa_brands филтъра
+      filters.attributeFilter.push({
+        taxonomy: 'pa_brands',
+        terms: [slug],
+        operator: 'IN'
+      });
+
+      console.log('🔥 DEBUG: filters СЛЕД добавяне на марка:', JSON.stringify(filters));
+      console.log('🔥 DEBUG: attributeFilter array:', filters.attributeFilter);
 
       // КРИТИЧНО: Правилна логика за cursor-based пагинация (КОПИРАНО ОТ ЕТИКЕТИТЕ)
       if (pageNumber > 1) {
-        console.log('🔥 BRAND DEBUG: Jump to page:', pageNumber, 'with filters:', filters);
-
+        console.log('🔥 DEBUG: Calling jumpToPageOptimized with filters:', filters);
         await jumpToPageOptimized(pageNumber, [], graphqlOrderBy, filters);
-
-        console.log('🔥 BRAND DEBUG: After jumpToPageOptimized, products:', products.value?.length);
 
         if (process.client && Object.keys(filters).length > 1 && (!products.value || products.value.length === 0)) {
           throw showError({ statusCode: 404, statusMessage: `Страница ${pageNumber} не съществува с тези филтри в марката` });
         }
       } else {
-        console.log('🔥 BRAND DEBUG: Load page 1 with filters:', filters);
-
+        console.log('🔥 DEBUG: Calling loadProductsPageOptimized with filters:', filters);
         await loadProductsPageOptimized(pageNumber, [], graphqlOrderBy, filters);
-
-        console.log('🔥 BRAND DEBUG: After loadProductsPageOptimized, products:', products.value?.length);
       }
 
       // КРИТИЧНО: Зареждаме filtered count при филтриране
-      if (process.client && Object.keys(filters).length > 1) {
-        // > 1 защото винаги има search
+      if (process.client) {
+        // Винаги зареждаме count при филтриране, защото loadBrandCount проверява hasAnyFilters
         await loadBrandCount(filters);
       }
     } else {
-      console.log('🔥 BRAND DEBUG: No filters - using search approach');
-
-      // BACK TO SEARCH: Използваме search подхода ТОЧНО като етикетите
-      const brandFilters = { search: matchingBrand?.name || '' };
-
-      console.log('🔥 BRAND DEBUG: Brand filters for no-filters case:', brandFilters);
+      // ⚡ ПРАВИЛЕН ПОДХОД: Използваме attributeFilter с pa_brands taxonomy!
+      // pa_brands е Product Attribute който всички продукти имат!
+      const brandFilters = {
+        attributeFilter: [
+          {
+            taxonomy: 'pa_brands',
+            terms: [slug], // slug-ът на марката в pa_brands
+            operator: 'IN'
+          }
+        ]
+      };
 
       if (pageNumber > 1) {
-        console.log('🔥 BRAND DEBUG: Jump to page (no filters):', pageNumber, 'with brandFilters:', brandFilters);
+        await jumpToPageOptimized(pageNumber, [], 'DATE', brandFilters as any);
 
-        await jumpToPageOptimized(pageNumber, [], 'DATE', brandFilters);
-
-        console.log('🔥 BRAND DEBUG: After jumpToPageOptimized (no filters), products:', products.value?.length);
-
-        if (process.client && (!products.value || products.value.length === 0)) {
-          const totalProducts = realProductCount.value || matchingBrand?.count || 0;
-          const maxPages = totalProducts > 0 ? Math.ceil(totalProducts / productsPerPage.value) : 1;
-          console.log('🔥 BRAND DEBUG: No products found, total:', totalProducts, 'maxPages:', maxPages);
-          // ⚡ REDIRECT към последна валидна страница вместо 404
-          console.warn(`⚠️ Page ${pageNumber} has no products, redirecting to page ${maxPages}`);
+        if (!products.value || products.value.length === 0) {
+          const maxPages = Math.ceil((realProductCount.value || 0) / productsPerPage.value);
           await navigateTo(`/marka-produkt/${slug}/page/${maxPages}`, { replace: true });
           return;
         }
       } else {
-        console.log('🔥 BRAND DEBUG: Load page 1 (no filters) with brandFilters:', brandFilters);
-
-        await loadProductsPageOptimized(pageNumber, [], 'DATE', brandFilters);
-
-        console.log('🔥 BRAND DEBUG: After loadProductsPageOptimized (no filters), products:', products.value?.length);
+        await loadProductsPageOptimized(pageNumber, [], 'DATE', brandFilters as any);
       }
 
       // Reset brand count
@@ -565,61 +512,30 @@ onMounted(async () => {
     const needsRefresh = !matchingBrand || matchingBrand.slug?.toLowerCase() !== slug.toLowerCase();
     
     if (needsRefresh) {
-      console.log('🔥 BRAND DEBUG: Loading brand data on client (no cache or different brand)...');
       try {
-        const { data: allProductsData } = await useAsyncGql(
-          'getProducts' as any,
-          {
-            first: 50,
-            orderby: 'DATE',
-            order: 'DESC',
-            search: slug,
-          } as any,
-        );
+        // ⚡ НОВА СТРАТЕГИЯ: Зареждаме марката ДИРЕКТНО от getProductBrands (като в SSR!)
+        const { data: brandData } = await useAsyncGql('getProductBrands', {
+          first: 10,
+          hideEmpty: true,
+          slug: [slug],
+        });
 
-        if (allProductsData.value?.products?.nodes) {
-          const products = allProductsData.value.products.nodes;
-          for (const product of products) {
-            if (product?.pwbBrands && product.pwbBrands.length > 0) {
-              for (const brand of product.pwbBrands) {
-                const brandSlug = brand.slug?.toLowerCase();
-                if (brandSlug === slug.toLowerCase() || brandSlug?.includes(slug.toLowerCase())) {
-                  matchingBrand = {
-                    slug: brand.slug,
-                    name: brand.name,
-                    description: brand.description,
-                    count: brand.count,
-                    databaseId: brand.databaseId,
-                  };
-                  realProductCount.value = brand.count || 0;
-                  matchingBrandRef.value = matchingBrand;
-                  break;
-                }
-              }
-            }
-            if (matchingBrand) break;
-          }
-        }
-
-        if (!matchingBrand) {
+        if (brandData.value?.terms?.nodes && brandData.value.terms.nodes.length > 0) {
+          const brand = brandData.value.terms.nodes[0];
+          
+          matchingBrand = {
+            slug: brand.slug,
+            name: brand.name,
+            description: brand.description,
+            count: brand.count,
+            databaseId: brand.databaseId,
+          };
+          
+          realProductCount.value = brand.count || 0;
+          matchingBrandRef.value = matchingBrand;
+        } else {
           throw showError({ statusCode: 404, statusMessage: 'Марката не е намерена' });
         }
-
-        // ⚡ КРИТИЧНО: Получаваме ТОЧНИЯ брой продукти с ЛЕКА заявка
-        try {
-          const { data: productsCountData } = await useAsyncGql('getProductsCount', {
-            search: slug,
-            first: 2000,
-          });
-
-          if (productsCountData.value?.products?.edges) {
-            const actualCount = productsCountData.value.products.edges.length;
-            console.log('🔥 BRAND DEBUG: Client REAL count from getProductsCount:', actualCount);
-            realProductCount.value = actualCount;
-        }
-      } catch (error) {
-        console.error('❌ BRAND DEBUG: Client getProductsCount failed, keeping brand.count:', error);
-      }
     } catch (error) {
       console.error('Failed to load brand:', error);
       throw showError({ statusCode: 404, statusMessage: 'Марката не е намерена' });
@@ -653,35 +569,9 @@ onMounted(async () => {
   });
 });
 
-// ⚡ ВАЖНО: Зареждаме продукти на SSR САМО ако няма филтри в URL-а!
-// При SSR в Nuxt 3, route.query е празен, което води до грешни резултати при филтри
-if (process.server) {
-  // Проверяваме дали URL-ът съдържа query параметри
-  const event = useRequestEvent();
-  const url = event?.node?.req?.url || '';
-  const hasQueryParams = url.includes('?');
-  
-  // Зареждаме САМО ако няма query параметри (филтри/сортиране)
-  if (!hasQueryParams) {
-    try {
-      const { data } = await useAsyncGql('getProductsOptimized', {
-        first: 12,
-        search: slug,
-        orderby: 'DATE',
-      });
-      
-      if (data.value?.products?.nodes) {
-        products.value = data.value.products.nodes;
-        pageInfo.hasNextPage = data.value.products.pageInfo?.hasNextPage || false;
-        pageInfo.endCursor = data.value.products.pageInfo?.endCursor || '';
-        hasEverLoaded.value = true;
-      }
-    } catch (error) {
-      console.error('SSR product load failed:', error);
-    }
-  }
-  // Ако има query параметри, client-side ще зареди правилните данни в onMounted
-}
+// ⚠️ ПРЕМАХНАТО: SSR product loading защото search: slug НЕ работи за pwbBrands!
+// WordPress search НЕ търси в pwbBrands taxonomy
+// Всички продукти се зареждат на client-side в onMounted с правилната логика
 
 // ⚡ ОПТИМИЗАЦИЯ НИВО 1.1: SMART UNIFIED ROUTE WATCHER с DEBOUNCE
 // Вместо 3 отделни watchers (fullPath, path, query) - 1 оптимизиран watcher
@@ -830,9 +720,10 @@ const brandCount = computed(() => {
   if (hasFilters) {
     const filters = parseFiltersFromQuery(route.query.filter as string);
 
-    // Проверяваме за ВСИЧКИ типове филтри (без search защото той винаги е с марката)
+    // Проверяваме за ВСИЧКИ типове филтри (ОСВЕН марката, която е винаги)
+    const hasOtherAttributeFilters = filters.attributeFilter && filters.attributeFilter.some((f: any) => f.taxonomy !== 'pa_brands');
     const hasAnyFilters =
-      filters.onSale || (filters.search && filters.search !== matchingBrand?.name) || filters.minPrice !== undefined || filters.maxPrice !== undefined;
+      filters.onSale || hasOtherAttributeFilters || filters.minPrice !== undefined || filters.maxPrice !== undefined;
 
     if (hasAnyFilters) {
       // При всякакви филтри използваме филтрирания count
@@ -851,15 +742,16 @@ const loadBrandCount = async (filters: any) => {
     return;
   }
 
-  // Проверяваме за всички типове филтри (без search защото той винаги е с марката)
+  // Проверяваме за всички типове филтри (ОСВЕН марката, която е винаги)
+  // hasAnyFilters проверява дали има ДОПЪЛНИТЕЛНИ филтри извън марката
+  const hasOtherAttributeFilters = filters.attributeFilter && filters.attributeFilter.some((f: any) => f.taxonomy !== 'pa_brands');
   const hasAnyFilters =
-    filters.onSale || (filters.search && filters.search !== matchingBrand?.name) || (filters.minPrice !== undefined && filters.maxPrice !== undefined);
+    filters.onSale || hasOtherAttributeFilters || (filters.minPrice !== undefined && filters.maxPrice !== undefined);
 
   if (hasAnyFilters) {
     try {
-      // ⚡ СУПЕР БЪРЗО: Използваме getProductsCount вместо getProducts!
+      // ⚡ ПРАВИЛЕН ПОДХОД: Използваме attributeFilter с pa_brands!
       const variables: any = {
-        search: filters.search || slug, // Search съдържа марката
         first: 2000, // Достатъчно за повечето случаи
       };
 
@@ -868,24 +760,22 @@ const loadBrandCount = async (filters: any) => {
       if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
       if (filters.onSale !== undefined) variables.onSale = filters.onSale;
 
-      // ⚡ КРИТИЧНО: Добавяме attributeFilter
-      const runtimeConfig = useRuntimeConfig();
-      const globalProductAttributes = Array.isArray(runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES) ? runtimeConfig.public.GLOBAL_PRODUCT_ATTRIBUTES : [];
-
+      // Добавяме attributeFilter за продуктови атрибути
       const attributeFilters: any[] = [];
-      globalProductAttributes.forEach((attr: any) => {
-        if (filters[attr.slug] && Array.isArray(filters[attr.slug])) {
-          attributeFilters.push({
-            taxonomy: attr.slug,
-            terms: filters[attr.slug],
-            operator: 'IN',
-          });
-        }
+      
+      // ⚡ КРИТИЧНО: ВИНАГИ добавяме марката като първи филтър!
+      attributeFilters.push({
+        taxonomy: 'pa_brands',
+        terms: [slug],
+        operator: 'IN'
       });
-
-      if (attributeFilters.length > 0) {
-        variables.attributeFilter = attributeFilters;
+      
+      // ⚡ ВАЖНО: Ако има attributeFilter от parseFiltersFromQuery, добавяме ги!
+      if (filters.attributeFilter && Array.isArray(filters.attributeFilter)) {
+        attributeFilters.push(...filters.attributeFilter);
       }
+
+      variables.attributeFilter = attributeFilters;
 
       // ⚡ БЪРЗО: getProductsCount връща само cursor-и, БЕЗ продуктни данни!
       const { data } = await useAsyncGql('getProductsCount', variables);

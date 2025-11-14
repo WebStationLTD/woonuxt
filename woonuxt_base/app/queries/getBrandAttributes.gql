@@ -1,5 +1,5 @@
-query getBrandAttributes($brandSearch: String, $first: Int = 100, $after: String) {
-  products(first: $first, after: $after, where: { search: $brandSearch, visibility: VISIBLE, status: "publish" }) {
+query getBrandAttributes($brandSearch: String, $attributeFilter: [WooNuxtTaxonomyFilterInput], $first: Int = 100, $after: String) {
+  products(first: $first, after: $after, where: { search: $brandSearch, attributeFilter: $attributeFilter, visibility: VISIBLE, status: "publish" }) {
     pageInfo {
       hasNextPage
       endCursor

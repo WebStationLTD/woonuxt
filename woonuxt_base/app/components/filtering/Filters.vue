@@ -90,53 +90,42 @@ const loadTerms = async () => {
   try {
     // ⚡ ПРИОРИТЕТ 1: КОНТЕКСТУАЛНИ ФИЛТРИ за категории
     if (categorySlug && categorySlug.trim().length > 0) {
-      console.log('🎯 Зареждам контекстуални филтри за категория:', categorySlug);
       const contextualTerms = await loadCategoryFilters(categorySlug);
 
       if (contextualTerms.length > 0) {
         terms.value = contextualTerms;
         return;
       }
-
-      console.log('🔄 FALLBACK: Зареждам глобални филтри (категория няма данни)');
     }
     
     // ⚡ ПРИОРИТЕТ 2: КОНТЕКСТУАЛНИ ФИЛТРИ за етикети
     else if (tagSlug && tagSlug.trim().length > 0) {
-      console.log('🎯 Зареждам контекстуални филтри за етикет:', tagSlug);
       const contextualTerms = await loadTagFilters(tagSlug);
 
       if (contextualTerms.length > 0) {
         terms.value = contextualTerms;
         return;
       }
-
-      console.log('🔄 FALLBACK: Зареждам глобални филтри (етикет няма данни)');
     }
     
     // ⚡ ПРИОРИТЕТ 3: КОНТЕКСТУАЛНИ ФИЛТРИ за марки
     else if (brandSlug && brandSlug.trim().length > 0) {
-      console.log('🎯 Зареждам контекстуални филтри за марка:', brandSlug);
       const contextualTerms = await loadBrandFilters(brandSlug);
 
       if (contextualTerms.length > 0) {
         terms.value = contextualTerms;
         return;
       }
-
-      console.log('🔄 FALLBACK: Зареждам глобални филтри (марка няма данни)');
     }
 
     // ⚡ ПРИОРИТЕТ 4: ГЛОБАЛНИ ФИЛТРИ - първо проверяваме кеша
     const cachedTerms = getCachedGlobalTerms();
     if (cachedTerms && cachedTerms.length > 0) {
-      console.log('⚡ КЕШИРАНИ глобални филтри:', cachedTerms.length);
       terms.value = cachedTerms;
       return;
     }
 
     // Зареждаме глобални термини асинхронно
-    console.log('🌐 Зареждам глобални филтри от сървъра...');
 
     const { data } = await useAsyncGql('getAllTerms', {
       taxonomies: [...taxonomies, TaxonomyEnum.PRODUCTCATEGORY],
@@ -195,7 +184,16 @@ const productCategoryTerms = computed(() => terms.value?.filter((term: any) => t
 
 // ПОПРАВКА: Добавяме по-интелигентно мачване на термините
 const attributesWithTerms = computed(() =>
-  globalProductAttributes.map((attr) => {
+  globalProductAttributes
+    // ⚡ КРИТИЧНО: Скриваме филтъра "Марка" на brand pages!
+    .filter((attr) => {
+      // Ако сме на brand page (има brandSlug), скриваме pa_brands филтъра
+      if (brandSlug && attr.slug === 'pa_brands') {
+        return false;
+      }
+      return true;
+    })
+    .map((attr) => {
     // Опитваме точно мачване първо
     let attributeTerms = terms.value?.filter((term: any) => term.taxonomyName === attr.slug) || [];
 

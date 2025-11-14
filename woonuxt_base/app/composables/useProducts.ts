@@ -13,6 +13,7 @@ let activeFilters: {
   maxPrice?: number;
   onSale?: boolean;
   search?: string;
+  attributeFilter?: any[]; // ⚡ ДОБАВЕНО: За brand/attribute filtering!
   // rating?: number;  // ВРЕМЕННО СКРИТО
   categorySlug?: string[];
 } = {
@@ -20,6 +21,7 @@ let activeFilters: {
   maxPrice: undefined,
   onSale: undefined,
   search: undefined,
+  attributeFilter: undefined, // ⚡ ДОБАВЕНО!
   // rating: undefined,  // ВРЕМЕННО СКРИТО
   categorySlug: undefined,
 };
@@ -111,6 +113,7 @@ export function useProducts() {
         if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
         if (filters.onSale !== undefined) variables.onSale = filters.onSale;
         if (filters.search) variables.search = filters.search;
+        if (filters.attributeFilter) variables.attributeFilter = filters.attributeFilter; // ⚡ ДОБАВЕНО!
         // if (filters.rating !== undefined) variables.rating = filters.rating;  // ВРЕМЕННО СКРИТО
 
         // Запазваме активните филтри
@@ -246,6 +249,7 @@ export function useProducts() {
       maxPrice: undefined,
       onSale: undefined,
       search: undefined,
+      attributeFilter: undefined, // ⚡ ДОБАВЕНО!
       categorySlug: undefined,
     };
   }
@@ -334,9 +338,16 @@ export function useProducts() {
         if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
         if (filters.onSale !== undefined) variables.onSale = filters.onSale;
         if (filters.search) variables.search = filters.search;
+        if (filters.attributeFilter) {
+          variables.attributeFilter = filters.attributeFilter;
+          console.log('🔥 DEBUG useProducts: attributeFilter from filters:', filters.attributeFilter);
+          console.log('🔥 DEBUG useProducts: Final variables.attributeFilter:', variables.attributeFilter);
+        }
 
         activeFilters = { ...filters };
       }
+      
+      console.log('🔥 DEBUG useProducts: Final GraphQL variables:', JSON.stringify(variables));
 
       // ПРАВИЛНО SERVER-SIDE АТРИБУТНО ФИЛТРИРАНЕ с taxonomyFilter
       if (process.client) {
@@ -362,10 +373,23 @@ export function useProducts() {
           }
         });
 
-        // Ако има атрибутни филтри, пращаме ги като attributeFilter
+        // ⚡ КРИТИЧНО FIX: КОМБИНИРАМЕ taxonomyFilters С СЪЩЕСТВУВАЩИЯ attributeFilter!
+        // НЕ презаписваме, защото може да има attributeFilter от filters (например марка!)
         if (taxonomyFilters.length > 0) {
+          // Ако вече има attributeFilter от filters, комбинираме ги
+          if (variables.attributeFilter && Array.isArray(variables.attributeFilter)) {
+            // Избягваме дублиращи се филтри (същата taxonomy)
+            const existingTaxonomies = variables.attributeFilter.map((f: any) => f.taxonomy);
+            const uniqueTaxonomyFilters = taxonomyFilters.filter(
+              (tf: any) => !existingTaxonomies.includes(tf.taxonomy)
+            );
+            variables.attributeFilter = [...variables.attributeFilter, ...uniqueTaxonomyFilters];
+          } else {
           variables.attributeFilter = taxonomyFilters;
         }
+        }
+        
+        console.log('🔥 DEBUG useProducts: FINAL attributeFilter after merge:', variables.attributeFilter);
       }
 
       // Използваме оптимизираната заявка
@@ -394,7 +418,7 @@ export function useProducts() {
           const startIndex = (page - 1) * productsPerPage.value;
           const endIndex = page * productsPerPage.value;
           productsToShow = productsToShow.slice(startIndex, endIndex);
-        }
+              }
 
         // Клиентско сортиране по discount ако е нужно (САМО сортиране)
         if (process.client && orderBy === 'discount') {
@@ -516,6 +540,7 @@ export function useProducts() {
         if (filters.maxPrice !== undefined) variables.maxPrice = filters.maxPrice;
         if (filters.onSale !== undefined) variables.onSale = filters.onSale;
         if (filters.search) variables.search = filters.search;
+        if (filters.attributeFilter) variables.attributeFilter = filters.attributeFilter; // ⚡ ДОБАВЕНО!
       }
 
       // Добавяме атрибутни филтри и към cursor заявката за консистентност
@@ -548,7 +573,7 @@ export function useProducts() {
 
       // Получаваме cursor-ите (много бърза заявка!)
       const cursorsResult = await useAsyncGql('getProductCursors', variables);
-      
+
       // ⚠️ ВАЖНО: useAsyncGql понякога остава в idle състояние при първо извикване
       // Форсваме изпълнението с refresh() ако е необходимо
       if (cursorsResult.status?.value === 'idle') {

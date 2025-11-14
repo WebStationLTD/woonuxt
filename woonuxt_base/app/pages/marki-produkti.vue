@@ -41,23 +41,63 @@ if (process.server) {
   console.log('🔥 BRANDS PAGE: Loading brands on SSR...');
 
   try {
-    // ⚡ ULTRA БЪРЗА заявка ДИРЕКТНО от terms таксономия (БЕЗ продукти!)
-    const { data } = await useAsyncGql('getProductBrands', {
-      first: 500, // Достатъчно за всички марки
+    // ⚡ ОПРОСТЕН ПОДХОД: Използваме getProductBrands (terms query - много по-лек!)
+    const brandsResult = await useAsyncGql('getProductBrands', {
+      first: 500, // Достатъчно за всички марки (марките са по-малко от продуктите!)
       hideEmpty: true, // Само марки с продукти
     });
 
+    // ⚠️ КРИТИЧЕН FIX: useAsyncGql понякога остава в idle състояние!
+    // Форсваме изпълнението с refresh() ако е необходимо (както в useProducts.ts)
+    console.log('🔥 BRANDS PAGE: brandsResult status:', brandsResult.status?.value);
+    console.log('🔥 BRANDS PAGE: brandsResult error:', brandsResult.error?.value);
+    
+    if (brandsResult.status?.value === 'idle' || !brandsResult.data?.value) {
+      console.log('🔥 BRANDS PAGE: useAsyncGql is idle, forcing refresh...');
+      await brandsResult.refresh();
+      console.log('🔥 BRANDS PAGE: After refresh - status:', brandsResult.status?.value);
+      console.log('🔥 BRANDS PAGE: After refresh - error:', brandsResult.error?.value);
+    }
+
+    const data = brandsResult.data;
+    const error = brandsResult.error;
+    
+    console.log('🔥 BRANDS PAGE: Raw data received:', data.value);
+    console.log('🔥 BRANDS PAGE: Error received:', error?.value);
+    console.log('🔥 BRANDS PAGE: Brands count:', data.value?.terms?.nodes?.length || 0);
+
     if (data.value?.terms?.nodes) {
-      initialBrands = data.value.terms.nodes
-        .filter((brand: any) => brand && brand.slug && brand.name)
+      // Директно вземаме марките от terms (вече са уникални!)
+      // ⚠️ ВАЖНО: Филтрираме марки с count > 0 (WordPress count може да включва draft!)
+      const allBrands = data.value.terms.nodes
+        .filter((brand: any) => {
+          // Базова валидация
+          if (!brand || !brand.slug || !brand.name) return false;
+          
+          // КРИТИЧНО: Проверяваме count (но това може да включва draft!)
+          // За по-сигурно филтриране, ще трябва да проверим реално visible продукти
+          const hasCount = brand.count && brand.count > 0;
+          
+          if (!hasCount) {
+            console.log(`⚠️ BRANDS PAGE: Skipping brand "${brand.name}" (count: ${brand.count})`);
+          }
+          
+          return hasCount;
+        })
         .map((brand: any) => ({
           databaseId: brand.databaseId,
           slug: brand.slug,
           name: brand.name,
+          count: brand.count, // Запазваме count за debug
         }))
         .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
       
-      console.log('🔥 BRANDS PAGE: SSR loaded', initialBrands.length, 'brands');
+      initialBrands = allBrands;
+      console.log('🔥 BRANDS PAGE: SSR loaded', initialBrands.length, 'brands from terms taxonomy');
+      console.log('🔥 BRANDS PAGE: Sample brands with counts:', 
+        initialBrands.slice(0, 5).map((b: any) => `${b.name} (${b.count})`));
+    } else {
+      console.error('❌ BRANDS PAGE: No products data in response');
     }
   } catch (error) {
     console.error('❌ BRANDS PAGE: SSR brand loading failed:', error);
@@ -74,13 +114,31 @@ onMounted(async () => {
     console.log('🔥 BRANDS PAGE: Loading brands on client (no SSR data)...');
 
     try {
-      // ⚡ ULTRA БЪРЗА заявка ДИРЕКТНО от terms таксономия
-      const { data } = await useAsyncGql('getProductBrands', {
-        first: 500,
-        hideEmpty: true,
+      // ⚡ ОПРОСТЕН ПОДХОД: Използваме getProductBrands (terms query - много по-лек!)
+      const brandsResult = await useAsyncGql('getProductBrands', {
+        first: 500, // Достатъчно за всички марки
+        hideEmpty: true, // Само марки с продукти
       });
 
+      // ⚠️ КРИТИЧЕН FIX: Форсваме изпълнението ако е необходимо
+      console.log('🔥 BRANDS PAGE: Client brandsResult status:', brandsResult.status?.value);
+      console.log('🔥 BRANDS PAGE: Client brandsResult error:', brandsResult.error?.value);
+      
+      if (brandsResult.status?.value === 'idle' || !brandsResult.data?.value) {
+        console.log('🔥 BRANDS PAGE: Client useAsyncGql is idle, forcing refresh...');
+        await brandsResult.refresh();
+        console.log('🔥 BRANDS PAGE: Client after refresh - status:', brandsResult.status?.value);
+        console.log('🔥 BRANDS PAGE: Client after refresh - error:', brandsResult.error?.value);
+      }
+
+      const data = brandsResult.data;
+      const error = brandsResult.error;
+      
+      console.log('🔥 BRANDS PAGE: Client raw data:', data.value);
+      console.log('🔥 BRANDS PAGE: Client error:', error?.value);
+
       if (data.value?.terms?.nodes) {
+        // Директно вземаме марките от terms (вече са уникални!)
         brands.value = data.value.terms.nodes
           .filter((brand: any) => brand && brand.slug && brand.name)
           .map((brand: any) => ({
@@ -90,7 +148,7 @@ onMounted(async () => {
           }))
           .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
         
-        console.log('🔥 BRANDS PAGE: Client loaded', brands.value.length, 'brands');
+        console.log('🔥 BRANDS PAGE: Client loaded', brands.value.length, 'brands from terms taxonomy');
       }
     } catch (error) {
       console.error('Error loading brands:', error);
