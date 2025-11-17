@@ -1,6 +1,5 @@
 import { createResolver } from '@nuxt/kit';
 const { resolve } = createResolver(import.meta.url);
-import redirects from './redirects.config';
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-03-30',
@@ -46,9 +45,6 @@ export default defineNuxtConfig({
       },
     },
   },
-
-  // Добавяне на redirects
-  redirects,
 
   alias: {
     '#constants': resolve('./app/constants'),
@@ -96,6 +92,8 @@ export default defineNuxtConfig({
       '/order-summary/**': { ssr: false },
       '/product/**': { redirect: { to: '/produkt/**', statusCode: 301 } },
       '/products/**': { redirect: { to: '/magazin/**', statusCode: 301 } },
+      '/фитнес-уреди': { redirect: { to: '/', statusCode: 301 } },
+      '/фитнес-уреди/': { redirect: { to: '/', statusCode: 301 } },
     },
     compressPublicAssets: {
       brotli: true,
