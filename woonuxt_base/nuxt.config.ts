@@ -92,8 +92,6 @@ export default defineNuxtConfig({
       '/order-summary/**': { ssr: false },
       '/product/**': { redirect: { to: '/produkt/**', statusCode: 301 } },
       '/products/**': { redirect: { to: '/magazin/**', statusCode: 301 } },
-      '/фитнес-уреди': { redirect: { to: '/', statusCode: 301 } },
-      '/фитнес-уреди/': { redirect: { to: '/', statusCode: 301 } },
     },
     compressPublicAssets: {
       brotli: true,
