@@ -2,17 +2,12 @@
   "buildCommand": "npm run vercel-build",
   "outputDirectory": ".output/public",
   "regions": ["fra1"],
-  "functions": {
-    "api/**/*.ts": {
-      "memory": 1024,
-      "maxDuration": 10
-    },
-    ".output/server/**/*.mjs": {
-      "memory": 1024,
-      "maxDuration": 10
+  "crons": [
+    {
+      "path": "/api/revalidate",
+      "schedule": "0 */6 * * *"
     }
-  },
-  "crons": [],
+  ],
   "headers": [
     {
       "source": "/_nuxt/(.*)",
@@ -34,3 +29,5 @@
     }
   ]
 }
+
+

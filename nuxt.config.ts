@@ -155,6 +155,9 @@ export default defineNuxtConfig({
     // Tracking API Keys (server-side за Conversion APIs)
     META_CONVERSION_API_TOKEN: process.env.META_CONVERSION_API_TOKEN,
     GOOGLE_ANALYTICS_API_SECRET: process.env.GOOGLE_ANALYTICS_API_SECRET,
+    
+    // ISR On-Demand Revalidation Secret (ОПЦИОНАЛНО - само ако искаш WordPress webhook)
+    REVALIDATE_SECRET: process.env.REVALIDATE_SECRET || 'not-configured',
 
     public: {
       GQL_HOST: "https://admin.leaderfitness.net/graphql",
@@ -312,55 +315,56 @@ export default defineNuxtConfig({
       },
 
       // ========================================
-      // ISR СТРАНИЦИ - 30 минути (беше 5-10 мин)
+      // ISR СТРАНИЦИ - САМО ЗА КРИТИЧНИ ПРОДУКТОВИ СТРАНИЦИ! 💰
+      // Марки, етикети и блог използват SSR + Edge Cache (много по-евтино!)
       // ========================================
       "/produkt/**": {
         isr: {
-          expiration: 1800, // 30 минути (беше 10)
+          expiration: 14400, // 4 часа - баланс между свежест и разходи
         },
         headers: {
+          // Edge: 4h, Browser: 30m, Stale: 8h
           "Cache-Control":
-            "public, s-maxage=1800, max-age=600, stale-while-revalidate=3600",
+            "public, s-maxage=14400, max-age=1800, stale-while-revalidate=28800",
         },
       },
       "/produkt-kategoriya/**": {
         isr: {
-          expiration: 1800, // 30 минути (беше 5)
+          expiration: 14400, // 4 часа - критични SEO страници
         },
         headers: {
+          // Edge: 4h, Browser: 15m, Stale: 8h
           "Cache-Control":
-            "public, s-maxage=1800, max-age=300, stale-while-revalidate=3600",
-        },
-      },
-      "/produkt-etiket/**": {
-        isr: {
-          expiration: 1800, // 30 минути (беше 5)
-        },
-        headers: {
-          "Cache-Control":
-            "public, s-maxage=1800, max-age=300, stale-while-revalidate=3600",
-        },
-      },
-      "/marka-produkt/**": {
-        isr: {
-          expiration: 1800, // 30 минути (беше 5)
-        },
-        headers: {
-          "Cache-Control":
-            "public, s-maxage=1800, max-age=300, stale-while-revalidate=3600",
+            "public, s-maxage=14400, max-age=900, stale-while-revalidate=28800",
         },
       },
 
       // ========================================
-      // БЛОГ - ISR 1 час (беше 30 мин)
+      // SSR + АГРЕСИВЕН EDGE CACHE - ПО-ЕВТИНО ОТ ISR! 💰
+      // За страници с рядко променящо се съдържание
       // ========================================
-      "/blog/**": {
-        isr: {
-          expiration: 3600, // 1 час
-        },
+      "/produkt-etiket/**": {
+        ssr: true, // SSR вместо ISR - много по-евтино!
         headers: {
+          // Edge: 24h, Browser: 30m, Stale: 48h - рядко се променят етикети
           "Cache-Control":
-            "public, s-maxage=3600, max-age=900, stale-while-revalidate=7200",
+            "public, s-maxage=86400, max-age=1800, stale-while-revalidate=172800",
+        },
+      },
+      "/marka-produkt/**": {
+        ssr: true, // SSR вместо ISR - много по-евтино!
+        headers: {
+          // Edge: 24h, Browser: 30m, Stale: 48h - рядко се добавят нови марки
+          "Cache-Control":
+            "public, s-maxage=86400, max-age=1800, stale-while-revalidate=172800",
+        },
+      },
+      "/blog/**": {
+        ssr: true, // SSR вместо ISR - много по-евтино!
+        headers: {
+          // Edge: 24h, Browser: 1h, Stale: 48h - блог се променя много рядко
+          "Cache-Control":
+            "public, s-maxage=86400, max-age=3600, stale-while-revalidate=172800",
         },
       },
 

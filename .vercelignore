@@ -1,0 +1,52 @@
+# Vercel Ignore - Файлове които не трябва да се upload-ват към Vercel
+
+# Node modules (автоматично се инсталират при build)
+node_modules/
+woonuxt_base/node_modules/
+
+# Nuxt build cache
+.nuxt/
+woonuxt_base/.nuxt/
+
+# Development files
+.git/
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Source maps (тежки и не са нужни в production)
+.output/public/_nuxt/*.map
+*.map
+
+# Local env files (secrets се добавят в Vercel Dashboard)
+.env
+.env.local
+.env.*.local
+
+# Testing
+coverage/
+.nyc_output/
+
+# Documentation (не е нужна в production build)
+*.md
+!README.md
+
+# Temporary files
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+*.swo
+*~
+
+# Scripts (не са нужни в runtime)
+scripts/
+
+# WordPress local development
+wp-content/
+leaderfitness.local/
+
+
