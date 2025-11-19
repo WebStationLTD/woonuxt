@@ -2,13 +2,6 @@
   "buildCommand": "npm run vercel-build",
   "outputDirectory": ".output/public",
   "regions": ["fra1"],
-  "functions": {
-    ".output/server/**/*.mjs": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  },
-  "crons": [],
   "headers": [
     {
       "source": "/_nuxt/(.*)",
