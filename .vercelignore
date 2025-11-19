@@ -42,8 +42,8 @@ Thumbs.db
 *.swo
 *~
 
-# Scripts (не са нужни в runtime)
-scripts/
+# Scripts (махнато - нужни са при build!)
+# scripts/
 
 # WordPress local development
 wp-content/
