@@ -20,6 +20,10 @@ if (!data.value?.product) {
 }
 
 const product = ref<Product>(data?.value?.product);
+
+// Schema.org Product markup
+useProductSchema(product);
+
 const quantity = ref<number>(1);
 const activeVariation = ref<Variation | null>(null);
 const variation = ref<VariationAttribute[]>([]);

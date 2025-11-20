@@ -41,6 +41,10 @@ useHead({
   ] : [],
 });
 
+// Schema.org глобални markup-и
+useLocalBusinessSchema();
+useWebSiteSchema();
+
 // Принудително завършване на loading indicator-а при завършена навигация
 const nuxtApp = useNuxtApp();
 

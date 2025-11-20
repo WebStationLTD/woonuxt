@@ -123,17 +123,19 @@ try {
         link: [{ rel: 'canonical', href: postSeo?.canonical || `/${slug}` }],
       });
 
-      // Добавяне на структурирани данни (schema.org) ако са налични в Yoast
-      if (postSeo?.schema?.raw) {
-        useHead({
-          script: [
-            {
-              type: 'application/ld+json',
-              innerHTML: postSeo.schema.raw,
-            },
-          ],
-        });
-      }
+      // Добавяне на структурирани данни (schema.org)
+      // Винаги използваме нашия Article schema с правилни URLs
+      useArticleSchema({
+        title: data.value.post.title,
+        excerpt: data.value.post.excerpt,
+        content: data.value.post.content,
+        slug: data.value.post.slug,
+        date: data.value.post.date,
+        modified: (data.value.post as any).modified,
+        author: (data.value.post as any).author,
+        featuredImage: data.value.post.featuredImage,
+        categories: (data.value.post as any).categories?.nodes,
+      });
     } else {
       // Ако публикацията не е намерена, хвърли 404
       throw createError({

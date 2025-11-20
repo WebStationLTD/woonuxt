@@ -151,6 +151,16 @@ if (process.server) {
   if (!matchingCategory) {
     throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
   }
+
+  // Schema.org CollectionPage markup
+  useCollectionPageSchema({
+    name: matchingCategory.name || '',
+    description: matchingCategory.description || '',
+    slug: matchingCategory.slug || '',
+    parentSlug: matchingCategory.parent?.node?.slug,
+    image: matchingCategory.image?.sourceUrl,
+    count: realProductCount || 0,
+  });
 } else {
   // ⚡ При CLIENT - проверяваме кеша веднага (синхронно, БЕЗ await)
   const cachedData = getCachedCategoryData();
@@ -668,6 +678,11 @@ if (process.server) {
   
   if (!hasQueryParams) {
     await loadCategoryProducts();
+
+    // Schema.org ItemList markup
+    if (products.value.length > 0) {
+      useItemListSchema(products, matchingCategory?.name || 'Продукти');
+    }
   }
 }
 

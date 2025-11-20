@@ -151,6 +151,16 @@ if (process.server) {
   if (!matchingCategory) {
     throw showError({ statusCode: 404, statusMessage: 'Категорията не е намерена' });
   }
+
+  // Schema.org CollectionPage markup
+  useCollectionPageSchema({
+    name: matchingCategory.name || '',
+    description: matchingCategory.description || '',
+    slug: matchingCategory.slug || '',
+    parentSlug: parentCategory?.slug,
+    image: matchingCategory.image?.sourceUrl,
+    count: realProductCount || 0,
+  });
 } else {
   // ⚡ ОПТИМИЗАЦИЯ: При CLIENT - проверяваме кеша веднага (синхронно, БЕЗ await)
   const cachedData = getCachedChildCategoryData();
@@ -642,6 +652,11 @@ if (process.server) {
   // Зареждаме САМО ако няма query параметри (филтри/сортиране)
   if (!hasQueryParams) {
     await loadCategoryProducts();
+
+    // Schema.org ItemList markup
+    if (products.value.length > 0) {
+      useItemListSchema(products, matchingCategory?.name || 'Продукти');
+    }
   }
   // Ако има query параметри, client-side ще зареди правилните данни в onMounted
 }
