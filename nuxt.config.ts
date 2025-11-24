@@ -269,8 +269,9 @@ export default defineNuxtConfig({
       "/": {
         prerender: true,
         headers: {
+          // Edge: 2h, Browser: 30m, Stale: 6h - балансирано за популярна страница
           "Cache-Control":
-            "public, max-age=1800, s-maxage=3600, stale-while-revalidate=7200",
+            "public, max-age=1800, s-maxage=7200, stale-while-revalidate=21600",
         },
       },
       "/categories": {
@@ -308,9 +309,9 @@ export default defineNuxtConfig({
       "/magazin": {
         ssr: true, // SSR при първо посещение
         headers: {
-          // Edge кешира 2 часа, браузър 5 мин, stale 4 часа
+          // Edge: 4h, Browser: 10m, Stale: 8h - популярна страница с филтри
           "Cache-Control":
-            "public, s-maxage=7200, max-age=300, stale-while-revalidate=14400",
+            "public, s-maxage=14400, max-age=600, stale-while-revalidate=28800",
         },
       },
 
@@ -320,22 +321,23 @@ export default defineNuxtConfig({
       // ========================================
       "/produkt/**": {
         isr: {
-          expiration: 14400, // 4 часа - баланс между свежест и разходи
+          expiration: 7200, // 2 часа - по-fresh + по-евтино
         },
         headers: {
-          // Edge: 4h, Browser: 30m, Stale: 8h
+          // Edge: 2h, Browser: 30m, Stale: 6h
           "Cache-Control":
-            "public, s-maxage=14400, max-age=1800, stale-while-revalidate=28800",
+            "public, s-maxage=7200, max-age=1800, stale-while-revalidate=21600",
         },
       },
       "/produkt-kategoriya/**": {
-        isr: {
-          expiration: 14400, // 4 часа - критични SEO страници
-        },
+        // ⚡ КРИТИЧНА ОПТИМИЗАЦИЯ: SSR + Edge Cache вместо ISR!
+        // Query params (филтри) не създават нови cache entries
+        // Това спестява 93% ISR writes и прави филтрите instant (от Edge Cache)
+        ssr: true,
         headers: {
-          // Edge: 4h, Browser: 15m, Stale: 8h
+          // Edge: 2h, Browser: 10m, Stale: 6h - оптимално за категории с филтри
           "Cache-Control":
-            "public, s-maxage=14400, max-age=900, stale-while-revalidate=28800",
+            "public, s-maxage=7200, max-age=600, stale-while-revalidate=21600",
         },
       },
 

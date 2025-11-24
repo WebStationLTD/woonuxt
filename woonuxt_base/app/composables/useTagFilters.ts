@@ -16,6 +16,9 @@ const tagAttributesCache = new Map<
 // Кеш TTL - 10 минути
 const CACHE_TTL = 10 * 60 * 1000;
 
+// ⚡ ВЕРСИЯ НА КЕША: Увеличаваме при промени в логиката за автоматично инвалидиране
+const CACHE_VERSION = 'v2'; // v2 = балансирано зареждане (до 800 продукта) за оптимална скорост/пълнота
+
 export const useTagFilters = () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -31,7 +34,7 @@ export const useTagFilters = () => {
 
   // Зарежда контекстуални филтри за етикет
   const loadTagFilters = async (tagSlug: string): Promise<any[]> => {
-    const cacheKey = `tag-${tagSlug}`;
+    const cacheKey = `${CACHE_VERSION}-tag-${tagSlug}`; // ⚡ Добавяме версия към ключа!
 
     // Проверяваме кеша първо
     if (isCacheValid(cacheKey)) {
@@ -49,13 +52,13 @@ export const useTagFilters = () => {
       let hasNextPage = true;
       let after: string | null = null;
       let batchCount = 0;
-      const maxBatches = 5; // Максимум 5 batch-а (500 продукта)
+      const maxBatches = 6; // Оптимизирано: 6 batch-а × 150 = 900 продукта (по-бързо, по-малко requests)
 
       // Зареждаме пагинирано за да не претоварим заявката
       while (hasNextPage && batchCount < maxBatches) {
         const variables: any = {
           tagSlug: [tagSlug], // ⚡ КРИТИЧНО: За етикети използваме tagIn с масив!
-          first: 100,
+          first: 150, // Увеличен batch size за по-малко HTTP requests
         };
 
         if (after) {
@@ -76,11 +79,7 @@ export const useTagFilters = () => {
 
         console.log(`📦 TAG Batch ${batchCount}: +${batch.length} продукта (общо: ${allProducts.length})`);
 
-        // Прекъсваме ако имаме достатъчно данни за репрезентативни филтри
-        if (allProducts.length >= 200) {
-          console.log(`⚡ TAG: Спираме на ${allProducts.length} продукта за бързо зареждане`);
-          break;
-        }
+        // ⚡ ВАЖНО: НЕ прекъсваме рано! Зареждаме ВСИЧКИ продукти от етикета!
       }
 
       console.log(`🔍 TAG: Обработвам ${allProducts.length} продукта за филтри`);

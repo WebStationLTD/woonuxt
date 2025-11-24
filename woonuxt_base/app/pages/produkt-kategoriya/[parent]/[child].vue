@@ -82,6 +82,9 @@ const currentParentSlug = ref(parentSlug);
 const currentChildSlug = ref(childSlug);
 const currentPageNumber = ref(1);
 
+// Ref за филтриран count при филтриране (трябва да е дефиниран ПРЕДИ loadCategoryProducts)
+const filteredCategoryCount = ref<number | null>(null);
+
 // ⚡ ОПТИМИЗАЦИЯ: Session Storage Cache за child категории
 const CHILD_CATEGORY_CACHE_KEY = `woonuxt_child_category_${parentSlug}_${childSlug}`;
 const CACHE_DURATION = 30 * 60 * 1000; // 30 минути
@@ -840,9 +843,6 @@ const shouldShowLoading = computed(() => {
 const shouldShowNoProducts = computed(() => {
   return hasEverLoaded.value && !isLoading.value && (!products.value || products.value.length === 0);
 });
-
-// Ref за филтриран count при филтриране (взето от magazin.vue)
-const filteredCategoryCount = ref<number | null>(null);
 
 // Computed за правилен count за pagination
 const categoryCount = computed(() => {

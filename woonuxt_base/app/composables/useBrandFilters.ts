@@ -50,7 +50,7 @@ export const useBrandFilters = () => {
       let hasNextPage = true;
       let after: string | null = null;
       let batchCount = 0;
-      const maxBatches = 20; // Увеличено: 20 batch-а (2000 продукта) - покрива всички марки
+      const maxBatches = 13; // Оптимизирано: 13 batch-а × 150 = 1950 продукта (покрива всички марки)
 
       // Зареждаме пагинирано за да не претоварим заявката
       while (hasNextPage && batchCount < maxBatches) {
@@ -63,7 +63,7 @@ export const useBrandFilters = () => {
               operator: 'IN'
             }
           ],
-          first: 100,
+          first: 150, // Увеличен batch size за по-малко HTTP requests
         };
 
         if (after) {
