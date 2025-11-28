@@ -1,6 +1,6 @@
 /**
  * useTracking Composable
- * Централизирано управление на tracking събития за Meta Pixel, GA4, Google Ads и GTM
+ * Централизирано управление на tracking събития за GA4, Google Ads и GTM
  */
 
 export interface TrackingProduct {
@@ -48,11 +48,6 @@ export function useTracking() {
 
     debugLog(eventName, params);
 
-    // Meta Pixel
-    if (window.fbq) {
-      window.fbq("track", eventName, params);
-    }
-
     // Google Analytics 4
     if (window.gtag) {
       window.gtag("event", eventName, params);
@@ -74,17 +69,6 @@ export function useTracking() {
     if (!isEnabled || !process.client) return;
 
     debugLog("ViewContent", product);
-
-    // Meta Pixel - ViewContent
-    if (window.fbq) {
-      window.fbq("track", "ViewContent", {
-        content_name: product.name,
-        content_ids: [product.id],
-        content_type: "product",
-        value: product.price,
-        currency: "BGN",
-      });
-    }
 
     // Google Analytics 4 - view_item
     if (window.gtag) {
@@ -133,17 +117,6 @@ export function useTracking() {
 
     const quantity = product.quantity || 1;
     const value = product.price * quantity;
-
-    // Meta Pixel - AddToCart
-    if (window.fbq) {
-      window.fbq("track", "AddToCart", {
-        content_name: product.name,
-        content_ids: [product.id],
-        content_type: "product",
-        value: value,
-        currency: "BGN",
-      });
-    }
 
     // Google Analytics 4 - add_to_cart
     if (window.gtag) {
@@ -196,17 +169,6 @@ export function useTracking() {
     const quantity = product.quantity || 1;
     const value = product.price * quantity;
 
-    // Meta Pixel - няма стандартно събитие, използваме custom
-    if (window.fbq) {
-      window.fbq("trackCustom", "RemoveFromCart", {
-        content_name: product.name,
-        content_ids: [product.id],
-        content_type: "product",
-        value: value,
-        currency: "BGN",
-      });
-    }
-
     // Google Analytics 4 - remove_from_cart
     if (window.gtag) {
       window.gtag("event", "remove_from_cart", {
@@ -258,20 +220,6 @@ export function useTracking() {
 
     debugLog("InitiateCheckout", { value: cartValue, products });
 
-    // Meta Pixel - InitiateCheckout
-    if (window.fbq) {
-      window.fbq("track", "InitiateCheckout", {
-        content_ids: products.map((p) => p.id),
-        contents: products.map((p) => ({
-          id: p.id,
-          quantity: p.quantity || 1,
-        })),
-        value: cartValue,
-        currency: "BGN",
-        num_items: products.reduce((sum, p) => sum + (p.quantity || 1), 0),
-      });
-    }
-
     // Google Analytics 4 - begin_checkout
     if (window.gtag) {
       window.gtag("event", "begin_checkout", {
@@ -317,23 +265,6 @@ export function useTracking() {
     debugLog("Purchase", purchase);
 
     const currency = purchase.currency || "BGN";
-
-    // Meta Pixel - Purchase
-    if (window.fbq) {
-      window.fbq("track", "Purchase", {
-        content_ids: purchase.products.map((p) => p.id),
-        contents: purchase.products.map((p) => ({
-          id: p.id,
-          quantity: p.quantity || 1,
-        })),
-        value: purchase.total,
-        currency: currency,
-        num_items: purchase.products.reduce(
-          (sum, p) => sum + (p.quantity || 1),
-          0
-        ),
-      });
-    }
 
     // Google Analytics 4 - purchase
     if (window.gtag) {
@@ -418,14 +349,6 @@ export function useTracking() {
 
     debugLog("Search", { search_term: searchTerm, results });
 
-    // Meta Pixel - Search
-    if (window.fbq) {
-      window.fbq("track", "Search", {
-        search_string: searchTerm,
-        content_category: "product",
-      });
-    }
-
     // Google Analytics 4 - search
     if (window.gtag) {
       window.gtag("event", "search", {
@@ -451,13 +374,6 @@ export function useTracking() {
     if (!isEnabled || !process.client) return;
 
     debugLog("Lead", { lead_type: leadType });
-
-    // Meta Pixel - Lead
-    if (window.fbq) {
-      window.fbq("track", "Lead", {
-        content_category: leadType || "contact_form",
-      });
-    }
 
     // Google Analytics 4 - generate_lead
     if (window.gtag) {

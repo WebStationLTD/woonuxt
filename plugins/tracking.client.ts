@@ -1,6 +1,6 @@
 /**
  * Tracking Plugin
- * Инициализира Meta Pixel, Google Analytics 4, Google Ads и GTM
+ * Инициализира Google Analytics 4, Google Ads и GTM
  * Client-side only plugin
  * 
  * ⚡ PERFORMANCE OPTIMIZATION:
@@ -19,7 +19,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   if (config.public.TRACKING_DEBUG) {
     console.log("🎯 Tracking Plugin initialized with config:", {
-      metaPixel: !!config.public.META_PIXEL_ID,
       googleAnalytics: !!config.public.GOOGLE_ANALYTICS_ID,
       googleAds: !!config.public.GOOGLE_ADS_ID,
       gtm: !!config.public.GTM_ID,
@@ -64,43 +63,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 
       if (config.public.TRACKING_DEBUG) {
         console.log("✅ GTM initialized:", config.public.GTM_ID);
-      }
-    }
-
-    // ============================================
-    // META (FACEBOOK) PIXEL
-    // ============================================
-    if (config.public.META_PIXEL_ID) {
-      // Facebook Pixel Base Code
-      !(function (f: any, b: any, e: any, v: any, n?: any, t?: any, s?: any) {
-        if (f.fbq) return;
-        n = f.fbq = function () {
-          n.callMethod
-            ? n.callMethod.apply(n, arguments)
-            : n.queue.push(arguments);
-        };
-        if (!f._fbq) f._fbq = n;
-        n.push = n;
-        n.loaded = !0;
-        n.version = "2.0";
-        n.queue = [];
-        t = b.createElement(e);
-        t.async = !0;
-        t.src = v;
-        s = b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t, s);
-      })(
-        window,
-        document,
-        "script",
-        "https://connect.facebook.net/en_US/fbevents.js"
-      );
-
-      window.fbq("init", config.public.META_PIXEL_ID);
-      window.fbq("track", "PageView");
-
-      if (config.public.TRACKING_DEBUG) {
-        console.log("✅ Meta Pixel initialized:", config.public.META_PIXEL_ID);
       }
     }
 
@@ -212,11 +174,6 @@ export default defineNuxtPlugin((nuxtApp) => {
         console.log("📄 Page View:", path);
       }
 
-      // Meta Pixel PageView
-      if (window.fbq) {
-        window.fbq("track", "PageView");
-      }
-
       // Google Analytics PageView
       if (window.gtag && config.public.GOOGLE_ANALYTICS_ID) {
         window.gtag("config", config.public.GOOGLE_ANALYTICS_ID, {
@@ -248,8 +205,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 // TypeScript типове за window обектите
 declare global {
   interface Window {
-    fbq: any;
-    _fbq: any;
     gtag: any;
     dataLayer: any[];
   }

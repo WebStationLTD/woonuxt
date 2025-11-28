@@ -33,25 +33,19 @@
 
 Системата поддържа следните tracking платформи:
 
-### 1. Meta (Facebook) Pixel
-
-- **ID:** 224997332649286
-- **Conversion API:** Активиран (server-side tracking)
-- **События:** PageView, ViewContent, AddToCart, InitiateCheckout, Purchase
-
-### 2. Google Analytics 4
+### 1. Google Analytics 4
 
 - **Tracking ID:** G-07DTZ2TF4V
 - **Measurement Protocol API:** Активиран (server-side)
 - **События:** page_view, view_item, add_to_cart, begin_checkout, purchase
 
-### 3. Google Ads
+### 2. Google Ads
 
 - **Conversion ID:** AW-992774522
 - **Enhanced Conversions:** ✅ Активирано
 - **События:** conversion (purchase)
 
-### 4. Google Tag Manager
+### 3. Google Tag Manager
 
 - **Container ID:** GTM-5MJD9KF6
 - **Data Layer Only:** ✅ Активирано
@@ -90,10 +84,6 @@ cp tracking.env.template .env
 ### Стъпка 2: Попълни данните в .env файла
 
 ```env
-# META PIXEL
-META_PIXEL_ID=224997332649286
-META_CONVERSION_API_TOKEN=EAAFiiADPyDsBOwApvn4hUGSebj77l17huvZAwGVPTZBjnidrbTZCBqQv3MJ0UlhgNo49oNZAAclxCSNGNyEZBSDtrobxY9x3vgRs84313UzgFQXvhHJGLKXZAmo95u5TpTdE8OjYnOPaOTGCZBdWQTDizePxQLaewNcDrNlXHhtiGEsHEZCO74B7YNdzL4ubjwZDZD
-
 # GOOGLE ANALYTICS 4
 GOOGLE_ANALYTICS_ID=G-07DTZ2TF4V
 GOOGLE_ANALYTICS_API_SECRET=7rHfoFZ4S7K-qxp4NojvCQ
@@ -135,13 +125,13 @@ vercel env add TRACKING_ENABLED
 ### 1. 📄 PageView
 
 **Къде:** Автоматично при всяка промяна на маршрут  
-**Платформи:** Meta Pixel, GA4, GTM  
+**Платформи:** GA4, GTM  
 **Данни:** URL, path
 
 ### 2. 👁️ ViewContent
 
 **Къде:** Продуктови страници (`/produkt/[slug]`)  
-**Платформи:** Meta Pixel, GA4, GTM  
+**Платформи:** GA4, GTM  
 **Данни:**
 
 - Product ID
@@ -154,7 +144,7 @@ vercel env add TRACKING_ENABLED
 ### 3. 🛒 AddToCart
 
 **Къде:** При добавяне на продукт в количката  
-**Платформи:** Meta Pixel, GA4, GTM  
+**Платформи:** GA4, GTM  
 **Данни:**
 
 - Product ID
@@ -167,13 +157,13 @@ vercel env add TRACKING_ENABLED
 ### 4. 🗑️ RemoveFromCart
 
 **Къде:** При премахване на продукт от количката  
-**Платформи:** Meta Pixel (custom), GA4, GTM  
+**Платформи:** GA4, GTM  
 **Данни:** Същите като AddToCart
 
 ### 5. 🛍️ InitiateCheckout
 
 **Къде:** При влизане в `/checkout` страницата  
-**Платформи:** Meta Pixel, GA4, GTM  
+**Платформи:** GA4, GTM  
 **Данни:**
 
 - Cart Total Value
@@ -183,7 +173,7 @@ vercel env add TRACKING_ENABLED
 ### 6. 💰 Purchase
 
 **Къде:** След успешна поръчка (order-received страница)  
-**Платформи:** Meta Pixel, GA4, Google Ads Conversion, GTM  
+**Платформи:** GA4, Google Ads Conversion, GTM  
 **Данни:**
 
 - Order ID
@@ -196,12 +186,12 @@ vercel env add TRACKING_ENABLED
 ### 7. 🔍 Search (готов за използване)
 
 **Функция:** `trackSearch(searchTerm, results)`  
-**Платформи:** Meta Pixel, GA4, GTM
+**Платформи:** GA4, GTM
 
 ### 8. 📧 Lead (готов за използване)
 
 **Функция:** `trackLead(leadType)`  
-**Платформи:** Meta Pixel, GA4, GTM
+**Платформи:** GA4, GTM
 
 ---
 
@@ -276,17 +266,9 @@ TRACKING_DEBUG=true
 
 ```
 🎯 Tracking Event: AddToCart { id: 123, name: 'Protein', ... }
-✅ Meta Pixel initialized: 224997332649286
 ✅ Google Analytics initialized: G-07DTZ2TF4V
 📄 Page View: /produkt/protein-whey
 ```
-
-### Тестване на Meta Pixel
-
-1. Инсталирай **Meta Pixel Helper** Chrome extension
-2. Отвори сайта
-3. Кликни на extension иконата
-4. Ще видиш всички изпратени Meta Pixel събития
 
 ### Тестване на Google Analytics
 
@@ -402,11 +384,6 @@ if (window.ttq) {
 function trackCustomEvent(eventName: string, data: any) {
   if (!isEnabled || !process.client) return;
 
-  // Meta Pixel
-  if (window.fbq) {
-    window.fbq("trackCustom", eventName, data);
-  }
-
   // GA4
   if (window.gtag) {
     window.gtag("event", eventName, data);
@@ -426,24 +403,15 @@ function trackCustomEvent(eventName: string, data: any) {
 
 ## ❓ FAQ
 
-### 1. Защо не виждам tracking събития в Meta Events Manager?
+### 1. Как да тествам без да правя реални покупки?
 
-**Отговор:**
+**Отговор:** Използвай GTM Preview режим. Виж секцията [Testing & Debugging](#testing--debugging).
 
-- Провери дали `TRACKING_ENABLED=true` в `.env`
-- Провери дали Meta Pixel ID е правилен
-- Включи Debug режим и провери в Console
-- Изчакай 20-30 минути за данните да се появят в Events Manager
+### 2. Tracking работи ли с ad blockers?
 
-### 2. Как да тествам без да правя реални покупки?
+**Отговор:** Не, повечето ad blockers блокират tracking scripts. За максимална точност, препоръчваме Server-Side tracking.
 
-**Отговор:** Използвай Test Mode в Meta Events Manager и GTM Preview режим. Виж секцията [Testing & Debugging](#testing--debugging).
-
-### 3. Tracking работи ли с ad blockers?
-
-**Отговор:** Не, повечето ad blockers блокират tracking scripts. За максимална точност, препоръчваме Server-Side tracking (Conversion API).
-
-### 4. Как да деактивирам tracking временно?
+### 3. Как да деактивирам tracking временно?
 
 **Отговор:** Промени `.env`:
 
@@ -451,26 +419,25 @@ function trackCustomEvent(eventName: string, data: any) {
 TRACKING_ENABLED=false
 ```
 
-### 5. Може ли да използвам само GTM?
+### 4. Може ли да използвам само GTM?
 
 **Отговор:** Да! Можеш да деактивираш останалите:
 
 ```env
-META_PIXEL_ID=
 GOOGLE_ANALYTICS_ID=
 GOOGLE_ADS_ID=
 GTM_ID=GTM-5MJD9KF6  # само GTM
 ```
 
-### 6. Tracking работи ли на SSR страници?
+### 5. Tracking работи ли на SSR страници?
 
 **Отговор:** Tracking е само **client-side** (`tracking.client.ts`). Всички tracking функции проверяват `process.client` преди изпълнение.
 
-### 7. Как да добавя server-side tracking (Conversion API)?
+### 6. Как да добавя server-side tracking?
 
-**Отговор:** Това изисква backend имплементация. Създай Nuxt server endpoint (`/server/api/tracking.post.ts`) и изпращай tracking данни до Facebook Conversion API и Google Measurement Protocol API.
+**Отговор:** Това изисква backend имплементация. Създай Nuxt server endpoint (`/server/api/tracking.post.ts`) и изпращай tracking данни до Google Measurement Protocol API.
 
-### 8. Дублират ли се събития между GTM и GA4?
+### 7. Дублират ли се събития между GTM и GA4?
 
 **Отговор:** Ако използваш GTM с GA4 tag И директно GA4, да. Препоръка:
 
@@ -486,7 +453,7 @@ GTM_ID=GTM-5MJD9KF6  # само GTM
 1. Провери Debug режима
 2. Провери конфигурацията в `.env`
 3. Провери browser console за грешки
-4. Тествай с Meta Pixel Helper / Tag Assistant
+4. Тествай с Tag Assistant
 
 ---
 
@@ -498,7 +465,6 @@ GTM_ID=GTM-5MJD9KF6  # само GTM
 - [ ] `TRACKING_ENABLED=true`
 - [ ] `TRACKING_DEBUG=false` (важно!)
 - [ ] Тестван е пълен purchase flow
-- [ ] Meta Pixel Helper показва всички събития
 - [ ] GTM Preview режим показва всички tags
 - [ ] Environment variables са добавени в Vercel/Netlify
 - [ ] GDPR cookie consent е имплементиран (ако е нужен)

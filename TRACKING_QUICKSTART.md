@@ -14,7 +14,6 @@ cp tracking.env.template .env
 
 ```env
 # Тези стойности са вече попълнени:
-META_PIXEL_ID=224997332649286
 GOOGLE_ANALYTICS_ID=G-07DTZ2TF4V
 GOOGLE_ADS_ID=AW-992774522
 GTM_ID=GTM-5MJD9KF6
@@ -40,7 +39,6 @@ npm run dev
 
    ```
    ✅ GTM initialized: GTM-5MJD9KF6
-   ✅ Meta Pixel initialized: 224997332649286
    ✅ Google Analytics initialized: G-07DTZ2TF4V
    ✅ Google Ads initialized: AW-992774522
    ```
@@ -64,12 +62,6 @@ npm run dev
 # Добави environment variables
 vercel env add TRACKING_ENABLED
 # Въведи: true
-
-vercel env add META_PIXEL_ID
-# Въведи: 224997332649286
-
-vercel env add META_CONVERSION_API_TOKEN
-# Въведи: EAAFiiADPyDsBOwApvn4hUGSebj77l17huvZAwGVPTZBjnidrbTZCBqQv3MJ0UlhgNo49oNZAAclxCSNGNyEZBSDtrobxY9x3vgRs84313UzgFQXvhHJGLKXZAmo95u5TpTdE8OjYnOPaOTGCZBdWQTDizePxQLaewNcDrNlXHhtiGEsHEZCO74B7YNdzL4ubjwZDZD
 
 vercel env add GOOGLE_ANALYTICS_ID
 # Въведи: G-07DTZ2TF4V
@@ -111,7 +103,6 @@ vercel --prod
 
 ### Всички данни се изпращат към:
 
-- ✅ Meta (Facebook) Pixel
 - ✅ Google Analytics 4
 - ✅ Google Ads
 - ✅ Google Tag Manager
@@ -119,12 +110,6 @@ vercel --prod
 ---
 
 ## 🧪 Валидиране
-
-### Провери Meta Pixel:
-
-1. Инсталирай [Meta Pixel Helper](https://chrome.google.com/webstore/detail/meta-pixel-helper/fdgfkebogiimcoedlicjlajpkdmockpc) Chrome extension
-2. Отвори сайта
-3. Кликни на extension - трябва да видиш зелен бадж
 
 ### Провери Google Analytics:
 
@@ -152,10 +137,6 @@ TRACKING_DEBUG=true
 ```
 
 Restart на dev сървъра и провери Console.
-
-### Проблем: "window.fbq is not a function"
-
-**Решение:** Изчакай 2-3 секунди след зареждане на страницата. Scripts се зареждат асинхронно.
 
 ### Проблем: Tracking не работи на production
 
