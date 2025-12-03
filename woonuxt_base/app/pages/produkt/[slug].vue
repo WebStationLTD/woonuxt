@@ -85,11 +85,14 @@ onMounted(async () => {
 const updateSelectedVariations = (variations: VariationAttribute[]): void => {
   if (!product.value.variations) return;
 
-  const clonedVariations = JSON.parse(JSON.stringify(variations));
+  const clonedVariations = JSON.parse(JSON.stringify(variations))
+    .map((el: any) => {
+        return { name: encodeURIComponent(el.name), value: el.value };
+    });
+
   attrValues.value = variations.map((el) => ({ attributeName: el.name, attributeValue: el.value }));
 
   const getActiveVariation = product.value.variations?.nodes.filter((variation: any) => {
-    // console.log(variation.attributes.nodes);
     // If there is any variation of type ANY set the value to ''
     if (variation.attributes) {
       // Set the value of the variation of type ANY to ''

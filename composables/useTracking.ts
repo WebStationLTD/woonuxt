@@ -48,6 +48,11 @@ export function useTracking() {
 
     debugLog(eventName, params);
 
+    // Facebook Pixel
+    if (window.fbq) {
+      window.fbq("track", eventName, params);
+    }
+
     // Google Analytics 4
     if (window.gtag) {
       window.gtag("event", eventName, params);
@@ -84,6 +89,16 @@ export function useTracking() {
             price: product.price,
           },
         ],
+      });
+    }
+
+    if (window.fbq) {
+      window.fbq("track", "ViewContent", {
+        content_name: product.name,
+        content_ids: [product.id],
+        content_type: "product",
+        value: product.price,
+        currency: "BGN",
       });
     }
 
@@ -133,6 +148,16 @@ export function useTracking() {
             quantity: quantity,
           },
         ],
+      });
+    }
+
+    if (window.fbq) {
+      window.fbq("track", "AddToCart", {
+        content_name: product.name,
+        content_ids: [product.id],
+        content_type: "product",
+        value: value,
+        currency: "BGN",
       });
     }
 
@@ -187,6 +212,16 @@ export function useTracking() {
       });
     }
 
+    if (window.fbq) {
+      window.fbq("trackCustom", "RemoveFromCart", {
+        content_name: product.name,
+        content_ids: [product.id],
+        content_type: "product",
+        value: value,
+        currency: "BGN",
+      });
+    }
+
     // GTM Data Layer
     if (window.dataLayer) {
       window.dataLayer.push({
@@ -233,6 +268,19 @@ export function useTracking() {
           price: p.price,
           quantity: p.quantity || 1,
         })),
+      });
+    }
+
+    if (window.fbq) {
+      window.fbq("track", "InitiateCheckout", {
+        content_ids: products.map((p) => p.id),
+        contents: products.map((p) => ({
+          id: p.id,
+          quantity: p.quantity || 1,
+        })),
+        value: cartValue,
+        currency: "BGN",
+        num_items: products.reduce((sum, p) => sum + (p.quantity || 1), 0),
       });
     }
 
@@ -283,6 +331,24 @@ export function useTracking() {
           price: p.price,
           quantity: p.quantity || 1,
         })),
+      });
+    }
+
+    if (window.fbq) {
+      window.fbq("track", "Purchase", {
+        event_id: purchase.orderId,
+        content_type: 'product',
+        content_ids: purchase.products.map((p) => p.id),
+        contents: purchase.products.map((p) => ({
+          id: p.id,
+          quantity: p.quantity || 1,
+        })),
+        value: purchase.total,
+        currency: currency,
+        num_items: purchase.products.reduce(
+          (sum, p) => sum + (p.quantity || 1),
+          0
+        ),
       });
     }
 
@@ -357,6 +423,13 @@ export function useTracking() {
       });
     }
 
+    if (window.fbq) {
+      window.fbq("track", "Search", {
+        search_string: searchTerm,
+        content_category: "product",
+      });  
+    }
+
     // GTM Data Layer
     if (window.dataLayer) {
       window.dataLayer.push({
@@ -379,6 +452,12 @@ export function useTracking() {
     if (window.gtag) {
       window.gtag("event", "generate_lead", {
         lead_type: leadType || "contact_form",
+      });
+    }
+
+    if (window.fbq) {
+      window.fbq("track", "Lead", {
+        content_category: leadType || "contact_form",
       });
     }
 
