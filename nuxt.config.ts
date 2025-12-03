@@ -189,6 +189,7 @@ export default defineNuxtConfig({
       TRACKING_DEBUG: process.env.TRACKING_DEBUG === "true",
       TRACKING_GDPR_MODE: process.env.TRACKING_GDPR_MODE === "true",
       GOOGLE_ANALYTICS_ID: process.env.GOOGLE_ANALYTICS_ID || "",
+      FACEBOOK_PIXEL_ID: process.env.FACEBOOK_PIXEL_ID || "",
       GOOGLE_ADS_ID: process.env.GOOGLE_ADS_ID || "",
       GOOGLE_ADS_ENHANCED_CONVERSIONS:
         process.env.GOOGLE_ADS_ENHANCED_CONVERSIONS === "true",
