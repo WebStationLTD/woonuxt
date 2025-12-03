@@ -277,12 +277,36 @@ useHead({
 });
 
 // Schema markup от категорията ако е наличен
+// ВАЖНО: Поправяме цените - заменяме запетая с точка (Schema.org изисква точка)
 if (matchingCategory?.seo?.schema?.raw) {
+  let schemaRaw = matchingCategory.seo.schema.raw;
+  try {
+    const schemaObj = JSON.parse(schemaRaw);
+    const priceFields = ['price', 'lowPrice', 'highPrice'];
+    const fixPrices = (obj: any): any => {
+      if (!obj || typeof obj !== 'object') return obj;
+      for (const key in obj) {
+        if (priceFields.includes(key) && typeof obj[key] === 'string') {
+          obj[key] = obj[key].replace(',', '.');
+        } else if (typeof obj[key] === 'object') {
+          fixPrices(obj[key]);
+        }
+      }
+      return obj;
+    };
+    fixPrices(schemaObj);
+    schemaRaw = JSON.stringify(schemaObj);
+  } catch (e) {
+    schemaRaw = schemaRaw
+      .replace(/"price"\s*:\s*"(\d+),(\d+)"/g, '"price":"$1.$2"')
+      .replace(/"lowPrice"\s*:\s*"(\d+),(\d+)"/g, '"lowPrice":"$1.$2"')
+      .replace(/"highPrice"\s*:\s*"(\d+),(\d+)"/g, '"highPrice":"$1.$2"');
+  }
   useHead({
     script: [
       {
         type: 'application/ld+json',
-        innerHTML: matchingCategory.seo.schema.raw,
+        innerHTML: schemaRaw,
       },
     ],
   });

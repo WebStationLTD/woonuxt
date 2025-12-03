@@ -17,10 +17,21 @@ export const useProductSchema = (productRef: Ref<Product> | Product) => {
 
     const baseUrl = frontEndUrl || 'https://leaderfitness.net';
     
+    // Helper за форматиране на цена за Schema.org (изисква точка като десетичен разделител)
+    const formatPrice = (price: string | undefined): string => {
+      if (!price) return '0';
+      // 1. Заменяме запетая с точка (за български формат)
+      // 2. Премахваме всичко освен цифри и точка
+      const normalized = price.replace(',', '.').replace(/[^\d.]/g, '');
+      // 3. Валидираме че е число
+      const num = parseFloat(normalized);
+      return isNaN(num) ? '0' : num.toFixed(2);
+    };
+    
     const priceString = p.rawSalePrice || p.rawRegularPrice || p.rawPrice;
-    const priceValue = priceString?.replace(/[^\d.]/g, '') || '0';
+    const priceValue = formatPrice(priceString);
     const hasSalePrice = Boolean(p.rawSalePrice && p.rawRegularPrice && p.rawSalePrice !== p.rawRegularPrice);
-    const regularPriceValue = p.rawRegularPrice?.replace(/[^\d.]/g, '');
+    const regularPriceValue = formatPrice(p.rawRegularPrice);
     
     let availability = 'https://schema.org/OutOfStock';
     if (p.stockStatus === 'IN_STOCK') {

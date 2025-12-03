@@ -29,14 +29,6 @@ watch(
   { immediate: true },
 );
 
-// Watcher за reset на филтри
-watch(isFiltersActive, (newValue) => {
-  if (!newValue) {
-    // При reset на филтри, setFilter ще се извика автоматично през computed setter
-    selectedTerms.value = [];
-  }
-});
-
 // Update the URL when the checkbox is changed
 const checkboxChanged = () => {
   // selectedTerms.value промяната автоматично ще извика computed setter

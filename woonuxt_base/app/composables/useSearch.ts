@@ -33,12 +33,17 @@ export function useSearching() {
 
     searchQuery.value = search;
 
-    // ПОПРАВКА: Използваме директна навигация с window.location за да избегнем конфликти с watcher-и
-
+    // КРИТИЧНО: Задаваме filter ПРЕДИ навигацията
     if (search && search.trim()) {
-      // Построяваме URL мануално
-      const trimmedSearch = search.trim();
+      setFilter('search', [search.trim()]);
+    } else {
+      setFilter('search', []);
+    }
 
+    // Построяваме URL мануално
+    const trimmedSearch = search.trim();
+
+    if (trimmedSearch) {
       // Проверяваме дали сме вече в /magazin
       const isInMagazin = route.path === '/magazin' || route.path.startsWith('/magazin/page/');
 
@@ -67,11 +72,16 @@ export function useSearching() {
         const queryString = otherParams ? `filter=${encodedFilter}&${otherParams}` : `filter=${encodedFilter}`;
 
         const newUrl = `/magazin?${queryString}`;
-        window.location.href = newUrl;
+        
+        // Проверяваме дали URL-а е различен преди навигация
+        if (route.fullPath !== newUrl) {
+          await navigateTo(newUrl);
+        }
       } else {
         // Ако НЕ сме в /magazin, правим чист redirect с само search филтър
         const encodedSearch = encodeURIComponent(trimmedSearch);
-        window.location.href = `/magazin?filter=search[${encodedSearch}]`;
+        const newUrl = `/magazin?filter=search[${encodedSearch}]`;
+        await navigateTo(newUrl);
       }
     } else {
       // Ако search е празен, изчистваме го
@@ -96,7 +106,11 @@ export function useSearching() {
           const encodedFilter = encodeURIComponent(filterQuery);
           const queryString = otherParams ? `filter=${encodedFilter}&${otherParams}` : `filter=${encodedFilter}`;
 
-          window.location.href = `/magazin?${queryString}`;
+          const newUrl = `/magazin?${queryString}`;
+          
+          if (route.fullPath !== newUrl) {
+            await navigateTo(newUrl);
+          }
         } else {
           // Само други параметри без filter
           const otherParams = Array.from(searchParams.entries())
@@ -105,11 +119,14 @@ export function useSearching() {
             .join('&');
 
           const newUrl = otherParams ? `/magazin?${otherParams}` : '/magazin';
-          window.location.href = newUrl;
+          
+          if (route.fullPath !== newUrl) {
+            await navigateTo(newUrl);
+          }
         }
       } else {
         // Ако НЕ сме в /magazin, отиваме в /magazin без филтри
-        window.location.href = '/magazin';
+        await navigateTo('/magazin');
       }
     }
   }

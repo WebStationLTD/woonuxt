@@ -59,12 +59,46 @@ const robotsContent = () => {
 };
 
 // Добавяме schema.org структурирани данни чрез useHead
+// ВАЖНО: Поправяме цените от Yoast - заменяме запетая с точка
 if (info.seo?.schema?.raw) {
+  let schemaRaw = info.seo.schema.raw;
+  
+  // Fix: Yoast понякога генерира цени с запетая (напр. "19,99")
+  // Schema.org изисква точка като десетичен разделител
+  try {
+    const schemaObj = JSON.parse(schemaRaw);
+    
+    // Helper за fix на price полета (price, lowPrice, highPrice)
+    const priceFields = ['price', 'lowPrice', 'highPrice'];
+    const fixPrices = (obj: any): any => {
+      if (!obj || typeof obj !== 'object') return obj;
+      
+      for (const key in obj) {
+        if (priceFields.includes(key) && typeof obj[key] === 'string') {
+          // Заменяме запетая с точка в цената
+          obj[key] = obj[key].replace(',', '.');
+        } else if (typeof obj[key] === 'object') {
+          fixPrices(obj[key]);
+        }
+      }
+      return obj;
+    };
+    
+    fixPrices(schemaObj);
+    schemaRaw = JSON.stringify(schemaObj);
+  } catch (e) {
+    // Ако parse-ването се провали, използваме regex като fallback
+    schemaRaw = schemaRaw
+      .replace(/"price"\s*:\s*"(\d+),(\d+)"/g, '"price":"$1.$2"')
+      .replace(/"lowPrice"\s*:\s*"(\d+),(\d+)"/g, '"lowPrice":"$1.$2"')
+      .replace(/"highPrice"\s*:\s*"(\d+),(\d+)"/g, '"highPrice":"$1.$2"');
+  }
+  
   useHead({
     script: [
       {
         type: 'application/ld+json',
-        innerHTML: info.seo.schema.raw,
+        innerHTML: schemaRaw,
       },
     ],
   });
