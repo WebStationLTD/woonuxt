@@ -5,10 +5,11 @@ import type { Stripe, StripeElements, CreateSourceData, StripeCardElement } from
 const { t } = useI18n();
 const { query } = useRoute();
 const router = useRouter();
-const { cart, isUpdatingCart, paymentGateways } = useCart();
+const { cart, isUpdatingCart, paymentGateways, refreshCart } = useCart();
 const { viewer, customer } = useAuth();
 const { orderInput, isProcessingOrder, processCheckout } = useCheckout();
 const { initiatePayment, redirectToGateway, validatePaymentData, generateOrderDescription, extractAmountFromCart } = useBorica();
+const tbiLoanPayment = useTBILoan();
 const runtimeConfig = useRuntimeConfig();
 const stripeKey = runtimeConfig.public?.STRIPE_PUBLISHABLE_KEY as string | null;
 
@@ -48,8 +49,11 @@ onBeforeMount(async () => {
   }
 });
 
-// 🎯 TRACKING: InitiateCheckout при влизане в checkout страница
-onMounted(() => {
+// 🎯 Refresh cart and TRACKING: InitiateCheckout при влизане в checkout страница
+onMounted(async () => {
+  // Refresh the cart first to ensure it's up-to-date
+  refreshCart();
+
   if (process.client && cart.value && !cart.value.isEmpty) {
     const { trackInitiateCheckout } = useTracking();
 
@@ -124,6 +128,10 @@ const payNow = async () => {
       // Използваме custom Borica интеграция
       await handleBoricaPayment();
       return; // Не продължаваме с нормалния checkout flow
+
+    } else if(method === 'tbi_bank') {
+      await handleTBIButtonPayment();
+      return; // Не продължаваме с нормалния checkout flow
     } else {
       isPaid.value = false;
       orderInput.value.transactionId = new Date().getTime().toString();
@@ -168,52 +176,7 @@ const handleBoricaPayment = async (): Promise<void> => {
       throw new Error('Количката е празна');
     }
 
-    // Подготвяме метаданните без да променяме orderInput преждевременно
-    const metadata = [
-      { key: 'order_via', value: 'WooNuxt' },
-      { key: '_chosen_payment_method', value: 'borica_emv' },
-    ];
-
-    // Подготвяме checkout payload за Borica
-    const { customer } = useAuth();
-    const billing = customer.value?.billing;
-    const shipping = orderInput.value.shipToDifferentAddress ? customer.value?.shipping : billing;
-    const shippingMethod = cart.value?.chosenShippingMethods;
-
-    const checkoutPayload = {
-      billing,
-      shipping,
-      shippingMethod,
-      metaData: metadata,
-      paymentMethod: 'borica_emv', // Използваме оригиналния Borica method
-      customerNote: orderInput.value.customerNote || '',
-      shipToDifferentAddress: orderInput.value.shipToDifferentAddress || false,
-      transactionId: new Date().getTime().toString(),
-      isPaid: false,
-      account: orderInput.value.createAccount
-        ? {
-            username: orderInput.value.username,
-            password: orderInput.value.password,
-          }
-        : null,
-    };
-
-    console.log('Creating Borica order with payload:', {
-      paymentMethod: checkoutPayload.paymentMethod,
-      amount: cart.value.total,
-      hasCustomer: !!billing?.email,
-      metaData: checkoutPayload.metaData,
-    });
-
-    // Създаваме поръчката директно чрез GraphQL (БЕЗ да минаваме през processCheckout)
-    const { checkout } = await GqlCheckout(checkoutPayload);
-
-    console.log('DEBUG: Checkout response:', checkout);
-
-    if (!checkout?.order?.databaseId) {
-      console.error('Checkout failed:', checkout);
-      throw new Error('Не може да се създаде поръчката. Моля, проверете данните си.');
-    }
+    const checkout = await createOrder('borica_emv');
 
     const orderId = checkout.order.databaseId;
     console.log('Order created successfully:', { orderId, orderKey: checkout.order.orderKey });
@@ -290,6 +253,86 @@ const handleBoricaPayment = async (): Promise<void> => {
 
   console.log('🔚 handleBoricaPayment() function COMPLETED - SHOULD NOT CONTINUE TO processCheckout()');
 };
+
+const handleTBIButtonPayment = async (): Promise<void> => {
+  buttonText.value = 'Пренасочване към TBI...';
+
+  try {
+    const checkout = await createOrder('tbi_bank', [{ key: '_tbi_checkout_status', value: 'Draft' }]);
+    const orderId = checkout.order.databaseId;
+
+    const result = await tbiLoanPayment.initiateTBILoanPayment({ orderId: orderId });
+
+    if(result.error === 0) {
+      window.location.href = result.url;
+    } else {
+      throw new Error("Failed to register order");
+    }
+  } catch (error) {
+    buttonText.value = t('messages.shop.placeOrder');
+  }
+}
+
+const createOrder = async (paymentMethod: string = 'borica_emv', extraMetaData: any = []): Promise<any> => {
+  try {
+    // Проверяваме дали има количка
+    if (!cart.value || cart.value.isEmpty) {
+      throw new Error('Количката е празна');
+    }
+
+    // Подготвяме метаданните без да променяме orderInput преждевременно
+    const metadata = [
+      { key: 'order_via', value: 'WooNuxt' },
+      { key: '_chosen_payment_method', value: paymentMethod },
+      ...extraMetaData,
+    ];
+
+    // Подготвяме checkout payload за Borica
+    const { customer } = useAuth();
+    const billing = customer.value?.billing;
+    const shipping = orderInput.value.shipToDifferentAddress ? customer.value?.shipping : billing;
+    const shippingMethod = cart.value?.chosenShippingMethods;
+
+    const checkoutPayload = {
+      billing,
+      shipping,
+      shippingMethod,
+      metaData: metadata,
+      paymentMethod: 'borica_emv', // Използваме оригиналния Borica method
+      customerNote: orderInput.value.customerNote || '',
+      shipToDifferentAddress: orderInput.value.shipToDifferentAddress || false,
+      transactionId: new Date().getTime().toString(),
+      isPaid: false,
+      account: orderInput.value.createAccount
+        ? {
+            username: orderInput.value.username,
+            password: orderInput.value.password,
+          }
+        : null,
+    };
+
+    console.log('Creating Borica order with payload:', {
+      paymentMethod: checkoutPayload.paymentMethod,
+      amount: cart.value.total,
+      hasCustomer: !!billing?.email,
+      metaData: checkoutPayload.metaData,
+    });
+
+    // Създаваме поръчката директно чрез GraphQL (БЕЗ да минаваме през processCheckout)
+    const { checkout } = await GqlCheckout(checkoutPayload);
+
+    console.log('DEBUG: Checkout response:', checkout);
+
+    if (!checkout?.order?.databaseId) {
+      console.error('Checkout failed:', checkout);
+      throw new Error('Не може да се създаде поръчката. Моля, проверете данните си.');
+    }
+
+    return checkout;
+  } catch (error) {
+    console.error('Order creation error:', error);
+  }
+}
 
 useSeoMeta({
   title: t('messages.shop.checkout'),

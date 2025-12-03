@@ -80,7 +80,7 @@ watch(filteredPaymentGateways, (newGateways) => {
         <span class="whitespace-nowrap" v-html="gateway.title" />
         <icon name="ion:checkmark-circle" size="20" class="ml-auto text-primary checkmark opacity-0" />
       </div>
-      <div v-if="activePaymentMethod.description" class="prose block w-full">
+      <div v-if="activePaymentMethod.description && activePaymentMethod.id !== 'tbi_bank'" class="prose block w-full">
         <p class="text-sm text-gray-500" v-html="activePaymentMethod.description" />
       </div>
     </div>
