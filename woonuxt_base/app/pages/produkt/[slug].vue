@@ -252,7 +252,13 @@ const showProductFeatures = computed(() => {
               class="rounded-lg flex font-bold bg-gray-800 text-white text-center min-w-[150px] p-2.5 gap-4 items-center justify-center focus:outline-none">
               {{ product?.buttonText || 'View product' }}
             </a>
-          </form>
+          </form> 
+
+          <TBIButton 
+            :product="product"
+            :variation="activeVariation" 
+            :quantity="quantity"
+            v-if="product" />
 
           <!-- Product Features Section -->
           <div v-if="showProductFeatures" class="my-8">
