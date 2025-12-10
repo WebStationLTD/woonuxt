@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { SavedOrder } from '~/types/tracking';
+
 // Извличане на информация за последната поръчка от localStorage
-const order = ref<any>(null);
+const order = ref<SavedOrder | null>(null);
 const { emptyCart } = useCart();
 const { formatDate } = useHelpers();
 const { formatDualPrice } = usePriceFormatter();
@@ -21,9 +23,52 @@ onMounted(() => {
 
     const savedOrder = localStorage.getItem('lastOrder');
 
-    if (savedOrder) {
-      order.value = JSON.parse(savedOrder);
+    if(!savedOrder) {
+      return;
     }
+
+    order.value = JSON.parse(savedOrder) as SavedOrder;
+
+    trackPurchase(order.value);
+  }
+
+  async function trackPurchase(order: SavedOrder) {
+    const trackedOrders = sessionStorage.getItem('tracked_orders');
+    const trackedOrderIds = trackedOrders ? JSON.parse(trackedOrders) : [];
+
+    if(trackedOrderIds.includes(order.id)) {
+      return;
+    }
+
+    const { trackPurchase } = useTracking();
+
+    const products = (order.lineItems.nodes || []).map((item: any) => {
+      const product = item.product?.node || item.variation?.node;
+      return {
+        id: product?.databaseId || item.productId || '',
+        name: product?.name || item.name || '',
+        price: parseFloat(item.total || '0') / (item.quantity || 1), // Цена за единица
+        quantity: item.quantity || 1,
+        category: product?.productCategories?.nodes?.[0]?.name,
+        brand: product?.attributes?.nodes?.find((attr: any) => attr.name === 'pa_brands')?.options?.[0],
+        sku: product?.sku,
+      };
+    });
+
+    console.log(products);
+
+    // Изпращаме Purchase tracking
+    trackPurchase({
+      orderId: order.id,
+      total: parseFloat(order.total),
+      shipping: parseFloat(order.shippingTotal?.toString().replace(/[^\d.]/g, '') || '0'),
+      currency: 'BGN',
+      products: products,
+    });
+
+    // Запазваме че сме tracking-нали тази поръчка
+    trackedOrderIds.push(order.id);
+    sessionStorage.setItem('tracked_orders', JSON.stringify(trackedOrderIds));
   }
 });
 

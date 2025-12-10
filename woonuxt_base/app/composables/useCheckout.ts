@@ -102,6 +102,8 @@ export function useCheckout() {
       const isPayPal = orderInputPaymentId === 'paypal' || orderInputPaymentId === 'ppcp-gateway';
       const isBorica = orderInputPaymentId === 'borica_emv';
 
+      console.log(JSON.stringify(checkout?.order, null, 4));
+
       // Съхраняваме данните за поръчката в localStorage
       if (checkout?.order) {
         try {
@@ -111,10 +113,12 @@ export function useCheckout() {
               id: orderId,
               key: orderKey,
               total: checkout.order.rawTotal,
+              shippingTotal: checkout.order.shippingTotal,
               status: checkout.order.status,
               date: checkout.order.date,
               paymentMethod: checkout.order.paymentMethod,
               paymentMethodTitle: checkout.order.paymentMethodTitle,
+              lineItems: checkout.order.lineItems
             }),
           );
         } catch (e) {

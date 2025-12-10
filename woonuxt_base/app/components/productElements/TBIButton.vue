@@ -60,6 +60,12 @@ const fetchTbiInstallments = async () => {
         return;
     }
 
+
+    if(amount < 500) {
+        installments.value = [];
+        return;
+    }
+
     try {
         const response = await $fetch<TBIInstallment[]>('/api/tbi/calculate', {
             method: 'GET',
