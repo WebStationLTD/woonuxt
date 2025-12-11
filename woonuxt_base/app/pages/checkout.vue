@@ -181,24 +181,8 @@ const handleBoricaPayment = async (): Promise<void> => {
     const orderId = checkout.order.databaseId;
     console.log('Order created successfully:', { orderId, orderKey: checkout.order.orderKey });
 
-    // Обновяваме payment method-а на поръчката да е Borica (след създаване)
-    try {
-      const updatePayload = {
-        orderId: orderId,
-        paymentMethod: 'borica_emv',
-        metaData: [
-          { key: '_payment_method', value: 'borica_emv' },
-          { key: '_payment_method_title', value: 'Borica EMV' },
-          { key: 'order_via', value: 'WooNuxt Borica Custom' },
-        ],
-      };
-
-      console.log('🔄 Updating order payment method to Borica:', updatePayload);
-      // Тук може да добавим GraphQL mutation за обновяване ако е нужно
-    } catch (error) {
-      console.log('⚠️ Could not update payment method, but continuing with Borica payment');
-    }
-
+    const { customer } = useAuth();
+    const billing = customer.value?.billing;
     // Подготвяме данните за Borica плащане
     const amount = extractAmountFromCart(cart.value);
     const firstName = billing?.firstName || customer.value?.firstName || '';
@@ -298,7 +282,7 @@ const createOrder = async (paymentMethod: string = 'borica_emv', extraMetaData: 
       shipping,
       shippingMethod,
       metaData: metadata,
-      paymentMethod: 'borica_emv', // Използваме оригиналния Borica method
+      paymentMethod: paymentMethod,
       customerNote: orderInput.value.customerNote || '',
       shipToDifferentAddress: orderInput.value.shipToDifferentAddress || false,
       transactionId: new Date().getTime().toString(),

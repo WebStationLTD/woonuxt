@@ -102,8 +102,6 @@ export function useCheckout() {
       const isPayPal = orderInputPaymentId === 'paypal' || orderInputPaymentId === 'ppcp-gateway';
       const isBorica = orderInputPaymentId === 'borica_emv';
 
-      console.log(JSON.stringify(checkout?.order, null, 4));
-
       // Съхраняваме данните за поръчката в localStorage
       if (checkout?.order) {
         try {
