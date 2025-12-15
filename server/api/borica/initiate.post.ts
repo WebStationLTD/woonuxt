@@ -117,12 +117,10 @@ export default defineEventHandler(async (event) => {
       BACKREF: config.backrefUrl,
       "AD.CUST_BOR_ORDER_ID": `${formattedOrderId}@${formattedOrderId}`,
       ADDENDUM: "AD,TD",
-      M_INFO: btoa(
-        JSON.stringify({
-          email: customerEmail,
-          cardholderName: customerName,
-        })
-      ),
+      M_INFO: Buffer.from(JSON.stringify({
+        email: customerEmail,
+        cardholderName: customerName,
+      }), "utf8").toString("base64")
     };
 
     // Генериране на подпис
