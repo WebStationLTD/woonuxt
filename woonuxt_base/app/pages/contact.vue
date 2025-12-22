@@ -80,6 +80,64 @@
               <span class="font-semibold text-red-500">ПОЧИВЕН ДЕН</span>
             </div>
           </div>
+          
+          <!-- Празнично работно време -->
+          <div class="mt-8 pt-6 border-t-2 border-red-100">
+            <h4 class="text-lg font-bold mb-4 flex items-center gap-2 text-red-700">
+              <Icon name="ion:gift-outline" size="20" />
+              <span>Празнично Работно Време:</span>
+            </h4>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-green-50 to-green-100">
+                <span class="font-medium text-gray-800">24.12.2025г.</span>
+                <span class="font-semibold text-green-700">11:00 - 17:00 ч.</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100">
+                <span class="font-medium text-gray-800">25.12.2025г.</span>
+                <span class="font-semibold text-red-600">Почивен Ден</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100">
+                <span class="font-medium text-gray-800">26.12.2025г.</span>
+                <span class="font-semibold text-red-600">Почивен Ден</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-green-50 to-green-100">
+                <span class="font-medium text-gray-800">27.12.2025г.</span>
+                <span class="font-semibold text-green-700">11:00 - 17:00 ч.</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100">
+                <span class="font-medium text-gray-800">28.12.2025г.</span>
+                <span class="font-semibold text-red-600">Почивен Ден</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-green-50 to-green-100">
+                <span class="font-medium text-gray-800">29.12.2025г.</span>
+                <span class="font-semibold text-green-700">11:00 - 17:00 ч.</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-green-50 to-green-100">
+                <span class="font-medium text-gray-800">30.12.2025г.</span>
+                <span class="font-semibold text-green-700">11:00 - 17:00 ч.</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100">
+                <span class="font-medium text-gray-800">31.12.2025г.</span>
+                <span class="font-semibold text-red-600">Почивен Ден</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100">
+                <span class="font-medium text-gray-800">01.01.2026г.</span>
+                <span class="font-semibold text-red-600">Почивен Ден</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100">
+                <span class="font-medium text-gray-800">02.01.2026г.</span>
+                <span class="font-semibold text-red-600">Почивен Ден</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100">
+                <span class="font-medium text-gray-800">03.01.2026г.</span>
+                <span class="font-semibold text-red-600">Почивен Ден</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5 px-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100">
+                <span class="font-medium text-gray-800">04.01.2026г.</span>
+                <span class="font-semibold text-red-600">Почивен Ден</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Обслужване -->
