@@ -13,20 +13,24 @@ const updatePaymentMethod = (value: any) => {
   emits('update:modelValue', value);
 };
 
-// Изчисляваме общата сума на поръчката
+// Изчисляваме общата сума на поръчката (в EUR от бекенда)
 const cartTotal = computed(() => {
   if (!cart.value?.rawTotal) return 0;
   return parseFloat(cart.value.rawTotal.replace(/[^\d.]/g, '') || '0');
 });
 
+// Минимална сума за наложен платеж: 70 лв = 35.79 EUR (по курс 1.95583)
+const MIN_AMOUNT_FOR_COD_EUR = 35.79;
+const MIN_AMOUNT_FOR_COD_BGN = 70;
+
 // Филтрираме методите за плащане според сумата
 const filteredPaymentGateways = computed(() => {
   if (!props.paymentGateways?.nodes) return [];
   
-  const total = cartTotal.value;
+  const total = cartTotal.value; // в EUR
   
-  // Ако поръчката е под 70 лв, показваме САМО картови плащания
-  if (total < 70) {
+  // Ако поръчката е под 70 лв (35.79 EUR), показваме САМО картови плащания
+  if (total < MIN_AMOUNT_FOR_COD_EUR) {
     return props.paymentGateways.nodes.filter(gateway => 
       gateway.id === 'stripe' || 
       gateway.id === 'borica_emv' || 
@@ -34,7 +38,7 @@ const filteredPaymentGateways = computed(() => {
     );
   }
   
-  // Над 70 лв - показваме всички методи
+  // Над 70 лв (35.79 EUR) - показваме всички методи
   return props.paymentGateways.nodes;
 });
 
@@ -57,11 +61,11 @@ watch(filteredPaymentGateways, (newGateways) => {
 
 <template>
   <div>
-    <!-- Съобщение при поръчка под 70 лв -->
-    <div v-if="cartTotal < 70" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+    <!-- Съобщение при поръчка под 70 лв (35.79 EUR) -->
+    <div v-if="cartTotal < MIN_AMOUNT_FOR_COD_EUR" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
       <p class="text-sm text-blue-800">
         <Icon name="ion:information-circle" size="18" class="inline-block mr-1" />
-        При поръчки под 70 лв е налично само плащане с карта.
+        При поръчки под {{ MIN_AMOUNT_FOR_COD_EUR.toFixed(2) }} € / {{ MIN_AMOUNT_FOR_COD_BGN }} лв. е налично само плащане с карта.
       </p>
     </div>
 

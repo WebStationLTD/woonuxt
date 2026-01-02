@@ -7,6 +7,27 @@ const props = defineProps({
 });
 
 const billing = toRef(props, 'modelValue');
+
+// Задаваме България по подразбиране ако няма зададена държава
+onMounted(() => {
+  if (!billing.value.country) {
+    billing.value.country = 'BG';
+  }
+});
+
+// Watch за промени в града и адреса - обновяваме методите за доставка
+watch(
+  () => [billing.value.city, billing.value.address1],
+  async ([newCity, newAddress], [oldCity, oldAddress]) => {
+    // Обновяваме само ако са попълнени и и двете полета И има промяна
+    if (newCity && newAddress && (newCity !== oldCity || newAddress !== oldAddress)) {
+      // Debounce - чакаме 500ms след последната промяна
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await updateShippingLocation();
+    }
+  },
+  { deep: true }
+);
 </script>
 
 <template>
@@ -40,5 +61,8 @@ const billing = toRef(props, 'modelValue');
       <label for="address1">Адрес <span class="text-red-500">*</span></label>
       <input id="address1" v-model="billing.address1" placeholder="ул. Витоша 47" autocomplete="street-address" type="text" required />
     </div>
+    
+    <!-- ВАЖНО: Скрито поле за държава - WooCommerce изисква country за да изчисли доставката -->
+    <input v-if="isBillingAddressEnabled" type="hidden" v-model="billing.country" />
   </div>
 </template>

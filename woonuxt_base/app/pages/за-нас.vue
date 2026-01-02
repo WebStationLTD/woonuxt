@@ -209,7 +209,7 @@
               <Icon name="ion:checkmark-circle" size="24" class="text-green-600 mr-3 mt-1" />
               <div>
                 <h3 class="text-lg font-bold text-gray-800 mb-2">Бърза доставка</h3>
-                <p class="text-gray-700">Осигуряваме бърза и надеждна доставка до цялата страна, с безплатна доставка над 150 лв.</p>
+                <p class="text-gray-700">Осигуряваме бърза и надеждна доставка до цялата страна, с безплатна доставка над 76.69 € / 150 лв.</p>
               </div>
             </div>
 

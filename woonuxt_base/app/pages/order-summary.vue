@@ -83,7 +83,7 @@ async function getOrder() {
             total: parseFloat(order.value.total?.replace(/[^\d.]/g, '') || '0'),
             tax: parseFloat(order.value.totalTax?.replace(/[^\d.]/g, '') || '0'),
             shipping: parseFloat(order.value.shippingTotal?.replace(/[^\d.]/g, '') || '0'),
-            currency: 'BGN',
+            currency: 'EUR',
             products: products,
             coupon: order.value.couponLines?.nodes?.[0]?.code,
           });

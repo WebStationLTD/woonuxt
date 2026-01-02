@@ -19,7 +19,7 @@
               <h2 class="text-2xl font-bold text-green-800">БЕЗПЛАТНА ДОСТАВКА</h2>
             </div>
             <p class="text-green-700 mb-4">
-              <strong>Доставката на поръчки над 150 лв. до адрес на получателят или до офис на куриерска фирма SPEEDY e БЕЗПЛАТНА!</strong>
+              <strong>Доставката на поръчки над 76.69 € / 150 лв. до адрес на получателят или до офис на куриерска фирма SPEEDY e БЕЗПЛАТНА!</strong>
             </p>
             <div class="text-sm text-green-600">
               <p>✓ До адрес на получателя</p>
@@ -37,13 +37,13 @@
             <div class="space-y-3 text-blue-700">
               <div class="flex justify-between">
                 <span>До офис на SPEEDY:</span>
-                <strong>8,00 лв.</strong>
+                <strong>4.09 € / 8.00 лв.</strong>
               </div>
               <div class="flex justify-between">
                 <span>До адрес на получателя:</span>
-                <strong>9,00 лв.</strong>
+                <strong>4.60 € / 9.00 лв.</strong>
               </div>
-              <p class="text-sm text-blue-600 mt-4">* За поръчки под 150 лв.</p>
+              <p class="text-sm text-blue-600 mt-4">* За поръчки под 76.69 € / 150 лв.</p>
             </div>
           </div>
         </div>
@@ -211,7 +211,7 @@ const { frontEndUrl } = useHelpers();
 // SEO meta data
 const pageTitle = 'Доставка - Условия, цени и срокове | Лидерфитнес ЕООД';
 const pageDescription =
-  'Информация за доставка на спортно оборудване от Лидерфитнес. Безплатна доставка над 150 лв. Цени, срокове и условия за получаване на поръчки.';
+  'Информация за доставка на спортно оборудване от Лидерфитнес. Безплатна доставка над 76.69 € / 150 лв. Цени, срокове и условия за получаване на поръчки.';
 const canonicalUrl = `${frontEndUrl || 'https://leaderfitness.net'}/доставка/`;
 
 useSeoMeta({

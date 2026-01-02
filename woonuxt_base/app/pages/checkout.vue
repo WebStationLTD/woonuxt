@@ -52,7 +52,8 @@ onBeforeMount(async () => {
 // 🎯 Refresh cart and TRACKING: InitiateCheckout при влизане в checkout страница
 onMounted(async () => {
   // Refresh the cart first to ensure it's up-to-date
-  refreshCart();
+  await refreshCart();
+  
 
   if (process.client && cart.value && !cart.value.isEmpty) {
     const { trackInitiateCheckout } = useTracking();
@@ -190,7 +191,7 @@ const handleBoricaPayment = async (): Promise<void> => {
     const paymentData = {
       orderId: orderId.toString(),
       amount: amount,
-      currency: 'BGN',
+      currency: 'EUR',
       description: generateOrderDescription({ orderId }),
       customerEmail: billing?.email || customer.value?.email || '',
       customerName: [firstName, lastName].filter(Boolean).join(' ').toUpperCase(),
@@ -356,9 +357,10 @@ useSeoMeta({
             </div>
           </Transition>
 
-          <div v-if="cart.availableShippingMethods && cart.availableShippingMethods.length">
+          <!-- Методи за доставка -->
+          <div v-if="cart.availableShippingMethods && cart.availableShippingMethods.length && cart.availableShippingMethods[0]?.rates?.length">
             <h3 class="mb-4 text-xl font-semibold">{{ $t('messages.general.shippingSelect') }}</h3>
-            <ShippingOptions :options="cart.availableShippingMethods?.[0]?.rates || []" :active-option="cart.chosenShippingMethods?.[0] || ''" />
+            <ShippingOptions :options="cart.availableShippingMethods[0].rates" :active-option="cart.chosenShippingMethods?.[0] || ''" />
           </div>
 
           <div v-if="paymentGateways?.nodes.length" class="mt-2 col-span-full">

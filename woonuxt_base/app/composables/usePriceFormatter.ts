@@ -1,42 +1,40 @@
 /**
- * Composable за форматиране на цени в двоен формат BGN / EUR
+ * Composable за форматиране на цени в двоен формат EUR / BGN
  * Съгласно изискванията на Еврозоната в България
  *
+ * ⚠️ ВАЖНО: От 01.01.2025 цените от бекенда са в ЕВРО!
  * Официален курс: 1 EUR = 1.95583 BGN (фиксиран)
+ * 
+ * Формат на показване (6 месеца от 01.01.2025):
+ * X.XX € / X.XX лв. (първо евро, после лева)
  */
 
 // Официален курс EUR/BGN - ЕДИНСТВЕНО МЯСТО за промяна!
-export const BGN_TO_EUR_RATE = 1.95583;
+export const EUR_TO_BGN_RATE = 1.95583;
 
 /**
- * Форматира цена в двоен формат: X.XX лв. / X.XX €
+ * Форматира цена в двоен формат: X.XX € / X.XX лв.
  * Pure function - може да се използва навсякъде
- * @param price - Raw цена като string или number
- * @param showZero - Дали да показва "0.00 лв. / 0.00 €" при липса на цена
- * @returns Форматирана цена в двоен формат
+ * 
+ * ⚠️ ВАЖНО: Цената от бекенда е в ЕВРО!
+ * 
+ * @param priceEUR - Raw цена в ЕВРО като string или number (от бекенда)
+ * @param showZero - Дали да показва "0.00 € / 0.00 лв." при липса на цена
+ * @returns Форматирана цена в двоен формат (EUR / BGN)
  */
-export const formatDualPrice = (price: string | number | null | undefined, showZero: boolean = false): string => {
-  if (!price) return showZero ? '0.00 лв. / 0.00 €' : '';
+export const formatDualPrice = (priceEUR: string | number | null | undefined, showZero: boolean = false): string => {
+  if (!priceEUR) return showZero ? '0.00 € / 0.00 лв.' : '';
 
-  const priceNum = typeof price === 'string' ? parseFloat(price) : price;
+  const priceNum = typeof priceEUR === 'string' ? parseFloat(priceEUR) : priceEUR;
 
   if (isNaN(priceNum) || priceNum === 0) {
-    return showZero ? '0.00 лв. / 0.00 €' : '';
+    return showZero ? '0.00 € / 0.00 лв.' : '';
   }
 
-  const priceBGN = priceNum.toFixed(2);
-  const priceEUR = (priceNum / BGN_TO_EUR_RATE).toFixed(2);
+  const priceEURFormatted = priceNum.toFixed(2);
+  const priceBGN = (priceNum * EUR_TO_BGN_RATE).toFixed(2);
 
-  return `${priceBGN} лв. / ${priceEUR} €`;
-};
-
-/**
- * Конвертира цена от BGN в EUR
- * @param priceBGN - Цена в лева
- * @returns Цена в евро
- */
-export const convertToEUR = (priceBGN: number): number => {
-  return priceBGN / BGN_TO_EUR_RATE;
+  return `${priceEURFormatted} € / ${priceBGN} лв.`;
 };
 
 /**
@@ -45,27 +43,41 @@ export const convertToEUR = (priceBGN: number): number => {
  * @returns Цена в лева
  */
 export const convertToBGN = (priceEUR: number): number => {
-  return priceEUR * BGN_TO_EUR_RATE;
+  return priceEUR * EUR_TO_BGN_RATE;
 };
 
 /**
- * Форматира само BGN цена
+ * Конвертира цена от BGN в EUR
+ * @param priceBGN - Цена в лева
+ * @returns Цена в евро
  */
-export const formatBGN = (price: string | number | null | undefined): string => {
-  if (!price) return '';
-  const priceNum = typeof price === 'string' ? parseFloat(price) : price;
-  if (isNaN(priceNum)) return '';
-  return `${priceNum.toFixed(2)} лв.`;
+export const convertToEUR = (priceBGN: number): number => {
+  return priceBGN / EUR_TO_BGN_RATE;
 };
 
 /**
  * Форматира само EUR цена
+ * ⚠️ ВАЖНО: Цената от бекенда е в ЕВРО!
+ * @param priceEUR - Цена в евро (от бекенда)
  */
-export const formatEUR = (price: string | number | null | undefined): string => {
-  if (!price) return '';
-  const priceNum = typeof price === 'string' ? parseFloat(price) : price;
+export const formatEUR = (priceEUR: string | number | null | undefined): string => {
+  if (!priceEUR) return '';
+  const priceNum = typeof priceEUR === 'string' ? parseFloat(priceEUR) : priceEUR;
   if (isNaN(priceNum)) return '';
-  return `${(priceNum / BGN_TO_EUR_RATE).toFixed(2)} €`;
+  return `${priceNum.toFixed(2)} €`;
+};
+
+/**
+ * Форматира само BGN цена
+ * ⚠️ ВАЖНО: Цената от бекенда е в ЕВРО, конвертираме в BGN!
+ * @param priceEUR - Цена в евро (от бекенда)
+ */
+export const formatBGN = (priceEUR: string | number | null | undefined): string => {
+  if (!priceEUR) return '';
+  const priceNum = typeof priceEUR === 'string' ? parseFloat(priceEUR) : priceEUR;
+  if (isNaN(priceNum)) return '';
+  const priceBGN = priceNum * EUR_TO_BGN_RATE;
+  return `${priceBGN.toFixed(2)} лв.`;
 };
 
 /**
@@ -74,11 +86,11 @@ export const formatEUR = (price: string | number | null | undefined): string => 
  */
 export function usePriceFormatter() {
   return {
-    BGN_TO_EUR_RATE,
+    EUR_TO_BGN_RATE,
     formatDualPrice,
-    formatBGN,
     formatEUR,
-    convertToEUR,
+    formatBGN,
     convertToBGN,
+    convertToEUR,
   };
 }

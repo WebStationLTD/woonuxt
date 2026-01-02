@@ -62,7 +62,7 @@ onMounted(() => {
       orderId: order.id,
       total: parseFloat(order.total),
       shipping: parseFloat(order.shippingTotal?.toString().replace(/[^\d.]/g, '') || '0'),
-      currency: 'BGN',
+      currency: 'EUR',
       products: products,
     });
 

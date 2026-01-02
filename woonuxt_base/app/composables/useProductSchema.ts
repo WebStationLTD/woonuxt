@@ -79,7 +79,7 @@ export const useProductSchema = (productRef: Ref<Product> | Product) => {
       offers: {
         '@type': 'Offer',
         price: priceValue,
-        priceCurrency: 'BGN',
+        priceCurrency: 'EUR',
         availability: availability,
         url: `${baseUrl}/produkt/${p.slug}`,
         
@@ -87,7 +87,7 @@ export const useProductSchema = (productRef: Ref<Product> | Product) => {
           priceSpecification: {
             '@type': 'PriceSpecification',
             price: priceValue,
-            priceCurrency: 'BGN',
+            priceCurrency: 'EUR',
             valueAddedTaxIncluded: true,
           },
         }),
