@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
             postalcode: ''
         },
         items: getProductsFromOrder(order),
-        currency: 'BGN'
+        currency: 'EUR'
     }
 
     // Encrypt payload for TBI using shared encryption key (same logic as PHP Cryptor::encryptString)
