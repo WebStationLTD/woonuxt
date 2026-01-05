@@ -80,7 +80,6 @@ if (process.client) {
 <template>
   <NuxtLoadingIndicator color="#9c0100" :height="3" :duration="100" />
   <div class="flex flex-col min-h-screen">
-    <HolidayBanner />
     <AppHeader />
 
     <Transition name="slide-from-right">
